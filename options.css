@@ -1,0 +1,17 @@
+body {
+    margin: 2px;
+    background-color: gray;
+}
+
+#panel {
+    height:100vh;
+}
+
+#content {
+	width:100%;
+	height:90%; 
+	box-sizing: border-box;         /* For IE and modern versions of Chrome */
+	-moz-box-sizing: border-box;    /* For Firefox                          */
+	-webkit-box-sizing: border-box; /* For Safari                           */
+	min-height: 200px;
+}

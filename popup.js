@@ -17,105 +17,17 @@
 // ----------------------------------------------
 //
 
-// -----------------------------------------------
-//
-//       Firefox Ubiquity emulation layer
-//
-// -----------------------------------------------
-
 //
 // CmdUtils
 //
-
 var active_document = document; // initially this is popup
 var active_window = window; // initially this is popup
-
-if (CmdUtils == undefined) var CmdUtils = { 
-    __globalObject: this,
-    jQuery: jQuery,
-};
-noun_arb_text = 1;
-CmdUtils.VERSION = 0.01;
-CmdUtils.CommandList = [];
-CmdUtils.CreateCommand = function CreateCommand(args) {
-    var cmd_name = args.name;
-    var cmd_list = CmdUtils.CommandList;
-    if (cmd_name in cmd_list) {
-        return;
-    }
-    CmdUtils.CommandList.push(args);
-};
-CmdUtils.closeWindow = function closeWindow() {
-    CmdUtils.saveLastCommand();
-    CmdUtils.getWindow().close();
-};
-CmdUtils.getDocument = function getDocument() {
-    return active_document;
-};
-CmdUtils.getLocation = function getLocation() {
-    return CmdUtils.getDocument().location;
-};
-CmdUtils.getWindow = function getWindow() {
-    return active_window;
-};
-CmdUtils.openWindow = function openWindow(url, name) {
-    if (!name) {
-        window.open(url);
-    } else {
-        window.open(url, name);
-    }
-};
-// 2nd order function
-CmdUtils.SimpleUrlBasedCommand = function SimpleUrlBasedCommand(url) {
-    if (!url) return;
-    var search_func = function(directObj) {
-        if (!directObj) return;
-        ubiq_set_results(url);
-        var text = directObj.text;
-        text = encodeURIComponent(text);
-        url = url.replace('{text}', text);
-        url = url.replace('{location}', CmdUtils.getLocation());
-        Utils.openUrlInBrowser(url);
-        //CmdUtils.toggleUbiquityWindow();
-    };
-    return search_func;
-};
-CmdUtils.saveLastCommand = function saveLastCommand(extra) {
-    extra = extra || "";
-    if (chrome.storage) chrome.storage.local.set({ 'lastCmd':ubiq_command() });
-};
-CmdUtils.toggleUbiquityWindow = function toggleUbiquityWindow(w) {
-    if (!w) w = ubiq_window;
-    var vis = w.style.visibility;
-    if (vis == 'visible') {
-        CmdUtils.saveLastCommand();
-        window.close();
-    }
-    return;
-};
-
-//
-// Utils
-//
-if (Utils == undefined) var Utils = {};
-Utils.openUrlInBrowser = function(url) {
-    window.open(url);
-};
-
-//
-// Application
-//
-if (Application == undefined) var Application = {
-    activeWindow: {
-        activeTab: window
-    }
-};
 
 var ubiq_window;
 var ubiq_selection;
 var ubiq_element;
 var ubiq_remote_server = 'res'; //http://people.opera.com/cosimo/ubiquity';
-var ubiq_selected_command;
+var ubiq_selected_command = 0;
 var ubiq_first_match;
 
 // Used to get css url of images and other resources
@@ -135,40 +47,6 @@ function ubiq_url(path) {
     url += '/';
     url += path;
     return url;
-}
-
-function ubiq_create_window() {
-    return;
-    //////////////////////////////////////
-    //////////////////////////////////////
-    //////////////////////////////////////
-    //////////////////////////////////////
-    //////////////////////////////////////
-    //////////////////////////////////////
-    //////////////////////////////////////
-    //////////////////////////////////////
-    //////////////////////////////////////
-    //////////////////////////////////////
-    //////////////////////////////////////
-    //////////////////////////////////////
-    var doc = window.document;
-    var wnd = document.createElement('div');
-    var stl = wnd.style;
-    wnd.setAttribute('id', 'ubiq_window');
-    stl.position = 'fixed';
-    stl.left = '1px';
-    stl.top = '1px';
-    stl.visibility = 'hidden';
-    stl.width = '810px';
-    stl.height = '561px';
-    stl.border = '0';
-    stl.padding = '0';
-    // Our window should appear on top of everything 
-    stl.zIndex = '99999';
-    stl.background = ubiq_url_for('ubiq_background.png');
-    wnd.innerHTML = ubiq_start_mode();
-    doc.body.appendChild(wnd);
-    return wnd;
 }
 
 function ubiq_start_mode() {
@@ -210,12 +88,17 @@ function ubiq_show_preview(cmd) {
         return;
     }
     preview_func = CmdUtils.CommandList[cmd]['preview'];
-    if (typeof preview_func == 'string') {
-        el.innerHTML = preview_func;
-    } else {
-
+    switch(typeof preview_func)
+    {
+    case 'undefined':
+        	el.innerHTML = CmdUtils.CommandList[cmd]['description'];
+        	break;
+    case 'string': 
+        	el.innerHTML = preview_func;
+        	break;
+    default:
         var words = ubiq_command().split(' ');
-        var cmd = words[0];
+        var command = words[0];
     
         var text;
         if (ubiq_selection) {
@@ -228,7 +111,10 @@ function ubiq_show_preview(cmd) {
         var directObj = {
             text: text,
         };
-        preview_func(el, directObj);
+		if (typeof CmdUtils.CommandList[cmd]['require'] !== 'undefined')
+	        CmdUtils.loadScripts(CmdUtils.CommandList[cmd]['require'], ()=>{ preview_func(el, directObj) });
+	    else
+        	preview_func(el, directObj);
     }
     return;
 }
@@ -312,7 +198,7 @@ function ubiq_display_results(text) {
 function ubiq_help() {
     var style = 'font-size:17px; padding:8px; font-weight:normal';
     var html = '<p style="' + style + '">Type the name of a command and press enter to execute it, or <b>help</b> for assistance.</p>';
-    html += "<p>commands loaded:<BR>"
+    html += "<p>commands loaded:<BR>";
     for (var c in CmdUtils.CommandList) {
         html += CmdUtils.CommandList[c]['name']+", ";
     }
@@ -482,6 +368,7 @@ function ubiq_show_matching_commands(text) {
         suggestions_list.setAttribute('style', 'padding:0; margin:0');
 
         //ubiq_show_tip(matches[ubiq_selected_command]);
+        //console.log("ubiq_show_preview pre ",ubiq_selected_command, matches);
         ubiq_show_preview(matches[ubiq_selected_command]);
 
         for (var c in matches) {
@@ -516,13 +403,16 @@ function ubiq_show_matching_commands(text) {
 }
 
 function ubiq_key_handler(userjs_event) {
+	// measure the input 
+	CmdUtils.inputUpdateTime = performance.now();
+	ubiq_save_input();
+
     if (!userjs_event) return;
     var ev = userjs_event;
     var kc = ev.keyCode;
 
     // On ENTER, execute the given command
     if (kc == 13) {
-        CmdUtils.saveLastCommand();
         ubiq_execute();
         return;
     }
@@ -558,19 +448,25 @@ function ubiq_xml_http(url, callback) {
     alert("NOT IMPLEMENTED YET");
 }
 
+function ubiq_save_input() {
+	cmd = document.getElementById('ubiq_input');
+    if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.set({ 'lastCmd': cmd.value });
+}
+
+function ubiq_load_input() {
+	cmd = document.getElementById('ubiq_input');
+    if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.get('lastCmd', function(result) {
+        lastCmd = result.lastCmd || "";
+        cmd.value = lastCmd;
+        cmd.select();
+    });
+}
 
 ubiq_window = document.getElementById("ubiq_window");
 ubiq_get_selection();
 ubiq_get_current_element();
-ubiq_focus();
 
-cmd = document.getElementById('ubiq_input');
-cmd.select();
-if (chrome.storage) chrome.storage.local.get('lastCmd', function(result) {
-    lastCmd = result.lastCmd || "";
-    cmd.value = lastCmd;
-    cmd.select();
-});
+ubiq_load_input();
 
 /*
 async function doSomething(script) {
@@ -601,4 +497,11 @@ console.log("hello from UbiChr");
 // Add event handler to window 
 document.addEventListener('keyup', function(e) { ubiq_key_handler(e) }, false);
 
-ubiq_show_matching_commands();
+if (ubiq_command()!="") 
+setTimeout(function() {
+	document.body.focus();
+    ubiq_show_matching_commands(ubiq_command());
+    ubiq_focus();
+	console.log("should focus");
+	cmd.focus();
+}, 500);

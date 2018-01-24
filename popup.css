@@ -1,0 +1,89 @@
+body {
+    width: 780px;
+    height: 560px;
+    margin: 0;
+    background-color: blue;
+}
+
+#ubiq_window {
+    position: fixed;
+    left: 0px;
+    top: 0px;
+    visibility: visible;
+    width: 780px;
+    height: 560px;
+    border: 0px;
+    padding: 0px;
+    z-index: 99999;
+    background: url("res/ubiq_background.png");
+}
+
+#ubiq-input-panel {
+    border: 0;
+    display: block;
+    float: left;
+    margin: 0;
+    ;
+    width: 100%;
+    height: 55px
+}
+
+#ubiq_input {
+    width: 100%;
+    border: 0px;
+    height: 55px;
+    margin: 0px;
+    background: lightgray;
+    color: black;
+    font-family: Trebuchet MS, Arial, Helvetica;
+    font-size: 28px;
+    -webkit-appearance: none;
+    outline: none;
+}
+#ubiq_input:focus {
+	color:green;
+	background-color: yelow;
+}        
+#ubiq-results-panel {
+    width: 100%;
+    border: 0;
+    display: block;
+    float: left;
+    margin: 0;
+    clear: both;
+    text-align: left;
+    padding-top: 2px;
+    font-size: 19px;
+    font-weight: normal;
+    color: white;
+    height: 502px;
+}
+
+#ubiq-command-tip {
+    position: absolute;
+    left: 310px;
+    top: 66px;
+    display: block;
+    border: 0;
+    color: #ddd;
+    font-family: Helvetica, Arial;
+    font-style: italic;
+    font-size: 11pt
+}
+
+#ubiq-command-preview {
+    position: absolute;
+    left: 310px;
+    top: 66px;
+    display: block;
+    overflow: auto;
+    border: 0;
+    color: #ddd;
+    font-family: Helvetica, Arial;
+}
+
+#ubiq-command-preview a {
+    color:white;
+    text-decoration: bold;
+    font-size: 11pt
+}
