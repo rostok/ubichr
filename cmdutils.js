@@ -105,6 +105,19 @@ CmdUtils.ajaxGet = function ajaxGet(url, callback) {
     }
     xhr.send();
 }
+CmdUtils.get = function get(url) {
+	return jQuery.ajax({
+    	url: url,
+        async: true
+	});
+}
+CmdUtils.post = function post(url, data) {
+	return jQuery.ajax({
+    	url: url,
+    	data: data,
+        async: true
+	});
+}
 CmdUtils.loadedScripts = [];
 CmdUtils.loadScripts = function loadScripts(url, callback) {
 	url = url || [];

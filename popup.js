@@ -49,31 +49,6 @@ function ubiq_url(path) {
     return url;
 }
 
-function ubiq_start_mode() {
-    var input_style =
-        'width:760px; border:0; padding:0; height:32px; margin-top:16px;' +
-        'margin-left:10px; background:none; color:black;' +
-        'font-family: Trebuchet MS, Arial, Helvetica; font-size: 28px;';
-    var div_style = 'border:0; display:block; float:left; margin:0;';
-    var results_panel_style = div_style +
-        'clear:both; text-align: left; padding-top:2px; font-size: 19px; ' +
-        'font-weight: normal; color:white; height: 502px;';
-
-    var html =
-        '<div id="ubiq-input-panel" style="' + div_style + ';width:99%;height:55px">' +
-        '<form id="ubiq1" onsubmit="return false">' +
-        '<input autocomplete="off" id="ubiq_input" style="' + input_style + '" type="text" size="60" maxlength="500">' +
-        '</form>' +
-        '</div>' +
-        '<br/>' +
-        '<div id="ubiq-results-panel" style="width:100%;' + results_panel_style + '">' +
-        ubiq_help() +
-        '</div>' +
-        '<div id="ubiq-command-tip" style="position:absolute;left:310px;top:65px;display:block;border:0;color:#ddd;font-family:Helvetica,Arial;font-style:italic;font-size:11pt"></div>' +
-        '<div id="ubiq-command-preview" style="position:absolute;left:310px;top:85px;display:block;overflow:auto;border:0;color:#ddd;"></div>';
-    return html;
-}
-
 function ubiq_set_results(v) {
     var el = document.getElementById('ubiq-results-panel');
     if (!el) return;
@@ -365,8 +340,6 @@ function ubiq_show_matching_commands(text) {
 
         var suggestions_div = document.createElement('div');
         var suggestions_list = document.createElement('ul');
-        suggestions_list.setAttribute('style', 'padding:0; margin:0');
-
         //ubiq_show_tip(matches[ubiq_selected_command]);
         //console.log("ubiq_show_preview pre ",ubiq_selected_command, matches);
         ubiq_show_preview(matches[ubiq_selected_command]);
@@ -374,7 +347,6 @@ function ubiq_show_matching_commands(text) {
         for (var c in matches) {
             var is_selected = (c == ubiq_selected_command);
             var li = document.createElement('li');
-            var li_bg = ubiq_url_for(is_selected ? 'selected_background.png' : 'command_background.png');
             c = matches[c];
             if (c == '...') {
                 li.innerHTML = c;
@@ -384,9 +356,7 @@ function ubiq_show_matching_commands(text) {
                 if (is_selected) ubiq_first_match = cmd;
                 li.innerHTML = icon + cmd;
             }
-            li.setAttribute('style', 'color: black; list-style: none; margin:0; padding-top:8px; padding-left:12px;' +
-                'font-family: Helvetica,Arial; font-size: 14px; height:26px;' +
-                'background-image:' + li_bg + '; width:290px; background-repeat: repeat;');
+            li.setAttribute('class', is_selected ? 'selected' : '');
             suggestions_list.appendChild(li);
         }
 

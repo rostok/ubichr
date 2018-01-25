@@ -432,8 +432,68 @@ CmdUtils.CreateCommand({
     author: {},
     icon: "http://www.google.com/favicon.ico",
     homepage: "",
+    timeout: 500,
     license: "",
-    preview: "Shows a location on the map",
+    require: "https://maps.googleapis.com/maps/api/js?sensor=false",
+    preview: async function wikipedia_preview(previewBlock, args) {
+    	// http://jsfiddle.net/user2314737/u9no8te4/
+        var text = args.text.trim();
+        from = text.split(' to ')[0];
+        dest = text.split(' to ').slice(1).join();
+
+        var A = await CmdUtils.get("https://nominatim.openstreetmap.org/search.php?q="+encodeURIComponent(from)+"&polygon_geojson=1&viewbox=&format=json");
+        if (!A[0]) return;
+        console.log("A",A[0]);
+        previewBlock.innerHTML = '<div id="map-canvas" style="width:480px;height:503px"></div>';
+    	var pointA = new google.maps.LatLng(A[0].lat, A[0].lon);
+        var myOptions = {
+            zoom: 10,
+            center: pointA
+        };
+        var map = new google.maps.Map(document.getElementById('map-canvas'), myOptions);
+        this.markerA = new google.maps.Marker({
+            position: pointA,
+            title: from,
+            label: "A",
+            map: map
+        });
+        var B = await CmdUtils.get("https://nominatim.openstreetmap.org/search.php?q="+encodeURIComponent(dest)+"&polygon_geojson=1&viewbox=&format=json");
+        if (!B[0]) { 
+	        map.data.addGeoJson(geoJson = {"type": "FeatureCollection", "features": [{ "type": "Feature", "geometry": A[0].geojson, "properties": {} }]});
+	        map.fitBounds( new google.maps.LatLngBounds( new google.maps.LatLng(A[0].boundingbox[0],A[0].boundingbox[2]), new google.maps.LatLng(A[0].boundingbox[1],A[0].boundingbox[3]) ) );
+	        map.setZoom(map.getZoom()-1);
+    	    return;
+    	}
+        console.log("B", B[0]);
+    	var pointB = new google.maps.LatLng(B[0].lat, B[0].lon);
+        // Instantiate a directions service.
+        directionsService = new google.maps.DirectionsService();
+        directionsDisplay = new google.maps.DirectionsRenderer({
+            map: map
+        });
+        this.markerB = new google.maps.Marker({
+            position: pointB,
+            title: dest,
+            label: "B",
+            map: map
+        });
+
+        // get route from A to B
+        directionsService.route({
+            origin: pointA,
+            destination: pointB,
+            avoidTolls: true,
+            avoidHighways: false,
+            travelMode: google.maps.TravelMode.DRIVING
+        }, function (response, status) {
+            if (status == google.maps.DirectionsStatus.OK) {
+                directionsDisplay.setDirections(response);
+            } else {
+                window.alert('Directions request failed due to ' + status);
+            }
+        });
+
+    },
     execute: CmdUtils.SimpleUrlBasedCommand(
         "http://maps.google.com/maps?q={text}"
     )
@@ -739,7 +799,7 @@ CmdUtils.CreateCommand({
         "Site to search": noun_arb_text
     },
     preview: function (pblock, theShout) {
-        pblock.innerHTML = "Buscar versiones antiguas del sitio <b>" + theShout.text + "</b>"
+        pblock.innerHTML = "Buscar versiones antiguas del sitio <b>" + theShout.text + "</b>";
     },
     execute: function (directObj) {
         CmdUtils.toggleUbiquityWindow();
@@ -793,56 +853,21 @@ CmdUtils.CreateCommand({
 
         var langCode = "en";
         var apiUrl = "http://" + langCode + ".wikipedia.org/w/api.php";
-/*
-        // works in browser 
-              $.ajax({
-                url: 'http://en.wikipedia.org/w/api.php',
-                data: {
-                    action: 'query',
-                    list: 'search',
-                    srsearch: searchText,
-                    srlimit: 5, // is this a good limit?
-                    format: 'json'
-                },
-                dataType: 'jsonp',
-                success: function processResult(apiResult) {
-                    function generateWikipediaLink(title) {
-                        return "http://" + langCode + ".wikipedia.org/wiki/" +title.replace(/ /g, "_")
-                    }
-                    function wikiAnchor(title) {
-                        return "<a href='"+generateWikipediaLink(title)+"'>"+title+"</a>";
-                    }
-                    previewBlock.innerHTML = "";
-                    for (var i = 0; i < apiResult.query.search.length; i++) {
-                        previewBlock.innerHTML += "<p>"+wikiAnchor(apiResult.query.search[i].title) + "<br>"+apiResult.query.search[i].snippet+"</p>";
-                    }
-                }
-              });
-*/
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch="+searchText+"&srlimit=5&format=json", true);
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState == 4) {
-                // JSON.parse does not evaluate the attacker's scripts.
-                var resp = JSON.parse(xhr.responseText);
-                function generateWikipediaLink(title) {
-                    return "http://" + langCode + ".wikipedia.org/wiki/" +title.replace(/ /g, "_")
-                }
-                function wikiAnchor(title) {
-                    return "<a href='"+generateWikipediaLink(title)+"'>"+title+"</a>";
-                }
-                previewBlock.innerHTML = "";
-                for (var i = 0; i < resp.query.search.length; i++) {
-                    previewBlock.innerHTML += "<p>"+wikiAnchor(resp.query.search[i].title) + "<br>"+resp.query.search[i].snippet+"</p>";
-                }
-            }
-        }
-        xhr.send();
 
+        CmdUtils.ajaxGetJSON("https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch="+searchText+"&srlimit=5&format=json", function (resp) {
+            function generateWikipediaLink(title) {
+                return "http://" + langCode + ".wikipedia.org/wiki/" +title.replace(/ /g, "_");
+            }
+            function wikiAnchor(title) {
+                return "<a href='"+generateWikipediaLink(title)+"'>"+title+"</a>";
+            }
+            previewBlock.innerHTML = "";
+            for (var i = 0; i < resp.query.search.length; i++) {
+                previewBlock.innerHTML += "<p>"+wikiAnchor(resp.query.search[i].title) + "<br>"+resp.query.search[i].snippet+"</p>";
+            }
+        });
     },
-    execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://en.wikipedia.org/wiki/Special:Search?search={text}"
-    )
+    execute: CmdUtils.SimpleUrlBasedCommand("http://en.wikipedia.org/wiki/Special:Search?search={text}")
 });
 
 CmdUtils.CreateCommand({
@@ -891,4 +916,28 @@ CmdUtils.CreateCommand({
     execute: CmdUtils.SimpleUrlBasedCommand(
         "http://www.youtube.com/results?search_type=search_videos&search_sort=relevance&search_query={text}&search=Search"
     )
+});
+
+CmdUtils.CreateCommand({
+    name: "calc",
+    description: "evals math expressions",
+    require: "https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.20.1/math.min.js",
+    preview: pr = function preview(previewBlock, args) {
+    	if (args.text.trim()!='') {
+    		var m = new math.parser();
+	        previewBlock.innerHTML = m.eval(args.text);
+	        //CmdUtils.ajaxGet("http://api.mathjs.org/v1/?expr="+encodeURIComponent(args.text), (r)=>{ previewBlock.innerHTML = r; });
+	    }
+		else
+	        previewBlock.innerHTML = this.description;
+    },
+    execute: function (args) { pr(document.getElementById('ubiq-command-preview'), args); }
+});
+
+CmdUtils.CreateCommand({
+    name: "edit-ubiquity-commands",
+    description: "Takes you to the Ubiquity command editor page.",
+    execute: function (args) { 
+    	chrome.runtime.openOptionsPage(); 
+    }
 });
