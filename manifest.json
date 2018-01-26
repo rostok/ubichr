@@ -8,7 +8,7 @@
     "browser_action": {
         "default_title": "UbiChr",
         "default_popup": "popup.html",
-        "default_icon": "res/u.png"
+        "default_icon": "res/icon-128.png"
     },
     "options_ui": {
         "page": "options.html",
@@ -24,6 +24,7 @@
             }
         }
     },
+    "icons": { "128" : "res/icon-128.png" },
     "permissions": [
         "http://*/",
         "https://*/",

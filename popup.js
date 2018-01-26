@@ -81,14 +81,18 @@ function ubiq_show_preview(cmd, args) {
 			text = args;
         } else {
             if (text.trim()=="") {
-        		chrome.tabs.executeScript( {
-        		    code: "window.getSelection().toString();"
-        		}, function(selection) {
-        			if (selection!="") {
-                        ubiq_show_preview(cmd, selection.toString());
-                    }
-        		});
-            	return;
+            	try {
+            		chrome.tabs.executeScript( {
+            		    code: "window.getSelection() ? window.getSelection().toString() : '';"
+            		}, function(selection) {
+            			if (selection!="") {
+                            ubiq_show_preview(cmd, selection.toString());
+                        }
+            		});
+	            	return;
+        		} catch (e) {
+        			console.error("ubiq_show_preview went wrong", e);
+        		}
             }
 		}
 		            
@@ -133,21 +137,33 @@ function ubiq_dispatch_command(line, args) {
     var command = words.shift();
 
     var text = words.join(' ');
+    console.log("dispatching 0");
 
     if (typeof args === 'string') {
         text = args;
     } else {
         if (text.trim()=="") {
-            chrome.tabs.executeScript( {
-                code: "window.getSelection().toString();"
-            }, function(selection) {
-                if (selection!="") {
-                    ubiq_dispatch_command(cmd, selection.toString());
-                }
-            });
-            return;
+            console.log("dispatching 1");
+        	try {
+                console.log("dispatching 1a");
+/*                chrome.tabs.executeScript( {
+                    code: "window.getSelection().toString();"
+                }, function(selection) {
+                    console.log("dispatching 1b");
+                    if (selection!="" && typeof selection !== 'undefined') {
+                        ubiq_dispatch_command(cmd, selection.toString());
+                    }
+                });
+                console.log("dispatching 1c");
+                return;
+*/                
+    		} catch (e) {
+    			console.error("ubiq_dispatch_command went wrong", e);
+    		}
         }
     }
+
+    console.log("dispatching 2");
 
     // Expand match (typing 'go' will expand to 'google')
     cmd = ubiq_match_first_command(cmd);
@@ -186,25 +202,10 @@ function ubiq_display_results(text) {
 }
 
 function ubiq_help() {
-    var style = 'font-size:17px; padding:8px; font-weight:normal';
-    var html = '<p style="' + style + '">Type the name of a command and press enter to execute it, or <b>help</b> for assistance.</p>';
+    var html = '<p>Type the name of a command and press enter to execute it, or <b>help</b> for assistance.</p>';
     html += "<p>commands loaded:<BR>";
-    for (var c in CmdUtils.CommandList) {
-        html += CmdUtils.CommandList[c]['name']+", ";
-    }
+    html += CmdUtils.CommandList.map((c)=>{return c.builtIn ? c.name : "<u>"+c.name+"</u>";}).sort().join(", ")
     return html;
-}
-
-function ubiq_get_selection() {
-    var str = '';
-    //if (document.getSelection) {
-    //    str = document.getSelection();
-    //}
-    if (document.selection && document.selection.createRange) {
-        var range = document.selection.createRange();
-        str = range.text;
-    }
-    return (ubiq_selection = str);
 }
 
 function ubiq_focus() {
@@ -221,14 +222,6 @@ function ubiq_focus() {
     el.focus();
 }
 
-function ubiq_enabled() {
-    var wnd = ubiq_window;
-    if (!wnd) return;
-    var vis = wnd.style.visibility;
-    if (vis == 'hidden') return false;
-    return true;
-}
-
 function ubiq_command() {
     var cmd = document.getElementById('ubiq_input');
     if (!cmd) {
@@ -236,16 +229,6 @@ function ubiq_command() {
         return '';
     }
     return cmd.value;
-}
-
-// Gets current selection element
-function ubiq_get_current_element() {
-    var el;
-    if (document.selection && document.selection.createRange) {
-        var range = document.selection.createRange();
-        el = range.parentElement();
-    }
-    return (ubiq_element = el);
 }
 
 function ubiq_match_first_command(text) {
@@ -420,11 +403,6 @@ function ubiq_xml(node) {
     return (node && node.nodeType) ? new XMLSerializer().serializeToString(node) : '(' + node + ')';
 }
 
-function ubiq_xml_http(url, callback) {
-    //NIY
-    alert("NOT IMPLEMENTED YET");
-}
-
 function ubiq_save_input() {
 	cmd = document.getElementById('ubiq_input');
     if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.set({ 'lastCmd': cmd.value });
@@ -440,33 +418,8 @@ function ubiq_load_input() {
 }
 
 ubiq_window = document.getElementById("ubiq_window");
-ubiq_get_selection();
-ubiq_get_current_element();
 
 ubiq_load_input();
-
-/*
-async function doSomething(script) {
-    try {
-        // Query the tabs and continue once we have the result 
-        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-        const activeTab = tabs[0];
-
-        cmd.select();
-        //active_document = activeTab.document;
-
-        // Execute the injected script and continue once we have the result 
-        const results = await chrome.tabs.executeScript(activeTab.id, { code: script });
-        const firstScriptResult = results[0];
-        return firstScriptResult;
-    } catch (err) {
-        // Handle errors from chrome.tabs.query, chrome.tabs.executeScript or my code 
-    }
-}
-
-// If you want to use the same callback you can use Promise syntax too: 
-doSomething("").then(function() {});
-*/
 
 // alert(activeTab.url);
 console.log("hello from UbiChr");
@@ -474,6 +427,7 @@ console.log("hello from UbiChr");
 // Add event handler to window 
 document.addEventListener('keyup', function(e) { ubiq_key_handler(e) }, false);
 
+// there's a problem in firefox with popup getting focus
 if (ubiq_command()!="") 
 setTimeout(function() {
 	document.body.focus();

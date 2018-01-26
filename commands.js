@@ -1,8 +1,4 @@
-//--------------------------------------------------------
-//
-//               Command definitions
-//
-//--------------------------------------------------------
+// BuildIn Command definitions
 
 CmdUtils.CreateCommand({
     name: "amazon-search",
@@ -63,7 +59,7 @@ CmdUtils.CreateCommand({
         var steps = parseInt(directObj.text);
         steps = -steps - 1;
         history.go(steps);
-        CmdUtils.toggleUbiquityWindow();
+        CmdUtils.closePopup();
     }
 });
 
@@ -86,15 +82,16 @@ CmdUtils.CreateCommand({
 CmdUtils.CreateCommand({
     name: "close",
     takes: {},
-    description: "Close the current window",
+    description: "Close the current tab",
     author: {},
     icon: "",
     homepage: "",
     license: "",
-    preview: "Close the current window",
+    preview: "Close the current tab",
     execute: function (directObj) {
-        CmdUtils.toggleUbiquityWindow();
-        CmdUtils.closeWindow();
+        console.log("close");
+        CmdUtils.displayMessage("closeing");
+        CmdUtils.closeTab();
     }
 });
 
@@ -372,17 +369,15 @@ CmdUtils.CreateCommand({
     preview: function (pblock, directObject) {
         //ubiq_show_preview(urlString);
         //searchText = jQuery.trim(directObject.text);
-        searchText = directObject.text;
-        var words = searchText.split(' ');
-        var host = words[1];
-        if (searchText.length < 1) {
+        var host = directObject.text;
+        if (host.length < 1) {
             pblock.innerHTML = "Checks if URL is down";
             return;
         }
         var previewTemplate = "Checks if <b>" + host + "</b> is down";
         pblock.innerHTML = previewTemplate;
     },
-    execute: function (directObject) {
+    execute: async function (directObject) {
         var url = "http://downforeveryoneorjustme.com/{QUERY}";
         var query = directObject.text;
         // Get the hostname from url
@@ -393,17 +388,17 @@ CmdUtils.CreateCommand({
         }
         var urlString = url.replace("{QUERY}", query);
         //Utils.openUrlInBrowser(urlString);
-        ubiq_xml_http(urlString, function (ajax) {
+        ajax = await CmdUtils.get(urlString);
+        {
+        	console.log("ajax", ajax);
             if (!ajax) return;
-            var text = ajax.responseText;
-            if (!text) return;
             var pblock = document.getElementById('ubiq-command-preview');
-            if (text.match('is up.')) {
+            if (ajax.match('is up.')) {
                 pblock.innerHTML = '<br/><p style="font-size: 18px;">It\'s just you. The site is <b>up!</b></p>';
             } else {
                 pblock.innerHTML = '<br/><p style="font-size: 18px;">It\'s <b>not</b> just you. The site is <b>down!</b></p>';
             }
-        });
+        };
     }
 });
 
@@ -531,7 +526,7 @@ CmdUtils.CreateCommand({
         if (directObj) {
             url = directObj.text;
         }
-        CmdUtils.toggleUbiquityWindow();
+        CmdUtils.closePopup();
         window.open(url);
     }
 });
@@ -580,7 +575,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Print the current page",
     execute: function (directObj) {
-        CmdUtils.toggleUbiquityWindow();
+        CmdUtils.closePopup();
         window.print();
     }
 });
@@ -595,7 +590,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Reloads the current document",
     execute: function (directObj) {
-        CmdUtils.toggleUbiquityWindow();
+        CmdUtils.closePopup();
         CmdUtils.getLocation().reload();
     }
 });
@@ -746,7 +741,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Translates the given words (or text selection, or the current window) to English",
     execute: function (directObj) {
-        CmdUtils.toggleUbiquityWindow();
+        CmdUtils.closePopup();
         var text = directObj.text;
         // HARD !!!
         //alert(ubiq_element.innerHTML);
@@ -771,7 +766,7 @@ CmdUtils.CreateCommand({
             if (!text) text = CmdUtils.getLocation();
             url = 'http://translate.google.com/translate?prev=_t&ie=UTF-8&sl=auto&tl=' + dest + '&history_state0=&u=';
         }
-        CmdUtils.openWindow(url + text);
+        CmdUtils.addTab(url + text);
     }
 });
 
@@ -802,12 +797,12 @@ CmdUtils.CreateCommand({
         pblock.innerHTML = "Buscar versiones antiguas del sitio <b>" + theShout.text + "</b>";
     },
     execute: function (directObj) {
-        CmdUtils.toggleUbiquityWindow();
+        CmdUtils.closePopup();
         var url = directObj.text;
         if (!url) url = CmdUtils.getLocation();
         var wayback_machine = "http://web.archive.org/web/*/" + url;
         // Take me back!
-        CmdUtils.openWindow(wayback_machine);
+        CmdUtils.addTab(wayback_machine);
     }
 });
 
@@ -936,8 +931,26 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "edit-ubiquity-commands",
-    description: "Takes you to the Ubiquity command editor page.",
+    description: "Takes you to the Ubiquity command <a href=options.html target=_blank>editor page</a>.",
     execute: function (args) { 
-    	chrome.runtime.openOptionsPage(); 
+    	//chrome.runtime.openOptionsPage(); 
+    	//CmdUtils.addTab(chrome.extension.getURL("options.html"));
+    	chrome.runtime.openOptionsPage();
     }
+});
+
+// - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  - 
+// - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  - 
+// - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  - 
+
+// mark built-int commands
+CmdUtils.CommandList.forEach((c)=>{c['builtIn']=true;});
+
+// load custom scripts
+chrome.storage.local.get('customscripts', function(result) {
+	try {
+		eval(result.customscripts || "");
+	} catch (e) {
+		console.error("custom scripts eval failed", e);
+	}
 });

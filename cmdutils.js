@@ -43,9 +43,13 @@ CmdUtils.CreateCommand = function CreateCommand(args) {
     }
     CmdUtils.CommandList.push(args);
 };
-CmdUtils.closeWindow = function closeWindow() {
-    CmdUtils.saveLastCommand();
-    CmdUtils.getWindow().close();
+CmdUtils.closeTab = function closeTab() {
+	chrome.tabs.query({active:true,currentWindow:true},function(tabs){
+        if (tabs && tabs[0]) 
+            chrome.tabs.remove(tabs[0].id, function() { });
+        else 
+            console.error("closeTab failed because 'tabs' is not set");
+	});
 };
 CmdUtils.getDocument = function getDocument() {
     return active_document;
@@ -56,13 +60,17 @@ CmdUtils.getLocation = function getLocation() {
 CmdUtils.getWindow = function getWindow() {
     return active_window;
 };
-CmdUtils.openWindow = function openWindow(url, name) {
-    if (!name) {
-        window.open(url);
-    } else {
-        window.open(url, name);
-    }
-};
+CmdUtils.addTab = function addTab(url) {
+	if (typeof browser !== 'undefined') {
+		browser.tabs.create({ "url": url });
+	} else 
+	if (typeof chrome !== 'undefined') {
+		chrome.tabs.create({ "url": url });
+	} else {
+		window.open(url);
+	}
+}
+
 // 2nd order function
 CmdUtils.SimpleUrlBasedCommand = function SimpleUrlBasedCommand(url) {
     if (!url) return;
@@ -74,15 +82,11 @@ CmdUtils.SimpleUrlBasedCommand = function SimpleUrlBasedCommand(url) {
         url = url.replace('{text}', text);
         url = url.replace('{location}', CmdUtils.getLocation());
         Utils.openUrlInBrowser(url);
-        //CmdUtils.toggleUbiquityWindow();
     };
     return search_func;
 };
-CmdUtils.toggleUbiquityWindow = function toggleUbiquityWindow(w) {
-    if (window.style.visibility == 'visible') {
-        window.close();
-    }
-    return;
+CmdUtils.closePopup = function closePopup(w) {
+    window.close();
 };
 CmdUtils.ajaxGetJSON = function ajaxGetJSON(url, callback) {
     var xhr = new XMLHttpRequest();
@@ -174,7 +178,18 @@ CmdUtils.setSelection = function setSelection(s) {
         }
     }
     replaceSelectedText("`+s+`");`;
-    chrome.tabs.executeScript( { code: insertCode } );
+    return chrome.tabs.executeScript( { code: insertCode } );
+}
+
+CmdUtils.getSelection = function getSelection(callback) {
+    return chrome.tabs.executeScript( { code: "window.getSelection() ? window.getSelection().toString() : '';" }, callback(selection) );
+}
+
+CmdUtils.getSelection2 = function getSelection2( callback ) {
+    return chrome.tabs.query({active:true, windowId: chrome.windows.WINDOW_ID_CURRENT}, 
+        function(tab) {
+          chrome.tabs.sendMessage(tab[0].id, {method: "getSelection"}, callback(response) );
+        });
 }
 
 // for measuring time the input is changed
@@ -187,9 +202,8 @@ CmdUtils.displayMessage = function displayMessage(m) {
 	$("#ubiq-command-preview").html( m );
 }
 
-
-// load custom scripts
-chrome.storage.local.get('customscripts', function(result) {
-	eval(result.customscripts || "");
-});
-
+CmdUtils.getcmd = function getcmd(cmdname) {
+    for (var c in CmdUtils.CommandList) 
+        if (CmdUtils.CommandList[c].name == cmdname) return CmdUtils.CommandList[c];
+    return {};
+}
