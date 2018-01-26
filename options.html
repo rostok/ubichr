@@ -8,15 +8,25 @@
 
 <body>
 	<div id="panel">
-		<textarea id="content">
-		</textarea>
+		<textarea id="code" name="code"></textarea>
 		<br>
-		<div id=info>add and modify your custom commands. saving is done automatically.</div>
+		<div id="footer">
+			<div id="info">add and modify your custom commands. saving is done automatically.</div>
+			<div id="buttons"><input id="insertstub" type="button" value="insert command stub"></div>
+		</div>
 	</div>
 </body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.33.0/codemirror.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.33.0/mode/javascript/javascript.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.33.0/addon/edit/matchbrackets.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.33.0/codemirror.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.33.0/theme/lesser-dark.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.33.0/theme/ambiance.css"/>
+
 <script src="jquery-1.12.4.min.js"></script>
 <script src="utils.js"></script>
 <script src="cmdutils.js"></script>
 <script src="commands.js"></script>
 <script src="options.js"></script>
+
 </html>

@@ -144,13 +144,52 @@ CmdUtils.loadScripts = function loadScripts(url, callback) {
     	tempfunc();
     }
 }
+
+CmdUtils.setSelection = function setSelection(s) {
+    s = s.replace('"', '\"');
+    // http://jsfiddle.net/b3Fk5/2/
+    var insertCode = `
+    function replaceSelectedText(replacementText) {
+        var sel, range;
+        if (window.getSelection) {
+            sel = window.getSelection();
+            var activeElement = document.activeElement;
+            if (activeElement.nodeName == "TEXTAREA" ||
+                (activeElement.nodeName == "INPUT" && activeElement.type.toLowerCase() == "text")) {
+                    var val = activeElement.value, start = activeElement.selectionStart, end = activeElement.selectionEnd;
+                    activeElement.value = val.slice(0, start) + replacementText + val.slice(end);
+                //alert("in text area");
+            } else {
+                if (sel.rangeCount) {
+                    range = sel.getRangeAt(0);
+                    range.deleteContents();
+                    range.insertNode(document.createTextNode(replacementText));
+                } else {
+                    sel.deleteFromDocument();
+                }
+            }
+        } else if (document.selection && document.selection.createRange) {
+            range = document.selection.createRange();
+            range.text = replacementText;
+        }
+    }
+    replaceSelectedText("`+s+`");`;
+    chrome.tabs.executeScript( { code: insertCode } );
+}
+
 // for measuring time the input is changed
 CmdUtils.inputUpdateTime = performance.now();
 CmdUtils.timeSinceInputUpdate = function timeSinceInputUpdate() {
 	return (performance.now() - CmdUtils.inputUpdateTime)*0.001;
 }
 
+CmdUtils.displayMessage = function displayMessage(m) {
+	$("#ubiq-command-preview").html( m );
+}
+
+
 // load custom scripts
 chrome.storage.local.get('customscripts', function(result) {
 	eval(result.customscripts || "");
 });
+

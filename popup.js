@@ -55,7 +55,7 @@ function ubiq_set_results(v) {
     el.innerHTML = v + "<hr/>" + el.innerHTML;
 }
 
-function ubiq_show_preview(cmd) {
+function ubiq_show_preview(cmd, args) {
     var el = document.getElementById('ubiq-command-preview');
     if (!el) return;
     if (!cmd) {
@@ -73,16 +73,25 @@ function ubiq_show_preview(cmd) {
         	break;
     default:
         var words = ubiq_command().split(' ');
-        var command = words[0];
+        var command = words.shift();
     
-        var text;
-        if (ubiq_selection) {
-            text = ubiq_selection;
+        var text = words.join(' ');
+
+		if (typeof args === 'string') {
+			text = args;
         } else {
-            words.shift();
-            text = words.join(' ');
-        }
-            
+            if (text.trim()=="") {
+        		chrome.tabs.executeScript( {
+        		    code: "window.getSelection().toString();"
+        		}, function(selection) {
+        			if (selection!="") {
+                        ubiq_show_preview(cmd, selection.toString());
+                    }
+        		});
+            	return;
+            }
+		}
+		            
         var directObj = {
             text: text,
         };
@@ -94,14 +103,11 @@ function ubiq_show_preview(cmd) {
     return;
 }
 
-//  ubiq_xml_http(url, function(ajax){
-//      if (! ajax) return;
-//      var text=ajax.responseText;
-//      if (! text) return;
-//      var preview_block=document.getElementById('ubiq-command-preview');
-//      if (! preview_block) return;
-//      preview_block.innerHTML=text;
-//  });
+function ubiq_clear() {
+	$("#ubiq-results-panel").html("");
+	$("#ubiq-command-tip").html("");
+	$("#ubiq-command-preview").html("");
+}
 
 function ubiq_show_tip(tip) {
     var el = document.getElementById('ubiq-command-tip');
@@ -122,16 +128,25 @@ function ubiq_execute() {
     return false;
 }
 
-function ubiq_dispatch_command(line) {
-    var words = line.split(' ');
-    var cmd = words[0];
+function ubiq_dispatch_command(line, args) {
+    var words = ubiq_command().split(' ');
+    var command = words.shift();
 
-    var text;
-    if (ubiq_selection) {
-        text = ubiq_selection;
+    var text = words.join(' ');
+
+    if (typeof args === 'string') {
+        text = args;
     } else {
-        words.shift();
-        text = words.join(' ');
+        if (text.trim()=="") {
+            chrome.tabs.executeScript( {
+                code: "window.getSelection().toString();"
+            }, function(selection) {
+                if (selection!="") {
+                    ubiq_dispatch_command(cmd, selection.toString());
+                }
+            });
+            return;
+        }
     }
 
     // Expand match (typing 'go' will expand to 'google')
@@ -190,15 +205,6 @@ function ubiq_get_selection() {
         str = range.text;
     }
     return (ubiq_selection = str);
-}
-
-function ubiq_toggle_window(w) {
-    CmdUtils.toggleUbiquityWindow(w);
-    //if (!w) w = ubiq_window;
-    //var vis = w.style.visibility;
-    //vis = (vis=='hidden') ? 'visible' : 'hidden';
-    //w.style.visibility=vis;
-    //return;
 }
 
 function ubiq_focus() {
@@ -366,6 +372,7 @@ function ubiq_show_matching_commands(text) {
     } else {
         ubiq_selected_command = -1;
         ubiq_show_tip(null);
+        ubiq_clear();
         results_panel.innerHTML = ubiq_help();
     }
 

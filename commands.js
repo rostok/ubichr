@@ -435,7 +435,7 @@ CmdUtils.CreateCommand({
     timeout: 500,
     license: "",
     require: "https://maps.googleapis.com/maps/api/js?sensor=false",
-    preview: async function wikipedia_preview(previewBlock, args) {
+    preview: async function mapsPreview(previewBlock, args) {
     	// http://jsfiddle.net/user2314737/u9no8te4/
         var text = args.text.trim();
         from = text.split(' to ')[0];
@@ -854,12 +854,12 @@ CmdUtils.CreateCommand({
         var langCode = "en";
         var apiUrl = "http://" + langCode + ".wikipedia.org/w/api.php";
 
-        CmdUtils.ajaxGetJSON("https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch="+searchText+"&srlimit=5&format=json", function (resp) {
+        CmdUtils.ajaxGetJSON("https://" + langCode + ".wikipedia.org/w/api.php?action=query&list=search&srsearch="+searchText+"&srlimit=5&format=json", function (resp) {
             function generateWikipediaLink(title) {
                 return "http://" + langCode + ".wikipedia.org/wiki/" +title.replace(/ /g, "_");
             }
             function wikiAnchor(title) {
-                return "<a href='"+generateWikipediaLink(title)+"'>"+title+"</a>";
+                return "<a target=_blank href='"+generateWikipediaLink(title)+"'>"+title+"</a>";
             }
             previewBlock.innerHTML = "";
             for (var i = 0; i < resp.query.search.length; i++) {

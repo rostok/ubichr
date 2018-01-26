@@ -1,25 +1,55 @@
-	function saveScripts() {
-    	var customscripts = $("#content").val();
+	editor = CodeMirror.fromTextArea( document.getElementById("code"), {
+		mode: "javascript",
+		theme: "ambiance",
+		lineWrapping: true,
+		lineNumbers: true,
+		styleActiveLine: true,
+		matchBrackets: true
+	});
+
+	editor.on("blur", saveScripts);
+	editor.on("change", saveScripts);
+
+    function insertCommandStub() {
+    	var stub = 
+`/* This is a template command. */
+CmdUtils.CreateCommand({
+  name: "example",
+  description: "A short description of your command.",
+  author: "Your Name",
+  icon: "http://www.mozilla.com/favicon.ico",
+  execute: function execute(args) {
+    alert("EX:You input: " + args.text, this);
+  },
+  preview: function preview(pblock, args) {
+    pblock.innerHTML = "PV:Your input is " + args.text + ".";
+  },
+});
+
+`;
+    	editor.setValue( stub + editor.getValue() );
+    	saveScripts();
+    }
+
+    function saveScripts() {
+    	var customscripts = editor.getValue();
     	// save
     	if (typeof chrome !== 'undefined' && chrome.storage) 
-			chrome.storage.local.set({'customscripts': customscripts});
-		
-		// eval
+    		chrome.storage.local.set({'customscripts': customscripts});
+    	
+    	// eval
         try {
-            eval(customscripts); 
             $("#info").html("evalueated!").fadeIn(0).fadeOut(5000);
+            eval(customscripts); 
         } catch (e) {
-            if (e instanceof SyntaxError) {
-                $("#info").fadeIn(0).html(e.message);
-            }
+            $("#info").fadeOut(0).fadeIn(0).html("<pre>"+e.stack+"</pre>");
         }	
-	}
+    }
 
-	$("#content").bind('input propertychange', saveScripts );
-	$("#savebutton").click( saveScripts );	
+    $("#insertstub").click( insertCommandStub );	
 
     if (typeof chrome !== 'undefined' && chrome.storage) {
     	chrome.storage.local.get('customscripts', function(result) {
-    		$("#content").val(result.customscripts || "");
-	    });
-	}
+    		editor.setValue(result.customscripts || "");
+        });
+    }
