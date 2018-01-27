@@ -1,9 +1,14 @@
+// CmdUtils
+// jshint esversion: 6 
+
+
 var active_document = document;
 var active_window = window;
 
 if (!CmdUtils) var CmdUtils = { 
     __globalObject: this,
     jQuery: jQuery,
+    ubiq_set_preview_func: function ubiq_set_preview_func(message, prepend) { console.log(message); }
 };
 noun_arb_text = 1;
 CmdUtils.VERSION = 0.01;
@@ -15,30 +20,30 @@ CmdUtils.CreateCommand = function CreateCommand(args) {
         return;
     }
     //console.log("command created ", cmd_name);
-    var to = parseFloat(args['timeout']);
+    var to = parseFloat(args.timeout);
     if (to>0) {
-    	args['timeoutFunc'] = null;
-    	if (typeof args['preview'] == 'function') {
-		    args['preview_timeout'] = args['preview'];
-			args['preview'] = function(b,a) {
-                if (args['timeoutFunc'] !== null) {
-                    clearTimeout(args['timeoutFunc']);
+    	args.timeoutFunc = null;
+    	if (typeof args.preview == 'function') {
+		    args.preview_timeout = args.preview;
+			args.preview = function(b,a) {
+                if (args.timeoutFunc !== null) {
+                    clearTimeout(args.timeoutFunc);
                 }
-                args['timeoutFunc'] = setTimeout(function () { 
-                	args['preview_timeout'](b, a); 
+                args.timeoutFunc = setTimeout(function () { 
+                	args.preview_timeout(b, a); 
                 }, to);
-			}    		
+			};
     	}
-    	if (typeof args['execute'] == 'function') {
-		    args['execute_timeout'] = args['execute'];
-			args['execute'] = function(a) {
-                if (args['timeoutFunc'] !== null) {
-                    clearTimeout(args['timeoutFunc']);
+    	if (typeof args.execute == 'function') {
+		    args.execute_timeout = args.execute;
+			args.execute = function(a) {
+                if (args.timeoutFunc !== null) {
+                    clearTimeout(args.timeoutFunc);
                 }
-                args['timeoutFunc'] = setTimeout(function () {
-					args['execute_timeout'](a);
+                args.timeoutFunc = setTimeout(function () {
+					args.execute_timeout(a);
                 }, to);
-			}    		
+			};
     	}
     }
     CmdUtils.CommandList.push(args);
@@ -69,7 +74,7 @@ CmdUtils.addTab = function addTab(url) {
 	} else {
 		window.open(url);
 	}
-}
+};
 
 // 2nd order function
 CmdUtils.SimpleUrlBasedCommand = function SimpleUrlBasedCommand(url) {
@@ -96,9 +101,9 @@ CmdUtils.ajaxGetJSON = function ajaxGetJSON(url, callback) {
             var resp = JSON.parse(xhr.responseText);
             callback(resp, xhr);
         }
-    }
+    };
     xhr.send();
-}
+};
 CmdUtils.ajaxGet = function ajaxGet(url, callback) {
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
@@ -106,22 +111,22 @@ CmdUtils.ajaxGet = function ajaxGet(url, callback) {
         if (xhr.readyState == 4) {
             callback(xhr.responseText, xhr);
         }
-    }
+    };
     xhr.send();
-}
+};
 CmdUtils.get = function get(url) {
 	return jQuery.ajax({
     	url: url,
         async: true
 	});
-}
+};
 CmdUtils.post = function post(url, data) {
 	return jQuery.ajax({
     	url: url,
     	data: data,
         async: true
 	});
-}
+};
 CmdUtils.loadedScripts = [];
 CmdUtils.loadScripts = function loadScripts(url, callback) {
 	url = url || [];
@@ -133,7 +138,7 @@ CmdUtils.loadScripts = function loadScripts(url, callback) {
 	var thisurl = url.shift();
 	tempfunc = function(data, textStatus, jqXHR) {
 		return loadScripts(url, callback);
-	}
+	};
 	if (CmdUtils.loadedScripts.indexOf(thisurl)==-1) {
 		console.log("loading :::: ", thisurl);
 		CmdUtils.loadedScripts.push(thisurl);
@@ -147,7 +152,7 @@ CmdUtils.loadScripts = function loadScripts(url, callback) {
     else {
     	tempfunc();
     }
-}
+};
 
 CmdUtils.setSelection = function setSelection(s) {
     s = s.replace('"', '\"');
@@ -179,31 +184,31 @@ CmdUtils.setSelection = function setSelection(s) {
     }
     replaceSelectedText("`+s+`");`;
     return chrome.tabs.executeScript( { code: insertCode } );
-}
+};
 
 CmdUtils.getSelection = function getSelection(callback) {
     return chrome.tabs.executeScript( { code: "window.getSelection() ? window.getSelection().toString() : '';" }, callback(selection) );
-}
+};
 
 CmdUtils.getSelection2 = function getSelection2( callback ) {
     return chrome.tabs.query({active:true, windowId: chrome.windows.WINDOW_ID_CURRENT}, 
         function(tab) {
           chrome.tabs.sendMessage(tab[0].id, {method: "getSelection"}, callback(response) );
         });
-}
+};
 
 // for measuring time the input is changed
 CmdUtils.inputUpdateTime = performance.now();
 CmdUtils.timeSinceInputUpdate = function timeSinceInputUpdate() {
 	return (performance.now() - CmdUtils.inputUpdateTime)*0.001;
-}
+};
 
-CmdUtils.displayMessage = function displayMessage(m) {
-	$("#ubiq-command-preview").html( m );
-}
+CmdUtils.setPreview = function setPreview(m, prepend) {
+    this.ubiq_set_preview_func(m, prepend);
+};
 
 CmdUtils.getcmd = function getcmd(cmdname) {
     for (var c in CmdUtils.CommandList) 
         if (CmdUtils.CommandList[c].name == cmdname) return CmdUtils.CommandList[c];
     return {};
-}
+};
