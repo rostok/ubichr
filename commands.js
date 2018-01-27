@@ -1,4 +1,6 @@
-// BuildIn Command definitions
+// BuildIn CmdUtils command definitions
+// jshint esversion: 6 
+
 
 CmdUtils.CreateCommand({
     name: "amazon-search",
@@ -89,8 +91,6 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Close the current tab",
     execute: function (directObj) {
-        console.log("close");
-        CmdUtils.displayMessage("closeing");
         CmdUtils.closeTab();
     }
 });
