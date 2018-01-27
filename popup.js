@@ -45,10 +45,10 @@ function ubiq_set_tip(v) {
     ubiq_set_preview(v);
 }
 
-// sets results panel, prepend allows to add new contnet to the top separated by HR
-function ubiq_set_results(v, prepend) {
+// sets result panel, prepend allows to add new contnet to the top separated by HR
+function ubiq_set_result(v, prepend) {
     prepend = prepend === true; 
-    var el = document.getElementById('ubiq-results-panel');
+    var el = document.getElementById('ubiq-result-panel');
     if (!el) return;
     el.innerHTML = v + (prepend ? "<hr/>" + el.innerHTML : "");
 }
@@ -64,7 +64,7 @@ function ubiq_set_preview(v, prepend) {
 // clears tip, result and preview panels
 function ubiq_clear() {
     ubiq_set_tip("");
-    ubiq_set_results("");
+    ubiq_set_result("");
     ubiq_set_preview("");
 }
 
@@ -190,7 +190,9 @@ function ubiq_dispatch_command(line, args) {
 function ubiq_help() {
     var html = '<p>Type the name of a command and press enter to execute it, or <b>help</b> for assistance.</p>';
     html += "<p>commands loaded:<BR>";
-    html += CmdUtils.CommandList.map((c)=>{return c.builtIn ? c.name : "<u>"+c.name+"</u>";}).sort().join(", ");
+    html += CmdUtils.CommandList.map((c)=>{
+        return "<span fakeattr='"+c.name+"' href=# title='"+c.description+"'>"+(c.builtIn ? c.name : "<u>"+c.name+"</u>")+"</span>";
+    }).sort().join(", ");
     return html;
 }
 
@@ -276,12 +278,13 @@ function ubiq_show_matching_commands(text) {
     if (text.length > 0) {
         for (var c in CmdUtils.CommandList) {
             var cmd = CmdUtils.CommandList[c].name;
+            var cmdnames = CmdUtils.CommandList[c].names;
             // Starting match only /^command/
-            if (show_all || cmd.match('^' + text)) {
+            if (show_all || cmd.match('^' + text) || cmdnames.some((e)=>{return e.match("^"+text);})) {
                 matches.push(c);
             }
             // Substring matching as well, in a separate list
-            else if (cmd.match(text)) {
+            else if (cmd.match(text) || cmdnames.some((e)=>{return e.match(text);})) {
                 substr_matches.push(c);
             }
         }
@@ -332,12 +335,12 @@ function ubiq_show_matching_commands(text) {
         }
 
         suggestions_div.appendChild(suggestions_list);
-        ubiq_set_results( suggestions_div.innerHTML );
+        ubiq_set_result( suggestions_div.innerHTML );
 
     } else {
         ubiq_selected_command = -1;
         ubiq_clear();
-        ubiq_set_results( ubiq_help() );
+        ubiq_set_result( ubiq_help() );
     }
 
     return;
@@ -400,6 +403,7 @@ function ubiq_load_input() {
 
 ubiq_window = document.getElementById("ubiq_window");
 CmdUtils.ubiq_set_preview_func = ubiq_set_preview;
+CmdUtils.ubiq_set_result_func = ubiq_set_result;
 
 ubiq_load_input();
 

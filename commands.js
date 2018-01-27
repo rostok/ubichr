@@ -380,6 +380,7 @@ CmdUtils.CreateCommand({
     execute: async function (directObject) {
         var url = "http://downforeveryoneorjustme.com/{QUERY}";
         var query = directObject.text;
+        CmdUtils.setPreview("checking "+query);
         // Get the hostname from url
         if (!query) {
             var host = window.location.href;
@@ -390,7 +391,6 @@ CmdUtils.CreateCommand({
         //Utils.openUrlInBrowser(urlString);
         ajax = await CmdUtils.get(urlString);
         {
-        	console.log("ajax", ajax);
             if (!ajax) return;
             var pblock = document.getElementById('ubiq-command-preview');
             if (ajax.match('is up.')) {
@@ -506,7 +506,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Searches MSN for the given words",
     execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://search.msn.com/results.aspx?q={text}"
+        "http://search.msn.com/result.aspx?q={text}"
     )
 });
 
@@ -662,7 +662,7 @@ CmdUtils.CreateCommand({
 
             // API successful. URL has been shortened
             eval('api_response=' + api_response);
-            var short_url = api_response.results[query].shortUrl;
+            var short_url = api_response.result[query].shortUrl;
             pblock.innerHTML = '<br/><p style="font-size: 24px; font-weight: bold; color: #ddf">' +
                 '&rarr; <a href="' + short_url + '">' + short_url + '</a>' +
                 '</p>';
@@ -909,7 +909,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Search for videos on YouTube",
     execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://www.youtube.com/results?search_type=search_videos&search_sort=relevance&search_query={text}&search=Search"
+        "http://www.youtube.com/result?search_type=search_videos&search_sort=relevance&search_query={text}&search=Search"
     )
 });
 
@@ -939,6 +939,74 @@ CmdUtils.CreateCommand({
     }
 });
 
+CmdUtils.CreateCommand({
+    name: "define",
+    description: "Gives the meaning of a word, using answers.com.",
+    help: "Try issuing &quot;define aglet&quot;",
+    icon: "http://www.answers.com/favicon.ico",
+    execute: CmdUtils.SimpleUrlBasedCommand(
+        "http://answers.com/search?q={text}"
+    ),
+    preview: async function define_preview(pblock, {text: word}) {
+        pblock.innerHTML = "Gives the definition of the word "+word;
+        var xml = await CmdUtils.post("http://services.aonaware.com/DictService/DictService.asmx/DefineInDict", { word: word, dictId: "wn" } );
+        pblock.innerHTML = (
+            jQuery(xml)
+            .find("WordDefinition > Definitions > Definition:first-child > WordDefinition")
+            .text()
+            .replace(/^\s*.+/, "<h2>$&</h2>")
+            .replace(/\[[^\]]*\]/g, "")
+            .replace(/\d+:/g, "<br/><strong>$&</strong>")
+            .replace(/1:/g, "<br/>$&"));
+        }
+});
+
+CmdUtils.CreateCommand({
+    names: ["base64decode","b64d","atob"],
+    description: "base64decode",
+    author: {
+        name: "von rostock",
+    },
+    license: "GPL",
+    arguments: [{
+        role: "object",
+        nountype: noun_arb_text,
+        label: "text"
+    }],
+    execute: function execute({text:text}) {
+        //if (text === "") text = CmdUtils.htmlSelection;
+        CmdUtils.setSelection(atob(text));
+    },
+    preview: function preview(pblock, {text:text}) {
+        //if (text === "") text = CmdUtils.htmlSelection;
+        pblock.innerHTML = atob(text);
+    },
+});
+
+//------------------------------------
+
+CmdUtils.CreateCommand({
+    names: ["base64encode","b64e", "btoa"],
+    description: "base64decode",
+    author: {
+        name: "von rostock",
+    },
+    license: "GPL",
+    arguments: [{
+        role: "object",
+        nountype: noun_arb_text,
+        label: "text"
+    }],
+    execute: function execute({text:text}) {
+        //if (text === "") text = CmdUtils.htmlSelection;
+        CmdUtils.setSelection(btoa(text));
+    },
+    preview: function preview(pblock, {text:text}) {
+        //if (text === "") text = CmdUtils.htmlSelection;
+        pblock.innerHTML = btoa(text);
+    },
+});
+
 // - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  - 
 // - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  - 
 // - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  - 
@@ -954,3 +1022,4 @@ chrome.storage.local.get('customscripts', function(result) {
 		console.error("custom scripts eval failed", e);
 	}
 });
+

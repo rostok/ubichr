@@ -3,6 +3,7 @@ body {
     height: 560px;
     margin: 0;
     font-family: Calibri, Helvetica, Verdana, Arial;
+    background-color: black;
 }
 
 #ubiq_window {
@@ -42,7 +43,7 @@ body {
 #ubiq_input:focus {
 	color:green;
 }        
-#ubiq-results-panel {
+#ubiq-result-panel {
     width: 100%;
     border: 0;
     display: block;
@@ -87,11 +88,11 @@ body {
     text-decoration: bold;
     font-size: 14pt
 }
-#ubiq-results-panel ul {
+#ubiq-result-panel ul {
 	padding:0; 
 	margin:0
 }
-#ubiq-results-panel li {
+#ubiq-result-panel li {
 	color: black; 
 	list-style: none; 
 	margin: 0; 
@@ -105,7 +106,7 @@ body {
 	background-repeat: repeat;
 }
 
-#ubiq-results-panel li.selected {
+#ubiq-result-panel li.selected {
 	background-image: url(res/selected_background.png); 
 }
 

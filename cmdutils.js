@@ -8,12 +8,15 @@ var active_window = window;
 if (!CmdUtils) var CmdUtils = { 
     __globalObject: this,
     jQuery: jQuery,
-    ubiq_set_preview_func: function ubiq_set_preview_func(message, prepend) { console.log(message); }
+    ubiq_set_preview_func: function ubiq_set_preview_func(message, prepend) { console.log(message); },
+    ubiq_set_result_func: function ubiq_set_result_func(message, prepend) { console.log(message); }
 };
 noun_arb_text = 1;
 CmdUtils.VERSION = 0.01;
 CmdUtils.CommandList = [];
 CmdUtils.CreateCommand = function CreateCommand(args) {
+    args.name = args.name || args.names[0];
+    args.names = args.names || [args.name];
     var cmd_name = args.name;
     var cmd_list = CmdUtils.CommandList;
     if (cmd_name in cmd_list) {
@@ -81,7 +84,7 @@ CmdUtils.SimpleUrlBasedCommand = function SimpleUrlBasedCommand(url) {
     if (!url) return;
     var search_func = function(directObj) {
         if (!directObj) return;
-        //ubiq_set_results(url);
+        //ubiq_set_result(url);
         var text = directObj.text;
         text = encodeURIComponent(text);
         url = url.replace('{text}', text);
@@ -127,6 +130,7 @@ CmdUtils.post = function post(url, data) {
         async: true
 	});
 };
+// loads remote scripts
 CmdUtils.loadedScripts = [];
 CmdUtils.loadScripts = function loadScripts(url, callback) {
 	url = url || [];
@@ -205,6 +209,10 @@ CmdUtils.timeSinceInputUpdate = function timeSinceInputUpdate() {
 
 CmdUtils.setPreview = function setPreview(m, prepend) {
     this.ubiq_set_preview_func(m, prepend);
+};
+
+CmdUtils.setResult = function setResult(m, prepend) {
+    this.ubiq_set_result_func(m, prepend);
 };
 
 CmdUtils.getcmd = function getcmd(cmdname) {
