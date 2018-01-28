@@ -16,7 +16,7 @@ body {
     border: 0px;
     padding: 0px;
     z-index: 99999;
-    background: url("res/ubiq_background.png");
+    background: #3D3D3D;
 }
 
 #ubiq-input-panel {
@@ -101,12 +101,12 @@ body {
 	font-family: Helvetica,Arial; 
 	font-size: 14px; 
 	height: 26px;
-	background-image: url(res/command_background.png); 
+	background-color: #a9a9a9; 
 	width: 288px; 
 	background-repeat: repeat;
 }
 
 #ubiq-result-panel li.selected {
-	background-image: url(res/selected_background.png); 
+	background-color: gray; 
 }
 

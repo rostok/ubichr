@@ -1,7 +1,6 @@
 // BuildIn CmdUtils command definitions
 // jshint esversion: 6 
 
-
 CmdUtils.CreateCommand({
     name: "amazon-search",
     takes: {
@@ -290,15 +289,13 @@ CmdUtils.CreateCommand({
 CmdUtils.CreateCommand({
     name: "help",
     takes: {},
-    description: "Provides basic help on using Ubiquity for Opera",
+    description: "Provides basic help on using Ubiquity",
     author: {},
     icon: "",
     homepage: "",
     license: "",
-    preview: "Provides basic help on using Ubiquity for Opera",
-    execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://people.opera.com/cosimo/ubiquity/help.html"
-    )
+    preview: "lists all avaiable commands",
+    execute: CmdUtils.SimpleUrlBasedCommand("help.html")
 });
 
 CmdUtils.CreateCommand({
@@ -312,9 +309,7 @@ CmdUtils.CreateCommand({
     homepage: "",
     license: "",
     preview: "Search on Google for images",
-    execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://images.google.com/images?hl=en&q={text}&client=opera&sourceid=opera"
-    )
+    execute: CmdUtils.SimpleUrlBasedCommand("http://images.google.com/images?hl=en&q={text}")
 });
 
 CmdUtils.CreateCommand({
@@ -327,9 +322,14 @@ CmdUtils.CreateCommand({
     icon: "http://www.imdb.com/favicon.ico",
     homepage: "",
     license: "",
-    preview: "Searches for movies on IMDb",
+    preview: async function define_preview(pblock, {text: text}) {
+        pblock.innerHTML = "Searches for movies on IMDb";
+        var doc = await CmdUtils.get("http://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr" );
+        pblock.innerHTML = jQuery("table.findList", doc).parent().html();
+    },
     execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://www.imdb.com/find?s=all&q={text}&x=0&y=0"
+        //"http://www.imdb.com/find?s=all&q={text}&x=0&y=0"
+        "http://www.imdb.com/find?q={text}&s=tt&ref_=fn_al_tt_mr"
     )
 });
 
@@ -409,13 +409,11 @@ CmdUtils.CreateCommand({
     },
     description: "Listen to some artist radio on Last.fm",
     author: {},
-    icon: "http://last.fm/favicon.ico",
+    icon: "https://www.last.fm/static/images/favicon.ico",
     homepage: "",
     license: "",
     preview: "Listen to some artist radio on Last.fm",
-    execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://www.lastfm.com/listen/artist/{text}/similarartists"
-    )
+    execute: CmdUtils.SimpleUrlBasedCommand("https://www.last.fm/music/{text}/+similar")
 });
 
 CmdUtils.CreateCommand({
@@ -529,40 +527,6 @@ CmdUtils.CreateCommand({
         CmdUtils.closePopup();
         window.open(url);
     }
-});
-
-CmdUtils.CreateCommand({
-    name: "opera-cache",
-    takes: {},
-    description: "Show Opera browser cache contents",
-    author: {
-        name: "Cosimo Streppone",
-        email: "cosimo@cpan.org"
-    },
-    icon: "http://www.opera.com/favicon.ico",
-    homepage: "http://www.opera.com",
-    license: "",
-    preview: "Show Opera browser cache contents",
-    execute: CmdUtils.SimpleUrlBasedCommand("opera:cache")
-});
-
-CmdUtils.CreateCommand({
-    name: "opera-config",
-    takes: {
-        "config_option": noun_arb_text
-    },
-    description: "Show Opera browser preferences (filtered by given words)",
-    author: {
-        name: "Cosimo Streppone",
-        email: "cosimo@cpan.org"
-    },
-    icon: "http://www.opera.com/favicon.ico",
-    homepage: "http://www.opera.com",
-    license: "",
-    preview: "Show Opera browser preferences (filtered by given words)",
-    execute: CmdUtils.SimpleUrlBasedCommand(
-        "opera:config#{text}"
-    )
 });
 
 CmdUtils.CreateCommand({

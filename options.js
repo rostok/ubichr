@@ -1,4 +1,4 @@
-/*jshint esversion: 6 */
+// jshint esversion: 6
 
 function insertCommandStub() {
     var stub = 
@@ -29,12 +29,12 @@ function saveScripts() {
     
     // eval
     try {
-        $("#info").html("evalueated!").fadeIn(0).fadeOut(5000);
+        $("#info").html("evalueated!");
         eval(customscripts); 
     } catch (e) {
-        $("#info").fadeOut(0).fadeIn(0).html("<pre>"+e.stack+"</pre>");
-    }	
-
+        $("#info").html("<pre>"+e.stack+"</p>");
+    }
+    
     // download link
     var a = document.getElementById("download");
     var file = new Blob([customscripts], {type: "text/plain"});
@@ -48,7 +48,9 @@ editor = CodeMirror.fromTextArea( document.getElementById("code"), {
     lineWrapping: true,
     lineNumbers: true,
     styleActiveLine: true,
-    matchBrackets: true
+    matchBrackets: true,
+    gutters: ["CodeMirror-lint-markers"],
+    lint:true,
 });
 
 editor.on("blur", saveScripts);

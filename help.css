@@ -1,4 +1,11 @@
 body {
-    background:darkgray;
+    background:#777;
     color:black;
 }
+
+#builtin, #custom {
+    width: 40%;
+    display: inline-block;
+    vertical-align: top;
+    top: 0px;
+} 
