@@ -1,6 +1,8 @@
 body {
     background:#777;
     color:black;
+    font-size: 12pt;
+    font-family: Calibri, Helvetica, Arial;
 }
 
 #builtin, #custom {
