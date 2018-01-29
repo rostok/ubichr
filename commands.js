@@ -325,7 +325,7 @@ CmdUtils.CreateCommand({
     preview: async function define_preview(pblock, {text: text}) {
         pblock.innerHTML = "Searches for movies on IMDb";
         var doc = await CmdUtils.get("http://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr" );
-        pblock.innerHTML = jQuery("table.findList", doc).parent().html();
+        pblock.innerHTML = "<table>"+jQuery("table.findList", doc).html()+"</table>";
     },
     execute: CmdUtils.SimpleUrlBasedCommand(
         //"http://www.imdb.com/find?s=all&q={text}&x=0&y=0"
@@ -739,9 +739,7 @@ CmdUtils.CreateCommand({
     icon: "http://www.imageboo.com/files/uhee2ii315oxd8akq0nm.ico",
     description: "Checks the markup validity of the current Web document",
     preview: "Sends this page to the W3C validator",
-    execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://validator.w3.org/check?uri={location}"
-    )
+    execute: CmdUtils.SimpleUrlBasedCommand("http://validator.w3.org/check?uri={location}")
 });
 
 CmdUtils.CreateCommand({
@@ -951,7 +949,7 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     names: ["base64encode","b64e", "btoa"],
-    description: "base64decode",
+    description: "base64encode",
     author: {
         name: "von rostock",
     },
