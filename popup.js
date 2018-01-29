@@ -7,41 +7,14 @@
 // Original Ubiquity Project: http://labs.mozilla.org/ubiquity/
 // jshint esversion: 6 
 
-var active_document = document; // initially this is popup
-var active_window = window; // initially this is popup
-
-var ubiq_window;
-var ubiq_selection;
-var ubiq_element;
-var ubiq_remote_server = 'res'; 
 var ubiq_selected_command = 0;
 var ubiq_first_match;
-
-// Used to get css url of images and other resources
-function ubiq_url_for(path) {
-    var url = 'url(';
-    url += ubiq_remote_server;
-    url += '/';
-    url += path;
-    url += ')';
-    return url;
-}
-
-// Used to get css url of images and other resources
-function ubiq_url(path) {
-    var url = '';
-    url += ubiq_remote_server;
-    url += '/';
-    url += path;
-    return url;
-}
 
 // sets the tip field (for time being this is the preview panel)
 function ubiq_set_tip(v) {
     // var el = document.getElementById('ubiq-command-tip');
     // if (!el) return;
     // el.innerHTML = v;
-
     ubiq_set_preview(v);
 }
 
@@ -197,8 +170,7 @@ function ubiq_help() {
 }
 
 function ubiq_focus() {
-    line = 'ubiq_input';
-    el = document.getElementById(line);
+    el = document.getElementById('ubiq_input');
     if (el.createTextRange) {
         var oRange = el.createTextRange();
         oRange.moveStart("character", 0);
@@ -243,7 +215,7 @@ function ubiq_match_first_command(text) {
 function ubiq_command_icon(c) {
     var icon = CmdUtils.CommandList[c].icon;
     if (!icon) {
-        icon = ubiq_url('spacer.png');
+        icon = 'res/spacer.png';
     }
     icon = '<img src="' + icon + '" width="16" height="16" border="0" alt="" align="absmiddle"> ';
     return icon;
@@ -401,7 +373,6 @@ function ubiq_load_input() {
     });
 }
 
-ubiq_window = document.getElementById("ubiq_window");
 CmdUtils.ubiq_set_preview_func = ubiq_set_preview;
 CmdUtils.ubiq_set_result_func = ubiq_set_result;
 
