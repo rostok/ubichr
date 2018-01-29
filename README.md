@@ -55,10 +55,7 @@ CmdUtils.CreateCommand({
         var doc = await CmdUtils.get("http://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr" );
         pblock.innerHTML = "<table>"+jQuery("table.findList", doc).html()+"</table>";
     },
-    execute: CmdUtils.SimpleUrlBasedCommand(
-        //"http://www.imdb.com/find?s=all&q={text}&x=0&y=0"
-        "http://www.imdb.com/find?q={text}&s=tt&ref_=fn_al_tt_mr"
-    )
+    execute: CmdUtils.SimpleUrlBasedCommand("http://www.imdb.com/find?q={text}&s=tt&ref_=fn_al_tt_mr")
 });
 ```
 
