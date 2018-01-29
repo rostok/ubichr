@@ -4,6 +4,10 @@
 
 var active_document = document;
 var active_window = window;
+var active_tab = {};
+
+chrome.tabs.query({active:true, windowId: chrome.windows.WINDOW_ID_CURRENT}, function(tab) { if (typeof tab !== 'undefined') active_tab = tab[0]; });
+
 
 if (!CmdUtils) var CmdUtils = { 
     __globalObject: this,
@@ -63,7 +67,10 @@ CmdUtils.getDocument = function getDocument() {
     return active_document;
 };
 CmdUtils.getLocation = function getLocation() {
-    return CmdUtils.getDocument().location;
+    if (active_tab.url) 
+        return active_tab.url;
+    else 
+        return CmdUtils.getDocument().location; //this is wrong TODO: Fix
 };
 CmdUtils.getWindow = function getWindow() {
     return active_window;
