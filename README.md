@@ -29,7 +29,7 @@ CmdUtils.CreateCommand({
     },
 });
 ```
-Use CmdUtils.CreateCommand and provide object with ```name``` string and ```preview``` and ```execute``` functions. The ```execute``` function takes argument which is an object containing text property - a single string following command. The ```preview``` function also has pblock argument pointing to div in a popup for various output.
+Use ```CmdUtils.CreateCommand()``` and provide object with ```name``` string and ```preview``` and ```execute``` functions. The ```execute``` function takes argument which is an object containing ```text``` property - a single string following command. The ```preview``` function also has ```pblock``` parameter pointing to popup div for various output.
 
 ## command with some action
 ```javascript
@@ -62,4 +62,4 @@ CmdUtils.CreateCommand({
 });
 ```
 
-Note that ```preview``` function is defined with ```async``` keyword. This will allow to avoid callback hell when getting data with GET request (```CmdUtils.get(url)```). 
+Here the ```preview``` function is defined with ```async``` keyword. This will allow to avoid callback hell when getting data with GET request (```CmdUtils.get(url)```). Note the destructuring assignment singling out the ```text``` parameter in ```preview``` function.
