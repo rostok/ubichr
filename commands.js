@@ -3,9 +3,6 @@
 
 CmdUtils.CreateCommand({
     name: "amazon-search",
-    takes: {
-        "search_string": noun_arb_text
-    },
     description: "Search Amazon for books matching:",
     author: {},
     icon: "http://www.amazon.com/favicon.ico",
@@ -19,9 +16,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "answers-search",
-    takes: {
-        "search_string": noun_arb_text
-    },
     description: "Search Answers.com for:",
     author: {},
     icon: "http://www.answers.com/favicon.ico",
@@ -33,9 +27,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "ask-search",
-    takes: {
-        "search_string": noun_arb_text
-    },
     description: "Search Ask.com for the given words",
     author: {},
     icon: "http://www.ask.com/favicon.ico",
@@ -47,9 +38,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "back",
-    takes: {
-        "pages": noun_arb_text
-    }, // FIXME SHOULD BE INTEGER SOMETHING
     description: "Go back in browser history",
     author: {},
     icon: "",
@@ -66,9 +54,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "bugzilla",
-    takes: {
-        "search_string": noun_arb_text
-    },
     description: "Perform a bugzilla search for",
     author: {},
     icon: "http://www.mozilla.org/favicon.ico",
@@ -96,9 +81,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "clusty",
-    takes: {
-        "search_string": noun_arb_text
-    },
     description: "Perform a clustered search through clusty.com",
     author: {},
     icon: "http://clusty.com/images/clusty-favicon.ico",
@@ -112,9 +94,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "code-search",
-    takes: {
-        "search_string": noun_arb_text
-    },
     description: "Search any source code for the given string",
     author: {
         name: "Cosimo Streppone",
@@ -153,9 +132,6 @@ CmdUtils.CreateCommand({
         email: "cosimo@cpan.org"
     },
     license: "",
-    takes: {
-        "package_name": noun_arb_text
-    },
     preview: "Search for a CPAN package information",
     execute: CmdUtils.SimpleUrlBasedCommand(
         "http://search.cpan.org/dist/{text}"
@@ -164,9 +140,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "currency-converter",
-    takes: {
-        "currency_spec": noun_arb_text
-    },
     description: "Convert currency using xe.com converter service.<br/><i>Ex.: 5000 NOK to EUR</i>",
     author: {
         name: "Cosimo Streppone",
@@ -198,9 +171,6 @@ CmdUtils.CreateCommand({
     help: "Try issuing &quot;dictionary ubiquity&quot;",
     license: "MPL",
     icon: "http://dictionary.reference.com/favicon.ico",
-    takes: {
-        "word": noun_arb_text
-    },
     execute: function (directObj) {
         var word = directObj.text;
         Utils.openUrlInBrowser("http://dictionary.reference.com/search?q=" + escape(word));
@@ -224,9 +194,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "ebay-search",
-    takes: {
-        "search_string": noun_arb_text
-    },
     description: "Search ebay for the given words",
     author: {},
     icon: "http://ebay.com/favicon.ico",
@@ -240,9 +207,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "flickr",
-    takes: {
-        "search_string": noun_arb_text
-    },
     description: "Search photos on Flickr",
     author: {},
     icon: "http://flickr.com/favicon.ico",
@@ -256,9 +220,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "gcalculate",
-    takes: {
-        "expression": noun_arb_text
-    }, // FIXME a different type?
     description: "Examples: 3^4/sqrt(2)-pi,  3 inch in cm,  speed of light,  0xAF in decimal (<a href=\"http://www.googleguide.com/calculator.html\">Command list</a>)",
     author: {},
     icon: "http://www.google.com/favicon.ico",
@@ -272,9 +233,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "google-search",
-    takes: {
-        "search_string": noun_arb_text
-    },
     description: "Search on Google for the given words",
     author: {},
     icon: "http://www.google.com/favicon.ico",
@@ -282,7 +240,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Search on Google for the given words",
     execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://www.google.com/search?client=opera&num=1&q={text}&sourceid=opera&ie=utf-8&oe=utf-8"
+        "http://www.google.com/search?client=opera&num=1&q={text}&ie=utf-8&oe=utf-8"
     )
 });
 
@@ -300,9 +258,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "image-search",
-    takes: {
-        "search_string": noun_arb_text
-    },
     description: "Search on Google for images",
     author: {},
     icon: "http://www.google.com/favicon.ico",
@@ -314,9 +269,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "imdb",
-    takes: {
-        "search_string": noun_arb_text
-    },
     description: "Searches for movies on IMDb",
     author: {},
     icon: "http://www.imdb.com/favicon.ico",
@@ -363,9 +315,6 @@ CmdUtils.CreateCommand({
         email: "andyfilms1@yahoo.com"
     },
     license: "GPL",
-    takes: {
-        URL: noun_arb_text
-    },
     preview: function (pblock, directObject) {
         //ubiq_show_preview(urlString);
         //searchText = jQuery.trim(directObject.text);
@@ -404,9 +353,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "lastfm",
-    takes: {
-        "search_string": noun_arb_text
-    },
     description: "Listen to some artist radio on Last.fm",
     author: {},
     icon: "https://www.last.fm/static/images/favicon.ico",
@@ -418,9 +364,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "maps",
-    takes: {
-        "address": noun_arb_text
-    },
     description: "Shows a location on the map",
     author: {},
     icon: "http://www.google.com/favicon.ico",
@@ -494,9 +437,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "msn-search",
-    takes: {
-        "search_string": noun_arb_text
-    },
     description: "Search MSN for the given words",
     author: {},
     icon: "http://www.msn.com/favicon.ico",
@@ -510,9 +450,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "new-tab",
-    takes: {
-        "URL": noun_arb_text
-    }, // FIXME URL type??
     description: "Open a new tab (or window) with the specified URL",
     author: {},
     icon: "",
@@ -561,9 +498,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "search",
-    takes: {
-        "search_string": noun_arb_text
-    },
     description: "Search on Google for the given words",
     author: {},
     icon: "http://www.google.com/favicon.ico",
@@ -587,9 +521,6 @@ CmdUtils.CreateCommand({
         email: "cosimo@cpan.org"
     },
     license: "GPL",
-    takes: {
-        URL: noun_arb_text
-    },
     preview: function (pblock, directObject) {
         var searchText = directObject.text;
         var words = searchText.split(' ');
@@ -644,9 +575,6 @@ CmdUtils.CreateCommand({
         email: "cosimo@cpan.org"
     },
     license: "",
-    takes: {
-        "search_term": noun_arb_text
-    },
     preview: "Search for online presentations on SlideShare",
     execute: CmdUtils.SimpleUrlBasedCommand(
         "http://www.slideshare.net/search/slideshow?q={text}&submit=post&searchfrom=header&x=0&y=0"
@@ -655,9 +583,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "stackoverflow-search",
-    takes: {
-        "search_string": noun_arb_text
-    },
     description: "Searches questions and answers on stackoverflow.com",
     author: {
         name: "Cosimo Streppone",
@@ -674,9 +599,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "torrent-search",
-    takes: {
-        "search_string": noun_arb_text
-    },
     description: "Search PirateBay, Isohunt, and Torrentz in new tabs.",
     author: {
         name: "Axel Boldt",
@@ -695,9 +617,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "translate",
-    takes: {
-        "words": noun_arb_text
-    },
     description: "Translates the given words (or text selection, or the current window) to English",
     author: {},
     icon: "http://www.google.com/favicon.ico",
@@ -752,9 +671,6 @@ CmdUtils.CreateCommand({
     description: "Search old versions of a site using the Wayback Machine (archive.org)",
     help: "wayback <i>sitio a buscar</i>",
     icon: "http://web.archive.org/favicon.ico",
-    takes: {
-        "Site to search": noun_arb_text
-    },
     preview: function (pblock, theShout) {
         pblock.innerHTML = "Buscar versiones antiguas del sitio <b>" + theShout.text + "</b>";
     },
@@ -770,9 +686,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "weather",
-    takes: {
-        "location": noun_arb_text
-    },
     description: "Show the weather forecast for",
     author: {},
     icon: "http://www.accuweather.com/favicon.ico",
@@ -786,9 +699,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "wikipedia",
-    takes: {
-        "search_string": noun_arb_text
-    },
     description: "Search Wikipedia for the given words",
     author: {},
     icon: "http://en.wikipedia.org/favicon.ico",
@@ -829,9 +739,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "yahoo-answers",
-    takes: {
-        "question": noun_arb_text
-    },
     description: "Search Yahoo! Answers for",
     author: {},
     icon: "http://l.yimg.com/a/i/us/sch/gr/answers_favicon.ico",
@@ -845,9 +752,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "yahoo-search",
-    takes: {
-        "search_string": noun_arb_text
-    },
     description: "Search Yahoo! for",
     author: {},
     icon: "http://www.yahoo.com/favicon.ico",
@@ -861,9 +765,6 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "youtube",
-    takes: {
-        "videos": noun_arb_text
-    },
     description: "Search for videos on YouTube",
     author: {},
     icon: "http://www.youtube.com/favicon.ico",
@@ -879,16 +780,22 @@ CmdUtils.CreateCommand({
     name: "calc",
     description: "evals math expressions",
     require: "https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.20.1/math.min.js",
-    preview: pr = function preview(previewBlock, args) {
-    	if (args.text.trim()!='') {
+    preview: pr = function preview(previewBlock, {text:text}) {
+    	if (text.trim()!='') {
     		var m = new math.parser();
-	        previewBlock.innerHTML = m.eval(args.text);
+	        previewBlock.innerHTML = m.eval(text);
 	        //CmdUtils.ajaxGet("http://api.mathjs.org/v1/?expr="+encodeURIComponent(args.text), (r)=>{ previewBlock.innerHTML = r; });
 	    }
 		else
 	        previewBlock.innerHTML = this.description;
     },
-    execute: function (args) { pr(document.getElementById('ubiq-command-preview'), args); }
+    execute: function ({text:text}) { 
+    	if (text.trim()!='') {
+    		var m = new math.parser();
+            text = m.eval(text);
+            CmdUtils.setSelection(text); 
+        }
+    }
 });
 
 CmdUtils.CreateCommand({
@@ -930,11 +837,6 @@ CmdUtils.CreateCommand({
         name: "von rostock",
     },
     license: "GPL",
-    arguments: [{
-        role: "object",
-        nountype: noun_arb_text,
-        label: "text"
-    }],
     execute: function execute({text:text}) {
         //if (text === "") text = CmdUtils.htmlSelection;
         CmdUtils.setSelection(atob(text));
@@ -954,11 +856,6 @@ CmdUtils.CreateCommand({
         name: "von rostock",
     },
     license: "GPL",
-    arguments: [{
-        role: "object",
-        nountype: noun_arb_text,
-        label: "text"
-    }],
     execute: function execute({text:text}) {
         //if (text === "") text = CmdUtils.htmlSelection;
         CmdUtils.setSelection(btoa(text));

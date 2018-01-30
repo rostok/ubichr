@@ -15,18 +15,16 @@ if (!CmdUtils) var CmdUtils = {
     ubiq_set_preview_func: function ubiq_set_preview_func(message, prepend) { console.log(message); },
     ubiq_set_result_func: function ubiq_set_result_func(message, prepend) { console.log(message); }
 };
-noun_arb_text = 1;
 CmdUtils.VERSION = 0.01;
 CmdUtils.CommandList = [];
 CmdUtils.CreateCommand = function CreateCommand(args) {
     args.name = args.name || args.names[0];
     args.names = args.names || [args.name];
-    var cmd_name = args.name;
-    var cmd_list = CmdUtils.CommandList;
-    if (cmd_name in cmd_list) {
-        return;
+    if (CmdUtils.getcmd(args.name)) {
+        // remove previously defined command with this name
+        CmdUtils.CommandList = CmdUtils.CommandList.filter( cmd => cmd.name !== args.name );
     }
-    //console.log("command created ", cmd_name);
+    //console.log("command created ", args.name);
     var to = parseFloat(args.timeout);
     if (to>0) {
     	args.timeoutFunc = null;
@@ -166,6 +164,7 @@ CmdUtils.loadScripts = function loadScripts(url, callback) {
 };
 
 CmdUtils.setSelection = function setSelection(s) {
+    if (typeof s!=='string') s = s+'';
     s = s.replace('"', '\"');
     // http://jsfiddle.net/b3Fk5/2/
     var insertCode = `
@@ -225,5 +224,25 @@ CmdUtils.setResult = function setResult(m, prepend) {
 CmdUtils.getcmd = function getcmd(cmdname) {
     for (var c in CmdUtils.CommandList) 
         if (CmdUtils.CommandList[c].name == cmdname) return CmdUtils.CommandList[c];
-    return {};
+    return null;
+};
+CmdUtils.unloadCustomScripts = function unloadCustomScripts() {
+    this.CommandList = this.CommandList.filter((c)=>{
+        return c['builtIn']==true;
+    });
+    
+}
+CmdUtils.loadCustomScripts = function loadCustomScripts() {
+    //this.unloadCustomScripts();
+    // mark built-int commands
+    this.CommandList.forEach((c)=>{c['builtIn']=true;});
+
+    // load custom scripts
+    chrome.storage.local.get('customscripts', function(result) {
+    	try {
+    		eval(result.customscripts || "");
+    	} catch (e) {
+    		console.error("custom scripts eval failed", e);
+    	}
+    });
 };
