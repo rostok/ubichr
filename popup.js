@@ -62,29 +62,9 @@ function ubiq_show_preview(cmd, args) {
         var words = ubiq_command().split(' ');
         var command = words.shift();
     
-        var text = words.join(' ');
-
-		if (typeof args === 'string') {
-			text = args;
-        } else {
-            /*
-            if (text.trim()=="") {
-            	try {
-            		chrome.tabs.executeScript( {
-            		    code: "window.getSelection() ? window.getSelection().toString() : '';"
-            		}, function(selection) {
-            			if (selection!="") {
-                            ubiq_show_preview(cmd, selection.toString());
-                        }
-            		});
-	            	return;
-        		} catch (e) {
-        			console.error("ubiq_show_preview went wrong", e);
-        		}
-            }
-            */
-		}
-		            
+        var text = words.join(' ').trim();
+        if (text=="") text = CmdUtils.selectedText;
+    
         var directObj = {
             text: text,
         };
@@ -107,29 +87,8 @@ function ubiq_dispatch_command(line, args) {
     var words = ubiq_command().split(' ');
     var command = words.shift();
 
-    var text = words.join(' ');
-
-    if (typeof args === 'string') {
-        text = args;
-    } else {
-/*
-        if (text.trim()=="") {
-        	try {
-                chrome.tabs.executeScript( {
-                    code: "window.getSelection().toString();"
-                }, function(selection) {
-                    console.log("dispatching 1b");
-                    if (selection!="" && typeof selection !== 'undefined') {
-                        ubiq_dispatch_command(cmd, selection.toString());
-                    }
-                });
-                return;
-    		} catch (e) {
-    			console.error("ubiq_dispatch_command went wrong", e);
-    		}
-        }
-*/                
-    }
+    var text = words.join(' ').trim();
+    if (text=="") text = CmdUtils.selectedText;
 
     // Expand match (typing 'go' will expand to 'google')
     cmd = ubiq_match_first_command(cmd);

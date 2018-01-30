@@ -12,6 +12,7 @@ chrome.tabs.query({active:true, windowId: chrome.windows.WINDOW_ID_CURRENT}, fun
 if (!CmdUtils) var CmdUtils = { 
     __globalObject: this,
     jQuery: jQuery,
+    selectedText: "",
     ubiq_set_preview_func: function ubiq_set_preview_func(message, prepend) { console.log(message); },
     ubiq_set_result_func: function ubiq_set_result_func(message, prepend) { console.log(message); }
 };
