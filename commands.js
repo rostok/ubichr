@@ -386,49 +386,50 @@ CmdUtils.CreateCommand({
             zoom: 10,
             center: pointA
         };
-        var map = new google.maps.Map(document.getElementById('map-canvas'), myOptions);
+        var map = new google.maps.Map(previewBlock.ownerDocument.getElementById('map-canvas'), myOptions);
         this.markerA = new google.maps.Marker({
             position: pointA,
             title: from,
             label: "A",
             map: map
         });
-        var B = await CmdUtils.get("https://nominatim.openstreetmap.org/search.php?q="+encodeURIComponent(dest)+"&polygon_geojson=1&viewbox=&format=json");
-        if (!B[0]) { 
-	        map.data.addGeoJson(geoJson = {"type": "FeatureCollection", "features": [{ "type": "Feature", "geometry": A[0].geojson, "properties": {} }]});
-	        map.fitBounds( new google.maps.LatLngBounds( new google.maps.LatLng(A[0].boundingbox[0],A[0].boundingbox[2]), new google.maps.LatLng(A[0].boundingbox[1],A[0].boundingbox[3]) ) );
-	        map.setZoom(map.getZoom()-1);
-    	    return;
-    	}
-        console.log("B", B[0]);
-    	var pointB = new google.maps.LatLng(B[0].lat, B[0].lon);
-        // Instantiate a directions service.
-        directionsService = new google.maps.DirectionsService();
-        directionsDisplay = new google.maps.DirectionsRenderer({
-            map: map
-        });
-        this.markerB = new google.maps.Marker({
-            position: pointB,
-            title: dest,
-            label: "B",
-            map: map
-        });
-
-        // get route from A to B
-        directionsService.route({
-            origin: pointA,
-            destination: pointB,
-            avoidTolls: true,
-            avoidHighways: false,
-            travelMode: google.maps.TravelMode.DRIVING
-        }, function (response, status) {
-            if (status == google.maps.DirectionsStatus.OK) {
-                directionsDisplay.setDirections(response);
-            } else {
-                window.alert('Directions request failed due to ' + status);
+         if (trim(dest)!='') {
+            var B = await CmdUtils.get("https://nominatim.openstreetmap.org/search.php?q="+encodeURIComponent(dest)+"&polygon_geojson=1&viewbox=&format=json");
+            if (!B[0]) { 
+                map.data.addGeoJson(geoJson = {"type": "FeatureCollection", "features": [{ "type": "Feature", "geometry": A[0].geojson, "properties": {} }]});
+                map.fitBounds( new google.maps.LatLngBounds( new google.maps.LatLng(A[0].boundingbox[0],A[0].boundingbox[2]), new google.maps.LatLng(A[0].boundingbox[1],A[0].boundingbox[3]) ) );
+                map.setZoom(map.getZoom()-1);
+                return;
             }
-        });
+            console.log("B", B[0]);
+            var pointB = new google.maps.LatLng(B[0].lat, B[0].lon);
+            // Instantiate a directions service.
+            directionsService = new google.maps.DirectionsService();
+            directionsDisplay = new google.maps.DirectionsRenderer({
+                map: map
+            });
+            this.markerB = new google.maps.Marker({
+                position: pointB,
+                title: dest,
+                label: "B",
+                map: map
+            });
 
+            // get route from A to B
+            directionsService.route({
+                origin: pointA,
+                destination: pointB,
+                avoidTolls: true,
+                avoidHighways: false,
+                travelMode: google.maps.TravelMode.DRIVING
+            }, function (response, status) {
+                if (status == google.maps.DirectionsStatus.OK) {
+                    directionsDisplay.setDirections(response);
+                } else {
+                    window.alert('Directions request failed due to ' + status);
+                }
+            });
+        }
     },
     execute: CmdUtils.SimpleUrlBasedCommand(
         "http://maps.google.com/maps?q={text}"
