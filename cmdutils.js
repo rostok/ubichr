@@ -89,12 +89,12 @@ CmdUtils.SimpleUrlBasedCommand = function SimpleUrlBasedCommand(url) {
     if (!url) return;
     var search_func = function(directObj) {
         if (!directObj) return;
-        //ubiq_set_result(url);
         var text = directObj.text;
         text = encodeURIComponent(text);
-        url = url.replace('{text}', text);
-        url = url.replace('{location}', CmdUtils.getLocation());
-        Utils.openUrlInBrowser(url);
+        var finalurl = url;
+        finalurl = finalurl.replace('{text}', text);
+        finalurl = finalurl.replace('{location}', CmdUtils.getLocation());
+        Utils.openUrlInBrowser(finalurl);
     };
     return search_func;
 };
