@@ -1,6 +1,8 @@
 body {
     margin: 0px;
     background-color: gray;
+    font-size: 8pt;
+    font-family: Calibri, Helvetica, Arial;
 }
 
 #panel {

@@ -4,16 +4,16 @@ function insertCommandStub() {
     var stub = 
 `/* This is a template command. */
 CmdUtils.CreateCommand({
-name: "example",
-description: "A short description of your command.",
-author: "Your Name",
-icon: "http://www.mozilla.com/favicon.ico",
-execute: function execute(args) {
-alert("EX:You input: " + args.text, this);
-},
-preview: function preview(pblock, args) {
-pblock.innerHTML = "PV:Your input is " + args.text + ".";
-},
+    name: "example",
+    description: "A short description of your command.",
+    author: "Your Name",
+    icon: "http://www.mozilla.com/favicon.ico",
+    execute: function execute(args) {
+        alert("EX:You input: " + args.text, this);
+    },
+    preview: function preview(pblock, args) {
+        pblock.innerHTML = "PV:Your input is " + args.text + ".";
+    },
 });
 
 `;
@@ -29,8 +29,10 @@ function saveScripts() {
     
     // eval
     try {
-        $("#info").html("evalueated!");
-        eval(customscripts); 
+        $("#info").html("evaluated!");
+        eval(customscripts);
+        CmdUtils.unloadCustomScripts(); 
+        CmdUtils.loadCustomScripts(); 
     } catch (e) {
         $("#info").html("<pre>"+e.stack+"</p>");
     }
