@@ -13,8 +13,8 @@ if (!CmdUtils) var CmdUtils = {
     __globalObject: this,
     jQuery: jQuery,
     selectedText: "",
-    ubiq_set_preview_func: function ubiq_set_preview_func(message, prepend) { console.log(message); },
-    ubiq_set_result_func: function ubiq_set_result_func(message, prepend) { console.log(message); }
+    setPreview: function setPreview(message, prepend) { console.log(message); },
+    setResult: function setResult(message, prepend) { console.log(message); }
 };
 CmdUtils.VERSION = 0.01;
 CmdUtils.CommandList = [];
@@ -197,29 +197,10 @@ CmdUtils.setSelection = function setSelection(s) {
     return chrome.tabs.executeScript( { code: insertCode } );
 };
 
-CmdUtils.getSelection = function getSelection(callback) {
-    return chrome.tabs.executeScript( { code: "window.getSelection() ? window.getSelection().toString() : '';" }, callback(selection) );
-};
-
-CmdUtils.getSelection2 = function getSelection2( callback ) {
-    return chrome.tabs.query({active:true, windowId: chrome.windows.WINDOW_ID_CURRENT}, 
-        function(tab) {
-          chrome.tabs.sendMessage(tab[0].id, {method: "getSelection"}, callback(response) );
-        });
-};
-
 // for measuring time the input is changed
 CmdUtils.inputUpdateTime = performance.now();
 CmdUtils.timeSinceInputUpdate = function timeSinceInputUpdate() {
 	return (performance.now() - CmdUtils.inputUpdateTime)*0.001;
-};
-
-CmdUtils.setPreview = function setPreview(m, prepend) {
-    this.ubiq_set_preview_func(m, prepend);
-};
-
-CmdUtils.setResult = function setResult(m, prepend) {
-    this.ubiq_set_result_func(m, prepend);
 };
 
 CmdUtils.getcmd = function getcmd(cmdname) {
@@ -247,3 +228,12 @@ CmdUtils.loadCustomScripts = function loadCustomScripts() {
     	}
     });
 };
+
+CmdUtils.notify = function (message, title) {
+    chrome.notifications.create({
+        "type": "basic",
+        "iconUrl": chrome.extension.getURL("res/icon-128.png"),
+        "title": title || "UbiChr",
+        "message": message
+    });
+}
