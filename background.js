@@ -1,11 +1,12 @@
-console.log("hello from background script");
+console.log("hello from UbiChr background script");
 
 // setup selection event sink
-chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+    //console.log("got message: ", request.message, request.data, request.event );
+    //CmdUtils.notify(request.data, request.message+" / "+request.event );
     switch(request.message)
     {
         case 'selection':
-        	// console.log("got sel", request.event, request.data);
             CmdUtils.selectedText = request.data;
         break;
 
