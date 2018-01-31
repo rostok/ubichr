@@ -332,8 +332,8 @@ function ubiq_load_input() {
     });
 }
 
-CmdUtils.ubiq_set_preview_func = ubiq_set_preview;
-CmdUtils.ubiq_set_result_func = ubiq_set_result;
+CmdUtils.setPreview = ubiq_set_preview;
+CmdUtils.setResult = ubiq_set_result;
 
 ubiq_load_input();
 
@@ -341,7 +341,7 @@ ubiq_load_input();
 document.addEventListener('keyup', function(e) { ubiq_key_handler(e); }, false);
 
 // there's a problem in firefox with popup getting focus
-if (ubiq_command()!="") 
+//if (ubiq_command()!="") 
 setTimeout(function() {
 	document.body.focus();
     ubiq_show_matching_commands(ubiq_command());
@@ -350,5 +350,4 @@ setTimeout(function() {
 	cmd.focus();
 }, 500);
 
-// alert(activeTab.url);
 console.log("hello from UbiChr");
