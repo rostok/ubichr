@@ -6,7 +6,7 @@
     "content_security_policy": "script-src 'self' 'unsafe-eval' https://maps.googleapis.com https://cdnjs.cloudflare.com; object-src 'self'",
     "manifest_version": 2,
     "background": {
-        "scripts": ["jquery-2.2.4.min.js", "utils.js", "cmdutils.js", "commands.js", "background.js"],
+        "scripts": ["lib/jquery-2.2.4.min.js", "utils.js", "cmdutils.js", "commands.js", "background.js"],
         "persistent":true
     },
     "browser_action": {

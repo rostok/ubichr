@@ -1,7 +1,6 @@
 // CmdUtils
 // jshint esversion: 6 
 
-
 var active_document = document;
 var active_window = window;
 var active_tab = {};

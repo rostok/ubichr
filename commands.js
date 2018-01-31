@@ -104,7 +104,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Search any source code for the given string",
     execute: CmdUtils.SimpleUrlBasedCommand(
-        'http://www.google.com/codesearch?client=opera&sourceid=opera&q={text}'
+        'http://www.google.com/codesearch?q={text}'
     )
 });
 
@@ -227,20 +227,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Examples: 3^4/sqrt(2)-pi,  3 inch in cm,  speed of light,  0xAF in decimal (<a href=\"http://www.googleguide.com/calculator.html\">Command list</a>)",
     execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://www.google.com/search?client=opera&num=1&q={text}&sourceid=opera&ie=utf-8&oe=utf-8"
-    )
-});
-
-CmdUtils.CreateCommand({
-    name: "google-search",
-    description: "Search on Google for the given words",
-    author: {},
-    icon: "http://www.google.com/favicon.ico",
-    homepage: "",
-    license: "",
-    preview: "Search on Google for the given words",
-    execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://www.google.com/search?client=opera&num=1&q={text}&ie=utf-8&oe=utf-8"
+        "http://www.google.com/search?q={text}&ie=utf-8&oe=utf-8"
     )
 });
 
@@ -393,7 +380,7 @@ CmdUtils.CreateCommand({
             label: "A",
             map: map
         });
-         if (trim(dest)!='') {
+         if (dest.trim()!='') {
             var B = await CmdUtils.get("https://nominatim.openstreetmap.org/search.php?q="+encodeURIComponent(dest)+"&polygon_geojson=1&viewbox=&format=json");
             if (!B[0]) { 
                 map.data.addGeoJson(geoJson = {"type": "FeatureCollection", "features": [{ "type": "Feature", "geometry": A[0].geojson, "properties": {} }]});
@@ -498,17 +485,20 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
-    name: "search",
+    names: ["search", "google-search"],
     description: "Search on Google for the given words",
     author: {},
     icon: "http://www.google.com/favicon.ico",
     homepage: "",
     license: "",
-    preview: "Search on Google for the given words",
+    preview: function preview(pblock, {text:text}) {
+        pblock.innerHTML = "Search on Google for "+text;
+    },
     execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://www.google.com/search?client=opera&num=1&q={text}&sourceid=opera&ie=utf-8&oe=utf-8"
+        "http://www.google.com/search?q={text}&ie=utf-8&oe=utf-8"
     )
 });
+
 
 var bitly_api_user = "ubiquityopera";
 var bitly_api_key = "R_59da9e09c96797371d258f102a690eab";
