@@ -18,8 +18,6 @@ CmdUtils.CreateCommand({
 
 `;
     editor.replaceRange(stub, editor.getCursor());
-
-    //editor.setValue( stub + editor.getValue() );
     saveScripts();
 }
 
