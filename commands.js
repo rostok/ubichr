@@ -763,7 +763,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Search for videos on YouTube",
     execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://www.youtube.com/result?search_type=search_videos&search_sort=relevance&search_query={text}&search=Search"
+        "https://www.youtube.com/results?search=Search&search_query={text}"
     )
 });
 

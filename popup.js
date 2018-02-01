@@ -342,6 +342,7 @@ document.addEventListener('keyup', function(e) { ubiq_key_handler(e); }, false);
 
 // there's a problem in firefox with popup getting focus
 //if (ubiq_command()!="") 
+/*
 setTimeout(function() {
 	document.body.focus();
     ubiq_show_matching_commands(ubiq_command());
@@ -349,5 +350,5 @@ setTimeout(function() {
 	console.log("should focus");
 	cmd.focus();
 }, 500);
-
+*/
 console.log("hello from UbiChr");

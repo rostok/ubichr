@@ -1,25 +1,54 @@
 // jshint esversion: 6
 
-function insertCommandStub() {
+function insertNotifyStub() {
     var stub = 
 `/* This is a template command. */
 CmdUtils.CreateCommand({
-    name: "example",
+    name: "1example",
     description: "A short description of your command.",
     author: "Your Name",
     icon: "http://www.mozilla.com/favicon.ico",
     execute: function execute(args) {
-        alert("EX:You input: " + args.text, this);
+        CmdUtils.notify("Execute:Your input is: " + args.text);
     },
     preview: function preview(pblock, args) {
-        pblock.innerHTML = "PV:Your input is " + args.text + ".";
+        pblock.innerHTML = "Preview:Your input is " + args.text + ".";
     },
 });
 
 `;
-    editor.setValue( stub + editor.getValue() );
+    editor.replaceRange(stub, editor.getCursor());
+
+    //editor.setValue( stub + editor.getValue() );
     saveScripts();
 }
+
+function insertSearchStub() {
+    var stub = 
+`/* This is a template command. */
+CmdUtils.CreateCommand({
+    name: "2example",
+    description: "Commence DuckGoGo search.",
+    icon: "http://www.duckduckgo.com/favicon.ico",
+    execute: function execute(args) {   
+        Utils.openUrlInBrowser("https://duckduckgo.com/?q=" + encodeURIComponent(args.text));
+    },
+    preview: function preview(pblock, args) {
+        var url = "https://duckduckgo.com/html?q=" + encodeURIComponent(args.text);
+        CmdUtils.ajaxGet(url, function(data) {
+            pblock.innerHTML = jQuery("#links", data).html(); 
+        });
+    },
+});
+
+`;
+    editor.replaceRange(stub, editor.getCursor());
+
+    //editor.setValue( stub + editor.getValue() );
+    saveScripts();
+}
+
+
 
 function saveScripts() {
     var customscripts = editor.getValue();
@@ -34,7 +63,7 @@ function saveScripts() {
         CmdUtils.unloadCustomScripts(); 
         CmdUtils.loadCustomScripts(); 
     } catch (e) {
-        $("#info").html("<pre>"+e.stack+"</p>");
+        $("#info").html("<span style='background-color:red'>"+e.message+"</span>");
     }
     
     // download link
@@ -53,12 +82,14 @@ editor = CodeMirror.fromTextArea( document.getElementById("code"), {
     matchBrackets: true,
     gutters: ["CodeMirror-lint-markers"],
     lint:true,
+    autofocus:true,
 });
 
 editor.on("blur", saveScripts);
 editor.on("change", saveScripts);
 
-$("#insertstub").click( insertCommandStub );	
+$("#insertnotifystub").click( insertNotifyStub );	
+$("#insertsearchstub").click( insertSearchStub );	
 
 // load scrtips
 if (typeof chrome !== 'undefined' && chrome.storage) {
