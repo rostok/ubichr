@@ -1,8 +1,6 @@
 // CmdUtils
 // jshint esversion: 6 
 
-var active_document = document;
-var active_window = window;
 var active_tab = {};
 
 chrome.tabs.query({active:true, windowId: chrome.windows.WINDOW_ID_CURRENT}, function(tab) { if (typeof tab !== 'undefined') active_tab = tab[0]; });
@@ -53,6 +51,7 @@ CmdUtils.CreateCommand = function CreateCommand(args) {
     }
     CmdUtils.CommandList.push(args);
 };
+
 CmdUtils.closeTab = function closeTab() {
 	chrome.tabs.query({active:true,currentWindow:true},function(tabs){
         if (tabs && tabs[0]) 
@@ -61,18 +60,14 @@ CmdUtils.closeTab = function closeTab() {
             console.error("closeTab failed because 'tabs' is not set");
 	});
 };
-CmdUtils.getDocument = function getDocument() {
-    return active_document;
-};
+
 CmdUtils.getLocation = function getLocation() {
     if (active_tab.url) 
         return active_tab.url;
     else 
-        return CmdUtils.getDocument().location; //this is wrong TODO: Fix
+        return ""; 
 };
-CmdUtils.getWindow = function getWindow() {
-    return active_window;
-};
+
 CmdUtils.addTab = function addTab(url) {
 	if (typeof browser !== 'undefined') {
 		browser.tabs.create({ "url": url });
@@ -98,9 +93,11 @@ CmdUtils.SimpleUrlBasedCommand = function SimpleUrlBasedCommand(url) {
     };
     return search_func;
 };
+
 CmdUtils.closePopup = function closePopup(w) {
     window.close();
 };
+
 CmdUtils.ajaxGetJSON = function ajaxGetJSON(url, callback) {
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
@@ -112,6 +109,7 @@ CmdUtils.ajaxGetJSON = function ajaxGetJSON(url, callback) {
     };
     xhr.send();
 };
+
 CmdUtils.ajaxGet = function ajaxGet(url, callback) {
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
@@ -122,12 +120,14 @@ CmdUtils.ajaxGet = function ajaxGet(url, callback) {
     };
     xhr.send();
 };
+
 CmdUtils.get = function get(url) {
 	return jQuery.ajax({
     	url: url,
         async: true
 	});
 };
+
 CmdUtils.post = function post(url, data) {
 	return jQuery.ajax({
     	url: url,
@@ -135,6 +135,7 @@ CmdUtils.post = function post(url, data) {
         async: true
 	});
 };
+
 // loads remote scripts
 CmdUtils.loadedScripts = [];
 CmdUtils.loadScripts = function loadScripts(url, callback) {
@@ -207,12 +208,14 @@ CmdUtils.getcmd = function getcmd(cmdname) {
         if (CmdUtils.CommandList[c].name == cmdname) return CmdUtils.CommandList[c];
     return null;
 };
+
 CmdUtils.unloadCustomScripts = function unloadCustomScripts() {
     this.CommandList = this.CommandList.filter((c)=>{
         return c['builtIn']==true;
     });
     
 }
+
 CmdUtils.loadCustomScripts = function loadCustomScripts() {
     //this.unloadCustomScripts();
     // mark built-int commands
@@ -228,11 +231,16 @@ CmdUtils.loadCustomScripts = function loadCustomScripts() {
     });
 };
 
+CmdUtils.lastNotification = "";
+
+// show browser notification with simple limiter 
 CmdUtils.notify = function (message, title) {
+    if (CmdUtils.lastNotification == title+"/"+message) return;
     chrome.notifications.create({
         "type": "basic",
         "iconUrl": chrome.extension.getURL("res/icon-128.png"),
         "title": title || "UbiChr",
         "message": message
     });
+    CmdUtils.lastNotification = title+"/"+message;
 }

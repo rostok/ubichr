@@ -68,10 +68,19 @@ function ubiq_show_preview(cmd, args) {
         var directObj = {
             text: text,
         };
+
+        var pfunc = ()=>{
+            try {
+                preview_func(el, directObj);
+            } catch (e) {
+                CmdUtils.notify(e.toString(), "preview function error")
+            }
+        }
+
 		if (typeof CmdUtils.CommandList[cmd].require !== 'undefined')
-	        CmdUtils.loadScripts( CmdUtils.CommandList[cmd].require, ()=>{ preview_func(el, directObj); } );
+	        CmdUtils.loadScripts( CmdUtils.CommandList[cmd].require, ()=>{ pfunc(); } );
 	    else
-        	preview_func(el, directObj);
+        	pfunc();
     }
     return;
 }
@@ -114,7 +123,12 @@ function ubiq_dispatch_command(line, args) {
     var direct_obj = { "text": text };
 
     // Run command's "execute" function
-    cmd_func(direct_obj);
+    try {
+        cmd_func(direct_obj);
+    } catch (e) {
+        CmdUtils.notify(e.toString(), "execute function error")
+    }
+
 
     return;
 }
@@ -332,23 +346,22 @@ function ubiq_load_input() {
     });
 }
 
-CmdUtils.setPreview = ubiq_set_preview;
-CmdUtils.setResult = ubiq_set_result;
+if (typeof CmdUtils !== 'undefined' && typeof Utils !== 'undefined' && typeof backgroundPage !== 'undefined' ) {
+    CmdUtils.setPreview = ubiq_set_preview;
+    CmdUtils.setResult = ubiq_set_result;
 
-ubiq_load_input();
+    ubiq_load_input();
 
-// Add event handler to window 
-document.addEventListener('keyup', function(e) { ubiq_key_handler(e); }, false);
+    // Add event handler to window 
+    document.addEventListener('keyup', function(e) { ubiq_key_handler(e); }, false);
 
-// there's a problem in firefox with popup getting focus
-//if (ubiq_command()!="") 
-/*
-setTimeout(function() {
-	document.body.focus();
-    ubiq_show_matching_commands(ubiq_command());
-    ubiq_focus();
-	console.log("should focus");
-	cmd.focus();
-}, 500);
-*/
-console.log("hello from UbiChr");
+    console.log("hello from UbiChr");
+} else {
+    chrome.tabs.create({ "url": "chrome://extensions" });
+    chrome.notifications.create({
+        "type": "basic",
+        "iconUrl": chrome.extension.getURL("res/icon-128.png"),
+        "title": "UbiChr",
+        "message": "there is something wrong, try restarting UbiChr"
+    });
+}

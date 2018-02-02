@@ -19,6 +19,8 @@ body {
     padding: 0px;
     z-index: 99999;
     background: #3D3D3D;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 #ubiq-input-panel {
@@ -66,7 +68,6 @@ body {
     position: absolute;
     left: 300px;
     top: 57px;
-    overflow: auto;
     color: #ddd;
 }
 

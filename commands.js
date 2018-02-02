@@ -80,31 +80,29 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
-    name: "clusty",
-    description: "Perform a clustered search through clusty.com",
+    name: "yippy",
+    description: "Perform a clustered search through yippy.com",
     author: {},
-    icon: "http://clusty.com/images/clusty-favicon.ico",
+    icon: "http://cdn2.hubspot.net/hubfs/2571411/YippyInc_Oct2016/favicon.png",
     homepage: "",
     license: "",
-    preview: "Perform a clustered search through clusty.com",
-    execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://clusty.com/search?query={text}"
-    )
+    preview: "Perform a clustered search through yippy.com",
+    execute: async function execute({text:text}) {
+            var xtoken = CmdUtils.get("http://yippy.com/");
+            xtoken = jQuery("#xtoken", xtoken).val();
+            Utils.postNewTab("http://yippy.com/search/?v%3Aproject=clusty-new&query=kakao&xtoken="+xtoken);//, {"v:project":"clusty-new", xtoken:xtoken});
+        }
 });
 
 CmdUtils.CreateCommand({
     name: "code-search",
     description: "Search any source code for the given string",
-    author: {
-        name: "Cosimo Streppone",
-        email: "cosimo@cpan.org"
-    },
-    icon: "http://www.google.com/favicon.ico",
-    homepage: "http://codesearch.google.com",
+    icon: "https://searchcode.com/static/favicon.ico",
+    homepage: "https://searchcode.com/",
     license: "",
     preview: "Search any source code for the given string",
     execute: CmdUtils.SimpleUrlBasedCommand(
-        'http://www.google.com/codesearch?q={text}'
+        'https://searchcode.com/?q={text}'
     )
 });
 
@@ -113,7 +111,7 @@ CmdUtils.CreateCommand({
     takes: {},
     description: "Shows the list of Ubiquity commands and what they do",
     author: {},
-    icon: "",
+    icon: "res/icon-128.png",
     homepage: "",
     license: "",
     preview: "Shows the list of Ubiquity commands and what they do",
@@ -233,12 +231,8 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "help",
-    takes: {},
     description: "Provides basic help on using Ubiquity",
-    author: {},
-    icon: "",
-    homepage: "",
-    license: "",
+    icon: "res/icon-128.png",
     preview: "lists all avaiable commands",
     execute: CmdUtils.SimpleUrlBasedCommand("help.html")
 });
@@ -267,22 +261,7 @@ CmdUtils.CreateCommand({
         pblock.innerHTML = "<table>"+jQuery("table.findList", doc).html()+"</table>";
     },
     execute: CmdUtils.SimpleUrlBasedCommand(
-        //"http://www.imdb.com/find?s=all&q={text}&x=0&y=0"
-        "http://www.imdb.com/find?q={text}&s=tt&ref_=fn_al_tt_mr"
-    )
-});
-
-CmdUtils.CreateCommand({
-    name: "instant-rimshot",
-    takes: {},
-    description: "Instant Rimshot at your fingertips!",
-    author: {},
-    icon: "",
-    homepage: "http://instantrimshot.com",
-    license: "",
-    preview: "Instant Rimshot at your fingertips!",
-    execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://instantrimshot.com/rimshot.swf"
+        "http://www.imdb.com/find?s=tt&ref_=fn_al_tt_mr&q={text}"
     )
 });
 
@@ -791,6 +770,7 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "edit-ubiquity-commands",
+    icon: "res/icon-128.png",
     description: "Takes you to the Ubiquity command <a href=options.html target=_blank>editor page</a>.",
     execute: function (args) { 
     	//chrome.runtime.openOptionsPage(); 
