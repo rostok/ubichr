@@ -9,7 +9,7 @@ People wanting to remove irritating 'disable developer mode popup' please follow
 # license & origins
 MIT license
 
-Most of the code is based on http://github.com/cosimo/ubiquity-opera/ however no license info is available.
+Most of the code is based on http://github.com/cosimo/ubiquity-opera/
 
 # adding commands
 You can add your custom commands using built-in editor (CodeMirror) or modify commands.js. The syntax is quite simple and self explanatory
