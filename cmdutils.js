@@ -1,20 +1,17 @@
 // CmdUtils
 // jshint esversion: 6 
 
-var active_tab = {};
-
-chrome.tabs.query({active:true, windowId: chrome.windows.WINDOW_ID_CURRENT}, function(tab) { if (typeof tab !== 'undefined') active_tab = tab[0]; });
-
-
 if (!CmdUtils) var CmdUtils = { 
-    __globalObject: this,
+    VERSION: 0.01,
+    CommandList: [],
     jQuery: jQuery,
-    selectedText: "",
+    active_tab: null,   // tab that is currently active, updated via background.js 
+    selectedText: "",   // currently selected text, update via content script selection.js
     setPreview: function setPreview(message, prepend) { console.log(message); },
-    setResult: function setResult(message, prepend) { console.log(message); }
+    setResult: function setResult(message, prepend) { console.log(message); },
 };
-CmdUtils.VERSION = 0.01;
-CmdUtils.CommandList = [];
+
+// creates command and adds it to command array, name or names must be provided and preview execute functions
 CmdUtils.CreateCommand = function CreateCommand(args) {
     args.name = args.name || args.names[0];
     args.names = args.names || [args.name];
@@ -52,6 +49,7 @@ CmdUtils.CreateCommand = function CreateCommand(args) {
     CmdUtils.CommandList.push(args);
 };
 
+// closes current tab
 CmdUtils.closeTab = function closeTab() {
 	chrome.tabs.query({active:true,currentWindow:true},function(tabs){
         if (tabs && tabs[0]) 
@@ -61,13 +59,15 @@ CmdUtils.closeTab = function closeTab() {
 	});
 };
 
+// returns active tabs URL if avaiable
 CmdUtils.getLocation = function getLocation() {
-    if (active_tab.url) 
-        return active_tab.url;
+    if (CmdUtils.active_tab && CmdUtils.active_tab.url) 
+        return CmdUtils.active_tab.url;
     else 
         return ""; 
 };
 
+// opens new tab with provided url
 CmdUtils.addTab = function addTab(url) {
 	if (typeof browser !== 'undefined') {
 		browser.tabs.create({ "url": url });
@@ -79,7 +79,31 @@ CmdUtils.addTab = function addTab(url) {
 	}
 };
 
-// 2nd order function
+// opens new tab with post request and provided data
+CmdUtils.postNewTab
+ = function postNewTab(url, data) {
+	var form = document.createElement("form");
+	form.setAttribute("method", "post");
+	form.setAttribute("action", url);
+	form.setAttribute("target", "_blank");
+
+	if (typeof data === 'string') data = Utils.urlToParams(data);
+	for (var i in data) {
+		if (data.hasOwnProperty(i)) {
+			var input = document.createElement('input');
+			input.type = 'hidden';
+			input.name = i;
+			input.value = data[i];
+			form.appendChild(input);
+		}
+	}
+
+	document.body.appendChild(form);
+	form.submit();
+	document.body.removeChild(form);
+}
+
+// returns a function that opens new tab with substituted {text} and {location} 
 CmdUtils.SimpleUrlBasedCommand = function SimpleUrlBasedCommand(url) {
     if (!url) return;
     var search_func = function(directObj) {
@@ -89,15 +113,17 @@ CmdUtils.SimpleUrlBasedCommand = function SimpleUrlBasedCommand(url) {
         var finalurl = url;
         finalurl = finalurl.replace('{text}', text);
         finalurl = finalurl.replace('{location}', CmdUtils.getLocation());
-        Utils.openUrlInBrowser(finalurl);
+        CmdUtils.addTab(finalurl);
     };
     return search_func;
 };
 
+// closes ubiquity popup
 CmdUtils.closePopup = function closePopup(w) {
     window.close();
 };
 
+// gets json with xhr
 CmdUtils.ajaxGetJSON = function ajaxGetJSON(url, callback) {
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
@@ -110,6 +136,7 @@ CmdUtils.ajaxGetJSON = function ajaxGetJSON(url, callback) {
     xhr.send();
 };
 
+// gets page with xhr
 CmdUtils.ajaxGet = function ajaxGet(url, callback) {
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
@@ -121,6 +148,7 @@ CmdUtils.ajaxGet = function ajaxGet(url, callback) {
     xhr.send();
 };
 
+// performs jQuery get and returns jqXHR that implements Promise 
 CmdUtils.get = function get(url) {
 	return jQuery.ajax({
     	url: url,
@@ -128,6 +156,7 @@ CmdUtils.get = function get(url) {
 	});
 };
 
+// performs jQuery post and return jsXHR
 CmdUtils.post = function post(url, data) {
 	return jQuery.ajax({
     	url: url,
@@ -164,6 +193,7 @@ CmdUtils.loadScripts = function loadScripts(url, callback) {
     }
 };
 
+// replaces current selection with string provided
 CmdUtils.setSelection = function setSelection(s) {
     if (typeof s!=='string') s = s+'';
     s = s.replace('"', '\"');
@@ -178,7 +208,6 @@ CmdUtils.setSelection = function setSelection(s) {
                 (activeElement.nodeName == "INPUT" && activeElement.type.toLowerCase() == "text")) {
                     var val = activeElement.value, start = activeElement.selectionStart, end = activeElement.selectionEnd;
                     activeElement.value = val.slice(0, start) + replacementText + val.slice(end);
-                //alert("in text area");
             } else {
                 if (sel.rangeCount) {
                     range = sel.getRangeAt(0);
@@ -203,9 +232,10 @@ CmdUtils.timeSinceInputUpdate = function timeSinceInputUpdate() {
 	return (performance.now() - CmdUtils.inputUpdateTime)*0.001;
 };
 
+// returns command with this name
 CmdUtils.getcmd = function getcmd(cmdname) {
     for (var c in CmdUtils.CommandList) 
-        if (CmdUtils.CommandList[c].name == cmdname) return CmdUtils.CommandList[c];
+        if (CmdUtils.CommandList[c].name == cmdname || CmdUtils.CommandList[c].names.indexOf(cmdname)>-1) return CmdUtils.CommandList[c];
     return null;
 };
 

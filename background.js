@@ -15,3 +15,17 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
         break;
     }
 });
+
+chrome.tabs.onUpdated.addListener( function(tabId, changeInfo, tab) {
+    chrome.tabs.getSelected(null, function(tab) {
+        CmdUtils.active_tab = tab;
+        //console.log("onUpdated", tab.url);  
+    });
+})
+
+chrome.tabs.onActivated.addListener(function(tabId, changeInfo, tab) {
+    chrome.tabs.getSelected(null, function(tab) {
+        CmdUtils.active_tab = tab;
+        //console.log("onActivated", tab.url);  
+    });
+});

@@ -4,17 +4,6 @@
 
 if (!Utils) var Utils = {};
 
-// opens new tab
-Utils.openUrlInBrowser = function (url) {
-	if (typeof browser !== 'undefined') {
-		browser.tabs.create({
-			"url": url
-		});
-	} else {
-		window.open(url);
-	}
-};
-
 // === {{{ Utils.paramsToString(params, prefix = "?") }}} ===
 // Takes the given object containing keys and values into a query string
 // suitable for inclusion in an HTTP GET or POST request.
@@ -63,27 +52,4 @@ Utils.urlToParams = function urlToParams(url) {
 		dict[key] = 1;
 	}
 	return params;
-}
-
-// opens new tab with post request and provided data
-Utils.postNewTab = function postNewTab(url, data) {
-	var form = document.createElement("form");
-	form.setAttribute("method", "post");
-	form.setAttribute("action", url);
-	form.setAttribute("target", "_blank");
-
-	if (typeof data === 'string') data = Utils.urlToParams(data);
-	for (var i in data) {
-		if (data.hasOwnProperty(i)) {
-			var input = document.createElement('input');
-			input.type = 'hidden';
-			input.name = i;
-			input.value = data[i];
-			form.appendChild(input);
-		}
-	}
-
-	document.body.appendChild(form);
-	form.submit();
-	document.body.removeChild(form);
 }

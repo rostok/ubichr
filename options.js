@@ -1,5 +1,6 @@
 // jshint esversion: 6
 
+// inserts simple notify command 
 function insertNotifyStub() {
     var stub = 
 `/* This is a template command. */
@@ -21,6 +22,7 @@ CmdUtils.CreateCommand({
     saveScripts();
 }
 
+// inserts simple search / preview command
 function insertSearchStub() {
     var stub = 
 `/* This is a template command. */
@@ -29,7 +31,7 @@ CmdUtils.CreateCommand({
     description: "Commence DuckGoGo search.",
     icon: "http://www.duckduckgo.com/favicon.ico",
     execute: function execute(args) {   
-        Utils.openUrlInBrowser("https://duckduckgo.com/?q=" + encodeURIComponent(args.text));
+        CmdUtils.addTab("https://duckduckgo.com/?q=" + encodeURIComponent(args.text));
     },
     preview: function preview(pblock, args) {
         var url = "https://duckduckgo.com/html?q=" + encodeURIComponent(args.text);
@@ -46,8 +48,7 @@ CmdUtils.CreateCommand({
     saveScripts();
 }
 
-
-
+// evaluates and saves scripts from editor
 function saveScripts() {
     var customscripts = editor.getValue();
     // save
@@ -71,6 +72,7 @@ function saveScripts() {
     a.download = "custom.js";
 }
 
+// initializes editor
 editor = CodeMirror.fromTextArea( document.getElementById("code"), {
     mode: "javascript",
     theme: "ambiance",

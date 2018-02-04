@@ -90,7 +90,7 @@ CmdUtils.CreateCommand({
     execute: async function execute({text:text}) {
             var xtoken = CmdUtils.get("http://yippy.com/");
             xtoken = jQuery("#xtoken", xtoken).val();
-            Utils.postNewTab("http://yippy.com/search/?v%3Aproject=clusty-new&query=kakao&xtoken="+xtoken);//, {"v:project":"clusty-new", xtoken:xtoken});
+            CmdUtils.postNewTab("http://yippy.com/search/?v%3Aproject=clusty-new&query=kakao&xtoken="+xtoken);//, {"v:project":"clusty-new", xtoken:xtoken});
         }
 });
 
@@ -155,7 +155,7 @@ CmdUtils.CreateCommand({
         var curr_to = matches[3].toUpperCase();
         var xe_url = "http://www.xe.com/ucc/convert.cgi?Amount=" + escape(amount) +
             "&From=" + escape(curr_from) + "&To=" + escape(curr_to);
-        Utils.openUrlInBrowser(xe_url);
+        CmdUtils.addTab(xe_url);
     }
 });
 
@@ -171,7 +171,7 @@ CmdUtils.CreateCommand({
     icon: "http://dictionary.reference.com/favicon.ico",
     execute: function (directObj) {
         var word = directObj.text;
-        Utils.openUrlInBrowser("http://dictionary.reference.com/search?q=" + escape(word));
+        CmdUtils.addTab("http://dictionary.reference.com/search?q=" + escape(word));
     },
     preview: "Gives the meaning of a word.",
 });
@@ -303,7 +303,7 @@ CmdUtils.CreateCommand({
             query = url_comp[2];
         }
         var urlString = url.replace("{QUERY}", query);
-        //Utils.openUrlInBrowser(urlString);
+        //CmdUtils.addTab(urlString);
         ajax = await CmdUtils.get(urlString);
         {
             if (!ajax) return;
@@ -449,21 +449,6 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
-    name: "refresh",
-    takes: {},
-    description: "Reloads the current document",
-    author: {},
-    icon: "",
-    homepage: "",
-    license: "",
-    preview: "Reloads the current document",
-    execute: function (directObj) {
-        CmdUtils.closePopup();
-        CmdUtils.getLocation().reload();
-    }
-});
-
-CmdUtils.CreateCommand({
     names: ["search", "google-search"],
     description: "Search on Google for the given words",
     author: {},
@@ -579,9 +564,9 @@ CmdUtils.CreateCommand({
     preview: "Search for torrent on PirateBay, Isohunt and Torrentz.",
     execute: function (directObj) {
         var search_string = encodeURIComponent(directObj.text);
-        Utils.openUrlInBrowser("http://thepiratebay.org/search.php?q=" + search_string);
-        Utils.openUrlInBrowser("http://isohunt.com/torrents/?ihq=" + search_string);
-        Utils.openUrlInBrowser("http://www.torrentz.com/search?q=" + search_string);
+        CmdUtils.addTab("http://thepiratebay.org/search.php?q=" + search_string);
+        CmdUtils.addTab("http://isohunt.com/torrents/?ihq=" + search_string);
+        CmdUtils.addTab("http://www.torrentz.com/search?q=" + search_string);
     }
 });
 
@@ -640,7 +625,7 @@ CmdUtils.CreateCommand({
     },
     description: "Search old versions of a site using the Wayback Machine (archive.org)",
     help: "wayback <i>sitio a buscar</i>",
-    icon: "http://web.archive.org/favicon.ico",
+    icon: "http://web.archive.org/static/images/archive.ico",
     preview: function (pblock, theShout) {
         pblock.innerHTML = "Buscar versiones antiguas del sitio <b>" + theShout.text + "</b>";
     },

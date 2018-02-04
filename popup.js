@@ -65,8 +65,11 @@ function ubiq_show_preview(cmd, args) {
         var text = words.join(' ').trim();
         if (text=="") text = CmdUtils.selectedText;
     
+        var cmd_struct = CmdUtils.CommandList[cmd];
         var directObj = {
             text: text,
+            _selection: text==CmdUtils.selectedText,
+            _cmd: cmd_struct
         };
 
         var pfunc = ()=>{
@@ -77,8 +80,8 @@ function ubiq_show_preview(cmd, args) {
             }
         }
 
-		if (typeof CmdUtils.CommandList[cmd].require !== 'undefined')
-	        CmdUtils.loadScripts( CmdUtils.CommandList[cmd].require, ()=>{ pfunc(); } );
+		if (typeof cmd_struct.require !== 'undefined')
+	        CmdUtils.loadScripts( cmd_struct.require, ()=>{ pfunc(); } );
 	    else
         	pfunc();
     }
@@ -120,15 +123,18 @@ function ubiq_dispatch_command(line, args) {
     // Create a fake Ubiquity-like object, to pass to
     // command's "execute" function
     var cmd_func = cmd_struct.execute;
-    var direct_obj = { "text": text };
+    var directObj = { 
+        text: text,
+        _selection: text==CmdUtils.selectedText,
+        _cmd: cmd_struct
+    };
 
     // Run command's "execute" function
     try {
-        cmd_func(direct_obj);
+        cmd_func(directObj);
     } catch (e) {
         CmdUtils.notify(e.toString(), "execute function error")
     }
-
 
     return;
 }
