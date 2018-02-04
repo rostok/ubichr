@@ -5,6 +5,7 @@ if (!CmdUtils) var CmdUtils = {
     VERSION: 0.01,
     CommandList: [],
     jQuery: jQuery,
+    popupWindow: null,
     active_tab: null,   // tab that is currently active, updated via background.js 
     selectedText: "",   // currently selected text, update via content script selection.js
     setPreview: function setPreview(message, prepend) { console.log(message); },
@@ -120,7 +121,7 @@ CmdUtils.SimpleUrlBasedCommand = function SimpleUrlBasedCommand(url) {
 
 // closes ubiquity popup
 CmdUtils.closePopup = function closePopup(w) {
-    window.close();
+    if (typeof popupWindow !== "undefined") popupWindow.close();
 };
 
 // gets json with xhr
@@ -240,16 +241,16 @@ CmdUtils.getcmd = function getcmd(cmdname) {
 };
 
 CmdUtils.unloadCustomScripts = function unloadCustomScripts() {
-    this.CommandList = this.CommandList.filter((c)=>{
+    CmdUtils.CommandList = CmdUtils.CommandList.filter((c)=>{
         return c['builtIn']==true;
     });
     
 }
 
 CmdUtils.loadCustomScripts = function loadCustomScripts() {
-    //this.unloadCustomScripts();
+    CmdUtils.unloadCustomScripts();
     // mark built-int commands
-    this.CommandList.forEach((c)=>{c['builtIn']=true;});
+    CmdUtils.CommandList.forEach((c)=>{c['builtIn']=true;});
 
     // load custom scripts
     chrome.storage.local.get('customscripts', function(result) {

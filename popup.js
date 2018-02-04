@@ -355,7 +355,8 @@ function ubiq_load_input() {
 if (typeof CmdUtils !== 'undefined' && typeof Utils !== 'undefined' && typeof backgroundPage !== 'undefined' ) {
     CmdUtils.setPreview = ubiq_set_preview;
     CmdUtils.setResult = ubiq_set_result;
-
+    CmdUtils.popupWindow = window;
+    
     ubiq_load_input();
 
     // Add event handler to window 

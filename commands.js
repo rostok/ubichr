@@ -48,7 +48,6 @@ CmdUtils.CreateCommand({
         var steps = parseInt(directObj.text);
         steps = -steps - 1;
         history.go(steps);
-        CmdUtils.closePopup();
     }
 });
 
@@ -353,7 +352,7 @@ CmdUtils.CreateCommand({
             center: pointA
         };
         var map = new google.maps.Map(previewBlock.ownerDocument.getElementById('map-canvas'), myOptions);
-        this.markerA = new google.maps.Marker({
+        var markerA = new google.maps.Marker({
             position: pointA,
             title: from,
             label: "A",
@@ -733,7 +732,7 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "calc",
-    description: "evals math expressions",
+    description: desc = "evals math expressions",
     require: "https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.20.1/math.min.js",
     preview: pr = function preview(previewBlock, {text:text}) {
     	if (text.trim()!='') {
@@ -742,7 +741,7 @@ CmdUtils.CreateCommand({
 	        //CmdUtils.ajaxGet("http://api.mathjs.org/v1/?expr="+encodeURIComponent(args.text), (r)=>{ previewBlock.innerHTML = r; });
 	    }
 		else
-	        previewBlock.innerHTML = this.description;
+	        previewBlock.innerHTML = desc;
     },
     execute: function ({text:text}) { 
     	if (text.trim()!='') {
@@ -758,8 +757,6 @@ CmdUtils.CreateCommand({
     icon: "res/icon-128.png",
     description: "Takes you to the Ubiquity command <a href=options.html target=_blank>editor page</a>.",
     execute: function (args) { 
-    	//chrome.runtime.openOptionsPage(); 
-    	//CmdUtils.addTab(chrome.extension.getURL("options.html"));
     	chrome.runtime.openOptionsPage();
     }
 });
