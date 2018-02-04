@@ -240,6 +240,17 @@ CmdUtils.getcmd = function getcmd(cmdname) {
     return null;
 };
 
+// sets clipboard
+CmdUtils.setClipboard = function setClipboard (t) {
+    var input = document.createElement('textarea');
+    document.body.appendChild(input);
+    input.value = t;
+    input.focus();
+    input.select();
+    document.execCommand('Copy');
+    input.remove();
+};
+
 CmdUtils.unloadCustomScripts = function unloadCustomScripts() {
     CmdUtils.CommandList = CmdUtils.CommandList.filter((c)=>{
         return c['builtIn']==true;

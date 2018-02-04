@@ -303,13 +303,19 @@ function ubiq_key_handler(userjs_event) {
 	ubiq_save_input();
 
     if (!userjs_event) return;
-    var ev = userjs_event;
-    var kc = ev.keyCode;
+    var kc = userjs_event.keyCode;
 
     // On ENTER, execute the given command
     if (kc == 13) {
         ubiq_execute();
         return;
+    }
+
+    if (kc == 67 && userjs_event.ctrlKey) {
+        backgroundPage.console.log("copy to cpli");
+        var el = document.getElementById('ubiq-command-preview');
+        if (!el) return;
+        CmdUtils.setClipboard( el.innerText );
     }
 
     // Cursor up

@@ -22,7 +22,7 @@ CmdUtils.CreateCommand({
     homepage: "",
     license: "",
     preview: "Search Answers.com for:",
-    execute: CmdUtils.SimpleUrlBasedCommand('http://www.answers.com/{text}')
+    execute: CmdUtils.SimpleUrlBasedCommand('http://www.answers.com/search?q={text}')
 });
 
 CmdUtils.CreateCommand({
@@ -34,21 +34,6 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Search Ask.com for the given words:",
     execute: CmdUtils.SimpleUrlBasedCommand('http://www.ask.com/web?q={text}')
-});
-
-CmdUtils.CreateCommand({
-    name: "back",
-    description: "Go back in browser history",
-    author: {},
-    icon: "",
-    homepage: "",
-    license: "",
-    preview: "Go back {text} steps in history",
-    execute: function (directObj) {
-        var steps = parseInt(directObj.text);
-        steps = -steps - 1;
-        history.go(steps);
-    }
 });
 
 CmdUtils.CreateCommand({
@@ -106,20 +91,6 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
-    name: "command-list",
-    takes: {},
-    description: "Shows the list of Ubiquity commands and what they do",
-    author: {},
-    icon: "res/icon-128.png",
-    homepage: "",
-    license: "",
-    preview: "Shows the list of Ubiquity commands and what they do",
-    execute: function (directObj) {
-        ubiq_show_matching_commands('*all');
-    }
-});
-
-CmdUtils.CreateCommand({
     name: "cpan",
     icon: "http://search.cpan.org/favicon.ico",
     description: "Search for a CPAN package information",
@@ -145,7 +116,18 @@ CmdUtils.CreateCommand({
     icon: "http://www.xe.com/favicon.ico",
     homepage: "http://xe.com/ucc/",
     license: "",
-    preview: "Convert currency values using xe.com converter service.",
+    preview: async function (pblock, directObj) {
+        pblock.innerHTML = "Convert currency values using xe.com converter service.";
+        var currency_spec = directObj.text;
+        var matches = currency_spec.match(/^([\d\.]+)\s+(\w+)\s+to\s+(\w+)$/);
+        var amount = matches[1];
+        var curr_from = matches[2].toUpperCase();
+        var curr_to = matches[3].toUpperCase();
+        var xe_url = "http://www.xe.com/ucc/convert.cgi?Amount=" + escape(amount) +
+            "&From=" + escape(curr_from) + "&To=" + escape(curr_to);
+        var d = await CmdUtils.get(xe_url);
+        pblock.innerHTML = jQuery(".uccAmountWrap", d).html();
+    },
     execute: function (directObj) {
         var currency_spec = directObj.text;
         var matches = currency_spec.match(/^([\d\.]+)\s+(\w+)\s+to\s+(\w+)$/);
@@ -229,7 +211,7 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
-    name: "help",
+    names: ["help", "command-list"],
     description: "Provides basic help on using Ubiquity",
     icon: "res/icon-128.png",
     preview: "lists all avaiable commands",
@@ -466,8 +448,8 @@ CmdUtils.CreateCommand({
 var bitly_api_user = "ubiquityopera";
 var bitly_api_key = "R_59da9e09c96797371d258f102a690eab";
 CmdUtils.CreateCommand({
-    name: "shorten-url",
-    icon: "http://bit.ly/static/images/favicon.ico",
+    names: ["shorten-url", "bitly"],
+    icon: "https://dl6fh5ptkejqa.cloudfront.net/0482a3c938673192a591f2845b9eb275.png",
     description: "Shorten your URLs with the least possible keystrokes",
     homepage: "http://bit.ly",
     author: {
@@ -475,47 +457,37 @@ CmdUtils.CreateCommand({
         email: "cosimo@cpan.org"
     },
     license: "GPL",
-    preview: function (pblock, directObject) {
-        var searchText = directObject.text;
-        var words = searchText.split(' ');
+    preview: async function (pblock, {text:text}) {
+        var words = text.split(' ');
         var host = words[1];
-        if (searchText.length < 1) {
-            pblock.innerHTML = "Shortens an URL (or the current tab) with bit.ly";
-            return;
-        }
-        var previewTemplate = "Shortens the URL '" + host + "' with bit.ly";
-        pblock.innerHTML = previewTemplate;
+        pblock.innerHTML = "Shortens an URL (or the current tab) with bit.ly";
     },
-    execute: function (directObject) {
+    execute: async function (directObject) {
         var url = "http://api.bit.ly/shorten?version=2.0.1&longUrl={QUERY}&login=" +
             bitly_api_user + "&apiKey=" + bitly_api_key;
         var query = directObject.text;
         // Get the url from current open tab if none specified
-        if (!query || query == "") query = window.location.href;
+        if (!query || query == "") query = CmdUtils.getLocation();
         var urlString = url.replace("{QUERY}", query);
-        ubiq_xml_http(urlString, function (ajax) {
 
-            if (!ajax) return;
-            var api_response = ajax.responseText;
-            if (!api_response) return;
+        var url = "http://api.bit.ly/shorten?version=2.0.1&longUrl={QUERY}&login=" + bitly_api_user + "&apiKey=" + bitly_api_key;
+        // Get the url from current open tab if none specified
+        var ajax = await CmdUtils.get(urlString);
+        //ajax = JSON.parse(ajax);
+        //if (!ajax) return;
+        var err_code = ajax.errorCode;
+        var err_msg = ajax.errorMessage;
+        // Received an error from bit.ly API?
+        if (err_code > 0 || err_msg) {
+            CmdUtils.setPreview('<br/><p style="font-size: 18px; color:orange">' + 'Bit.ly API error ' + err_code + ': ' + err_msg + '</p>');
+            return;
+        }
 
-            var pblock = document.getElementById('ubiq-command-preview');
-            var err_code = api_response.errorCode;
-            var err_msg = api_response.errorMessage;
-            // Received an error from bit.ly API?
-            if (err_code > 0 || err_msg) {
-                pblock.innerHTML = '<br/><p style="font-size: 18px; color:orange">' +
-                    'Bit.ly API error ' + err_code + ': ' + err_msg + '</p>';
-                return;
-            }
-
-            // API successful. URL has been shortened
-            eval('api_response=' + api_response);
-            var short_url = api_response.result[query].shortUrl;
-            pblock.innerHTML = '<br/><p style="font-size: 24px; font-weight: bold; color: #ddf">' +
-                '&rarr; <a href="' + short_url + '">' + short_url + '</a>' +
-                '</p>';
-        });
+        var short_url = ajax.results[query].shortUrl;
+        CmdUtils.setPreview('<br/><p style="font-size: 24px; font-weight: bold; color: #ddf">' +
+            '<a target=_blank href="' + short_url + '">' + short_url + '</a>' +
+            '</p>');
+        CmdUtils.setClipboard(short_url);
     }
 });
 
