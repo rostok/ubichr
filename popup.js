@@ -140,11 +140,16 @@ function ubiq_dispatch_command(line, args) {
 }
 
 function ubiq_help() {
-    var html = '<p>Type the name of a command and press enter to execute it, or <b>help</b> for assistance.</p>';
+    var html = '<p>Type the name of a command and press Enter to execute it, or <b>help</b> for assistance.</p>';
     html += "<p>commands loaded:<BR>";
     html += CmdUtils.CommandList.map((c)=>{
         return "<span fakeattr='"+c.name+"' href=# title='"+c.description+"'>"+(c.builtIn ? c.name : "<u>"+c.name+"</u>")+"</span>";
     }).sort().join(", ");
+    html += "<p>";
+    html += "<u>Keys:</u><br>";
+    html += "Ctrl-C - copy preview to clipboard<br>";
+    html += "up/down - cycle through commands suggestions<br>";
+    html += "F5 - reload the extension";
     return html;
 }
 
@@ -311,6 +316,13 @@ function ubiq_key_handler(userjs_event) {
         return;
     }
 
+    // On F5 restart extension
+    if (kc == 116) {
+        chrome.runtime.reload();
+        return;
+    }
+
+    // Ctrl+C copies preview to clipboard
     if (kc == 67 && userjs_event.ctrlKey) {
         backgroundPage.console.log("copy to cpli");
         var el = document.getElementById('ubiq-command-preview');

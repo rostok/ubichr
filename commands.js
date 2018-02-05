@@ -150,11 +150,19 @@ CmdUtils.CreateCommand({
     help: "Try issuing &quot;dictionary ubiquity&quot;",
     license: "MPL",
     icon: "http://dictionary.reference.com/favicon.ico",
-    execute: function (directObj) {
-        var word = directObj.text;
-        CmdUtils.addTab("http://dictionary.reference.com/search?q=" + escape(word));
+    execute: function ({text: text}) {
+        CmdUtils.addTab("http://dictionary.reference.com/search?q=" + escape(text));
     },
-    preview: "Gives the meaning of a word.",
+    preview: async function define_preview(pblock, {text: text}) {
+        pblock.innerHTML = "Gives the meaning of a word.";
+        var doc = await CmdUtils.get("http://dictionary.reference.com/search?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr" );
+        doc = jQuery("div.source-box", doc)
+                .find("button", doc).remove().end()
+                .find("ul.headword-bar-list").remove().end()
+                .find(".deep-link-synonyms").remove().end()
+                .html();
+        pblock.innerHTML = doc;
+    },
 });
 
 CmdUtils.CreateCommand({
@@ -180,7 +188,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Search ebay for the given words",
     execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://search.ebay.com/search/search.dll?satitle={text}"
+        "https://www.ebay.com/sch/i.html?_nkw={text}"
     )
 });
 
@@ -216,6 +224,16 @@ CmdUtils.CreateCommand({
     icon: "res/icon-128.png",
     preview: "lists all avaiable commands",
     execute: CmdUtils.SimpleUrlBasedCommand("help.html")
+});
+
+CmdUtils.CreateCommand({
+    names: ["reload-ubiquity", "restart-ubiquity"],
+    description: "Reloads Ubiquity extension",
+    icon: "res/icon-128.png",
+    preview: "reloads Ubiquity extension",
+    execute: ()=>{
+        chrome.runtime.reload();
+    }
 });
 
 CmdUtils.CreateCommand({
@@ -392,7 +410,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Searches MSN for the given words",
     execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://search.msn.com/result.aspx?q={text}"
+        "https://www.bing.com/search?q={text}"
     )
 });
 
@@ -404,28 +422,18 @@ CmdUtils.CreateCommand({
     homepage: "",
     license: "",
     preview: "Open a new tab (or window) with the specified URL",
-    execute: function (directObj) {
-        var url = 'about:';
-        if (directObj) {
-            url = directObj.text;
-        }
-        CmdUtils.closePopup();
-        window.open(url);
+    execute: function ({text:text}) {
+        if (!text.match('^https?://')) text = "http://"+text;
+        CmdUtils.addTab(text);
     }
 });
 
 CmdUtils.CreateCommand({
     name: "print",
-    takes: {},
     description: "Print the current page",
-    author: {},
-    icon: "",
-    homepage: "",
-    license: "",
     preview: "Print the current page",
     execute: function (directObj) {
-        CmdUtils.closePopup();
-        window.print();
+        chrome.tabs.executeScript( { code:"window.print();" } );
     }
 });
 
@@ -436,8 +444,15 @@ CmdUtils.CreateCommand({
     icon: "http://www.google.com/favicon.ico",
     homepage: "",
     license: "",
-    preview: function preview(pblock, {text:text}) {
+    preview: async function define_preview(pblock, {text: text}) {
         pblock.innerHTML = "Search on Google for "+text;
+        var doc = await CmdUtils.get("https://www.google.pl/search?q="+encodeURIComponent(text) );
+        doc = jQuery("div#rso", doc)
+        .find("a").each(function() { $(this).attr("target", "_blank")}).end()
+        .find("cite").remove().end()
+        .find(".action-menu").remove().end()
+        .html();
+         pblock.innerHTML = doc;
     },
     execute: CmdUtils.SimpleUrlBasedCommand(
         "http://www.google.com/search?q={text}&ie=utf-8&oe=utf-8"
@@ -491,6 +506,7 @@ CmdUtils.CreateCommand({
     }
 });
 
+//review
 CmdUtils.CreateCommand({
     name: "slideshare",
     icon: "http://www.slideshare.com/favicon.ico",
@@ -507,6 +523,7 @@ CmdUtils.CreateCommand({
     )
 });
 
+//review
 CmdUtils.CreateCommand({
     name: "stackoverflow-search",
     description: "Searches questions and answers on stackoverflow.com",
@@ -523,9 +540,11 @@ CmdUtils.CreateCommand({
     )
 });
 
+//review
 CmdUtils.CreateCommand({
     name: "torrent-search",
     description: "Search PirateBay, Isohunt, and Torrentz in new tabs.",
+    icon: "https://thepiratebay.org/favicon.ico",
     author: {
         name: "Axel Boldt",
         email: "axelboldt@yahoo.com"
@@ -541,6 +560,7 @@ CmdUtils.CreateCommand({
     }
 });
 
+//review
 CmdUtils.CreateCommand({
     name: "translate",
     description: "Translates the given words (or text selection, or the current window) to English",
@@ -579,14 +599,16 @@ CmdUtils.CreateCommand({
     }
 });
 
+//review
 CmdUtils.CreateCommand({
     name: "validate",
-    icon: "http://www.imageboo.com/files/uhee2ii315oxd8akq0nm.ico",
+    icon: "https://validator.w3.org/images/favicon.ico",
     description: "Checks the markup validity of the current Web document",
     preview: "Sends this page to the W3C validator",
     execute: CmdUtils.SimpleUrlBasedCommand("http://validator.w3.org/check?uri={location}")
 });
 
+//review
 CmdUtils.CreateCommand({
     name: "wayback",
     homepage: "http://www.pendor.com.ar/ubiquity",
@@ -610,6 +632,7 @@ CmdUtils.CreateCommand({
     }
 });
 
+//review
 CmdUtils.CreateCommand({
     name: "weather",
     description: "Show the weather forecast for",
@@ -623,6 +646,7 @@ CmdUtils.CreateCommand({
     )
 });
 
+//review
 CmdUtils.CreateCommand({
     name: "wikipedia",
     description: "Search Wikipedia for the given words",
@@ -663,6 +687,7 @@ CmdUtils.CreateCommand({
     execute: CmdUtils.SimpleUrlBasedCommand("http://en.wikipedia.org/wiki/Special:Search?search={text}")
 });
 
+//review
 CmdUtils.CreateCommand({
     name: "yahoo-answers",
     description: "Search Yahoo! Answers for",
@@ -676,6 +701,7 @@ CmdUtils.CreateCommand({
     )
 });
 
+//review
 CmdUtils.CreateCommand({
     name: "yahoo-search",
     description: "Search Yahoo! for",
@@ -689,6 +715,7 @@ CmdUtils.CreateCommand({
     )
 });
 
+//review
 CmdUtils.CreateCommand({
     name: "youtube",
     description: "Search for videos on YouTube",
@@ -702,9 +729,11 @@ CmdUtils.CreateCommand({
     )
 });
 
+//review
 CmdUtils.CreateCommand({
     name: "calc",
     description: desc = "evals math expressions",
+    icon: "https://png.icons8.com/metro/50/000000/calculator.png",
     require: "https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.20.1/math.min.js",
     preview: pr = function preview(previewBlock, {text:text}) {
     	if (text.trim()!='') {
@@ -724,6 +753,7 @@ CmdUtils.CreateCommand({
     }
 });
 
+//review
 CmdUtils.CreateCommand({
     name: "edit-ubiquity-commands",
     icon: "res/icon-128.png",
@@ -733,6 +763,7 @@ CmdUtils.CreateCommand({
     }
 });
 
+//review
 CmdUtils.CreateCommand({
     name: "define",
     description: "Gives the meaning of a word, using answers.com.",
@@ -755,6 +786,7 @@ CmdUtils.CreateCommand({
         }
 });
 
+//review
 CmdUtils.CreateCommand({
     names: ["base64decode","b64d","atob"],
     description: "base64decode",
@@ -774,6 +806,7 @@ CmdUtils.CreateCommand({
 
 //------------------------------------
 
+//review
 CmdUtils.CreateCommand({
     names: ["base64encode","b64e", "btoa"],
     description: "base64encode",
