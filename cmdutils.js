@@ -3,6 +3,7 @@
 
 if (!CmdUtils) var CmdUtils = { 
     VERSION: 0.01,
+    DEBUG: false,
     CommandList: [],
     jQuery: jQuery,
     popupWindow: null,
@@ -194,10 +195,19 @@ CmdUtils.loadScripts = function loadScripts(url, callback) {
     }
 };
 
+CmdUtils.updateSelection = function () {
+    chrome.tabs.executeScript( {
+        code: "window ? window.getSelection().toString() : '';"
+      }, function(selection) {
+        if (selection && selection.length>0) selectedText = selection[0] || "";
+        if (CmdUtils.DEBUG) console.log("selectedText is ", selectedText);  
+    });
+}
 // replaces current selection with string provided
 CmdUtils.setSelection = function setSelection(s) {
+    console.log("CmdUtils.setSelection"+s)
     if (typeof s!=='string') s = s+'';
-    s = s.replace('"', '\"');
+    s = s.replace(/(['"])/g, "\\$1");
     // http://jsfiddle.net/b3Fk5/2/
     var insertCode = `
     function replaceSelectedText(replacementText) {
@@ -224,7 +234,10 @@ CmdUtils.setSelection = function setSelection(s) {
         }
     }
     replaceSelectedText("`+s+`");`;
-    return chrome.tabs.executeScript( { code: insertCode } );
+    if (CmdUtils.active_tab && CmdUtils.active_tab.id)
+        return chrome.tabs.executeScript( CmdUtils.active_tab.id, { code: insertCode } );
+    else 
+        return chrome.tabs.executeScript( { code: insertCode } );
 };
 
 // for measuring time the input is changed

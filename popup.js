@@ -324,7 +324,7 @@ function ubiq_key_handler(userjs_event) {
 
     // Ctrl+C copies preview to clipboard
     if (kc == 67 && userjs_event.ctrlKey) {
-        backgroundPage.console.log("copy to cpli");
+        backgroundPage.console.log("copy to clip");
         var el = document.getElementById('ubiq-command-preview');
         if (!el) return;
         CmdUtils.setClipboard( el.innerText );

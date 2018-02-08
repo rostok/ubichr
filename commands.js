@@ -445,14 +445,17 @@ CmdUtils.CreateCommand({
     homepage: "",
     license: "",
     preview: async function define_preview(pblock, {text: text}) {
+        text = text.trim();
         pblock.innerHTML = "Search on Google for "+text;
-        var doc = await CmdUtils.get("https://www.google.pl/search?q="+encodeURIComponent(text) );
-        doc = jQuery("div#rso", doc)
-        .find("a").each(function() { $(this).attr("target", "_blank")}).end()
-        .find("cite").remove().end()
-        .find(".action-menu").remove().end()
-        .html();
-         pblock.innerHTML = doc;
+        if (text!="") {
+            var doc = await CmdUtils.get("https://www.google.pl/search?q="+encodeURIComponent(text) );
+            doc = jQuery("div#rso", doc)
+            .find("a").each(function() { $(this).attr("target", "_blank")}).end()
+            .find("cite").remove().end()
+            .find(".action-menu").remove().end()
+            .html();
+            pblock.innerHTML = doc;
+        }
     },
     execute: CmdUtils.SimpleUrlBasedCommand(
         "http://www.google.com/search?q={text}&ie=utf-8&oe=utf-8"
@@ -506,7 +509,6 @@ CmdUtils.CreateCommand({
     }
 });
 
-//review
 CmdUtils.CreateCommand({
     name: "slideshare",
     icon: "http://www.slideshare.com/favicon.ico",
@@ -523,7 +525,6 @@ CmdUtils.CreateCommand({
     )
 });
 
-//review
 CmdUtils.CreateCommand({
     name: "stackoverflow-search",
     description: "Searches questions and answers on stackoverflow.com",
@@ -540,10 +541,9 @@ CmdUtils.CreateCommand({
     )
 });
 
-//review
 CmdUtils.CreateCommand({
     name: "torrent-search",
-    description: "Search PirateBay, Isohunt, and Torrentz in new tabs.",
+    description: "Search PirateBay, RARBG, 1337x, torrentz2",
     icon: "https://thepiratebay.org/favicon.ico",
     author: {
         name: "Axel Boldt",
@@ -551,52 +551,142 @@ CmdUtils.CreateCommand({
     },
     homepage: "http://math-www.uni-paderborn.de/~axel/",
     license: "Public domain",
-    preview: "Search for torrent on PirateBay, Isohunt and Torrentz.",
+    preview: "Search for torrent on PirateBay, RARBG, 1337x, torrentz2",
     execute: function (directObj) {
         var search_string = encodeURIComponent(directObj.text);
         CmdUtils.addTab("http://thepiratebay.org/search.php?q=" + search_string);
-        CmdUtils.addTab("http://isohunt.com/torrents/?ihq=" + search_string);
-        CmdUtils.addTab("http://www.torrentz.com/search?q=" + search_string);
+        CmdUtils.addTab("https://rarbgmirror.org/torrents.php?search=" + search_string);
+        CmdUtils.addTab("http://1337x.to/search/harakiri/" + search_string+'/');
+        CmdUtils.addTab("https://torrentz2.eu/search?f=" + search_string+'/');
     }
 });
 
-//review
+// -----------------------------------------------------------------
+// TRANSLATE COMMANDS
+// -----------------------------------------------------------------
+
+const MS_TRANSLATOR_LIMIT = 1e4,
+    MS_LANGS = {},
+    MS_LANGS_REV = {
+        ar: "Arabic",
+        bg: "Bulgarian",
+        ca: "Catalan",
+        cs: "Czech",
+        da: "Danish",
+        nl: "Dutch",
+        en: "English",
+        et: "Estonian",
+        fi: "Finnish",
+        fr: "French",
+        de: "German",
+        el: "Greek",
+        he: "Hebrew",
+        hi: "Hindi",
+        hu: "Hungarian",
+        id: "Indonesian",
+        it: "Italian",
+        ja: "Japanese",
+        ko: "Korean",
+        lv: "Latvian",
+        lt: "Lithuanian",
+        no: "Norwegian",
+        pl: "Polish",
+        pt: "Portuguese",
+        ro: "Romanian",
+        ru: "Russian",
+        sk: "Slovak",
+        sl: "Slovenian",
+        es: "Spanish",
+        sv: "Swedish",
+        th: "Thai",
+        tr: "Turkish",
+        uk: "Ukrainian",
+        vi: "Vietnamese",
+        "zh-CN": "Chinese Simplified",
+        "zh-TW": "Chinese Traditional"
+    };
+
+for (let code in MS_LANGS_REV) MS_LANGS[code] = MS_LANGS_REV[code];
+
+function msTranslator(method, params, back) {
+    params.to = params.to || "en";
+    params.appId = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" + new Date % 10;
+    return CmdUtils.jQuery.ajax({
+        url: "http://api.microsofttranslator.com/V2/Ajax.svc/" + method,
+        data: params,
+    });
+}
+
 CmdUtils.CreateCommand({
     name: "translate",
-    description: "Translates the given words (or text selection, or the current window) to English",
-    author: {},
-    icon: "http://www.google.com/favicon.ico",
-    homepage: "",
-    license: "",
-    preview: "Translates the given words (or text selection, or the current window) to English",
-    execute: function (directObj) {
-        CmdUtils.closePopup();
-        var text = directObj.text;
-        // HARD !!!
-        //alert(ubiq_element.innerHTML);
-        //var html = ubiq_element.innerHTML.replace(text, 'blah blah blah');
-        //ubiq_element.innerHTML = html;
+    description: "Translates from one language to another.",
+    icon: "chrome://ubiquity/skin/icons/translate_bing.ico",
+    help: '\
+    You can specify the language to translate to,\
+    and the language to translate from.\
+    For example, try issuing "translate mother from english to chinese".\
+    If you leave out the languages, it will try to guess what you want.\
+    It works on selected text in any web page,\
+    but there&#39;s a limit (a couple of paragraphs)\
+    to how much it can translate a selection at once.\
+    If you want to translate a lot of text, leave out the input and\
+    it will load\
+    <a href="http://www.microsofttranslator.com">Bing Translator</a> toolbar.\
+  ',
+    author: "based on original ubiquity translate command",
+    execute: async function translate_execute({
+        text: text,
+        _selection: _selection
+    }) {
         var words = text.split(/\s+/);
-        var dest = 'auto';
+        var dest = 'en';
 
-        // Detect the destination language ("translate ... to it")
         if (words.length >= 3 && words[words.length - 2].toLowerCase() == 'to') {
-            // Get destination language
             dest = words.pop();
-            // Remove the 'to'
             words.pop();
-            // Update the text to be translated
             text = words.join('');
         }
 
-        // Translate text or current URL
-        var url = 'http://translate.google.com/translate_t?#auto|' + dest + '|';
-        if (!text || text.length == 0 || text.match('^https?://')) {
-            if (!text) text = CmdUtils.getLocation();
-            url = 'http://translate.google.com/translate?prev=_t&ie=UTF-8&sl=auto&tl=' + dest + '&history_state0=&u=';
+        if (text && text.length <= MS_TRANSLATOR_LIMIT) {
+            var T = await msTranslator("Translate", {
+                contentType: "text/html",
+                text: text,
+                from: "",
+                to: dest
+            });
+            if (T[0] = '"') T.split("").slice(1, -1).join("");
+            if (typeof isSelected !== 'undefined' && _selection == true) {
+                CmdUtils.setSelection(T);
+                CmdUtils.closePopup();
+            }
+        } else {
+            CmdUtils.setPreview("text is too short or too long. try translating <a target=_blank href=https://www.bing.com/translator/>manually</a>");
         }
-        CmdUtils.addTab(url + text);
-    }
+    },
+    preview: async function translate_preview(pblock, {
+        text: text
+    }) {
+        var words = text.split(/\s+/);
+        var dest = 'en';
+
+        if (words.length >= 3 && words[words.length - 2].toLowerCase() == 'to') {
+            dest = words.pop();
+            words.pop();
+            text = words.join(' ');
+        }
+
+        if (text && text.length <= MS_TRANSLATOR_LIMIT) {
+            var T = await msTranslator("Translate", {
+                contentType: "text/html",
+                text: text,
+                from: "",
+                to: dest
+            });
+            if (T[0] = '"') T.split("").slice(1, -1).join("");
+            CmdUtils.setPreview(T);
+        } else
+            pblock.innerHTML = "text is too short or too long<BR><BR>[" + text + "]";
+    },
 });
 
 //review
@@ -806,7 +896,6 @@ CmdUtils.CreateCommand({
 
 //------------------------------------
 
-//review
 CmdUtils.CreateCommand({
     names: ["base64encode","b64e", "btoa"],
     description: "base64encode",

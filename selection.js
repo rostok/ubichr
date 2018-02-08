@@ -1,6 +1,6 @@
 // this will send message to background and set CmdUtils.selectedText
 var sendSel = function(event) {
-    chrome.runtime.sendMessage({
+    if (chrome && chrome.runtime) chrome.runtime.sendMessage({
         message:"selection", 
         data: window.getSelection().toString(), 
         event: event.type
