@@ -125,8 +125,7 @@ CmdUtils.CreateCommand({
         var curr_to = matches[3].toUpperCase();
         var xe_url = "http://www.xe.com/ucc/convert.cgi?Amount=" + escape(amount) +
             "&From=" + escape(curr_from) + "&To=" + escape(curr_to);
-        var d = await CmdUtils.get(xe_url);
-        pblock.innerHTML = jQuery(".uccAmountWrap", d).html();
+        jQuery(pblock).load( xe_url+" .uccAmountWrap");
     },
     execute: function (directObj) {
         var currency_spec = directObj.text;
@@ -256,8 +255,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: async function define_preview(pblock, {text: text}) {
         pblock.innerHTML = "Searches for movies on IMDb";
-        var doc = await CmdUtils.get("http://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr" );
-        pblock.innerHTML = "<table>"+jQuery("table.findList", doc).html()+"</table>";
+        if (text.trim()!="") jQuery(pblock).load("http://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr table.findList");
     },
     execute: CmdUtils.SimpleUrlBasedCommand(
         "http://www.imdb.com/find?s=tt&ref_=fn_al_tt_mr&q={text}"
@@ -288,7 +286,7 @@ CmdUtils.CreateCommand({
             pblock.innerHTML = "Checks if URL is down";
             return;
         }
-        var previewTemplate = "Checks if <b>" + host + "</b> is down";
+        var previewTemplate = "Press Enter to check if <b>" + host + "</b> is down.";
         pblock.innerHTML = previewTemplate;
     },
     execute: async function (directObject) {
@@ -306,11 +304,10 @@ CmdUtils.CreateCommand({
         ajax = await CmdUtils.get(urlString);
         {
             if (!ajax) return;
-            var pblock = document.getElementById('ubiq-command-preview');
             if (ajax.match('is up.')) {
-                pblock.innerHTML = '<br/><p style="font-size: 18px;">It\'s just you. The site is <b>up!</b></p>';
+                CmdUtils.setPreview('<br/><p style="font-size: 18px;">It\'s just you. The site is <b>up!</b></p>');
             } else {
-                pblock.innerHTML = '<br/><p style="font-size: 18px;">It\'s <b>not</b> just you. The site is <b>down!</b></p>';
+                CmdUtils.setPreview('<br/><p style="font-size: 18px;">It\'s <b>not</b> just you. The site is <b>down!</b></p>');
             }
         };
     }
@@ -634,10 +631,7 @@ CmdUtils.CreateCommand({
     <a href="http://www.microsofttranslator.com">Bing Translator</a> toolbar.\
   ',
     author: "based on original ubiquity translate command",
-    execute: async function translate_execute({
-        text: text,
-        _selection: _selection
-    }) {
+    execute: async function translate_execute({text: text, _selection: _selection}) {
         var words = text.split(/\s+/);
         var dest = 'en';
 
@@ -663,9 +657,7 @@ CmdUtils.CreateCommand({
             CmdUtils.setPreview("text is too short or too long. try translating <a target=_blank href=https://www.bing.com/translator/>manually</a>");
         }
     },
-    preview: async function translate_preview(pblock, {
-        text: text
-    }) {
+    preview: async function translate_preview(pblock, {text: text}) {
         var words = text.split(/\s+/);
         var dest = 'en';
 
@@ -684,17 +676,19 @@ CmdUtils.CreateCommand({
             });
             if (T[0] = '"') T.split("").slice(1, -1).join("");
             CmdUtils.setPreview(T);
-        } else
+        } else {
             pblock.innerHTML = "text is too short or too long<BR><BR>[" + text + "]";
+        }
     },
 });
 
-//review
 CmdUtils.CreateCommand({
     name: "validate",
     icon: "https://validator.w3.org/images/favicon.ico",
     description: "Checks the markup validity of the current Web document",
-    preview: "Sends this page to the W3C validator",
+    preview: async function(pblock, args) {
+        jQuery(pblock).load("http://validator.w3.org/check?uri="+encodeURI(CmdUtils.getLocation())+" div#results");
+    },
     execute: CmdUtils.SimpleUrlBasedCommand("http://validator.w3.org/check?uri={location}")
 });
 

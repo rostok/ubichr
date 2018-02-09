@@ -52,8 +52,7 @@ CmdUtils.CreateCommand({
     icon: "http://www.imdb.com/favicon.ico",
     preview: async function preview(pblock, {text: text}) {
         pblock.innerHTML = "Searches for movies on IMDb";
-        var doc = await CmdUtils.get("http://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr" );
-        pblock.innerHTML = "<table>"+jQuery("table.findList", doc).html()+"</table>";
+        if (text.trim()!="") jQuery(pblock).load("http://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr table.findList");
     },
     execute: CmdUtils.SimpleUrlBasedCommand("http://www.imdb.com/find?q={text}&s=tt&ref_=fn_al_tt_mr")
 });

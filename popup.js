@@ -220,6 +220,7 @@ function ubiq_replace_first_word(w) {
     return;
 }
 
+// will also call preview
 function ubiq_show_matching_commands(text) {
     if (!text) text = ubiq_command();
 
@@ -302,6 +303,8 @@ function ubiq_show_matching_commands(text) {
     return;
 }
 
+var lcmd = "";
+
 function ubiq_key_handler(userjs_event) {
 	// measure the input 
 	CmdUtils.inputUpdateTime = performance.now();
@@ -333,13 +336,17 @@ function ubiq_key_handler(userjs_event) {
     // Cursor up
     if (kc == 38) {
         ubiq_select_prev_command();
+        lcmd = "";
     }
     // Cursor Down
     else if (kc == 40) {
         ubiq_select_next_command();
+        lcmd = "";
     }
 
+    if (lcmd==ubiq_command()) return;
     ubiq_show_matching_commands();
+    lcmd=ubiq_command();
 }
 
 function ubiq_select_prev_command() {
@@ -374,6 +381,7 @@ if (typeof CmdUtils !== 'undefined' && typeof Utils !== 'undefined' && typeof ba
     CmdUtils.setPreview = ubiq_set_preview;
     CmdUtils.setResult = ubiq_set_result;
     CmdUtils.popupWindow = window;
+    CmdUtils.updateActiveTab();
     
     ubiq_load_input();
 

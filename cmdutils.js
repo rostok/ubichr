@@ -195,6 +195,7 @@ CmdUtils.loadScripts = function loadScripts(url, callback) {
     }
 };
 
+// updates selectedText variable
 CmdUtils.updateSelection = function () {
     chrome.tabs.executeScript( {
         code: "window ? window.getSelection().toString() : '';"
@@ -202,7 +203,18 @@ CmdUtils.updateSelection = function () {
         if (selection && selection.length>0) selectedText = selection[0] || "";
         if (CmdUtils.DEBUG) console.log("selectedText is ", selectedText);  
     });
-}
+};
+
+// called when tab is switched or changed, updates selectedText and activeTab
+CmdUtils.updateActiveTab = function () {
+    chrome.tabs.getSelected(null, function(tab) {
+        if (tab.url.match('^https?://')){
+            CmdUtils.active_tab = tab;
+            CmdUtils.updateSelection();
+        }
+    });
+};
+
 // replaces current selection with string provided
 CmdUtils.setSelection = function setSelection(s) {
     console.log("CmdUtils.setSelection"+s)
@@ -286,9 +298,8 @@ CmdUtils.loadCustomScripts = function loadCustomScripts() {
     });
 };
 
-CmdUtils.lastNotification = "";
-
 // show browser notification with simple limiter 
+CmdUtils.lastNotification = "";
 CmdUtils.notify = function (message, title) {
     if (CmdUtils.lastNotification == title+"/"+message) return;
     chrome.notifications.create({
@@ -298,4 +309,4 @@ CmdUtils.notify = function (message, title) {
         "message": message
     });
     CmdUtils.lastNotification = title+"/"+message;
-}
+};

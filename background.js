@@ -19,21 +19,11 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 });
 
 chrome.tabs.onUpdated.addListener( function(tabId, changeInfo, tab) {
-    chrome.tabs.getSelected(null, function(tab) {
-        if (tab.url.match('^https?://')) {
-            if (CmdUtils.DEBUG) console.log("onUpdated", tab.url);  
-            CmdUtils.active_tab = tab;
-            CmdUtils.updateSelection();
-        }
-    });
+    if (CmdUtils.DEBUG) console.log("onUpdated", tab.url);  
+    CmdUtils.updateActiveTab();  
 })
 
 chrome.tabs.onActivated.addListener(function(tabId, changeInfo, tab) {
-    chrome.tabs.getSelected(null, function(tab) {
-        if (tab.url.match('^https?://')){
-            if (CmdUtils.DEBUG) console.log("onActivated", tab.url);  
-            CmdUtils.active_tab = tab;
-            CmdUtils.updateSelection();
-        }
-    });
+    if (CmdUtils.DEBUG) console.log("onActivated", tab.url);
+    CmdUtils.updateActiveTab();  
 });
