@@ -120,6 +120,7 @@ CmdUtils.CreateCommand({
         pblock.innerHTML = "Convert currency values using xe.com converter service.";
         var currency_spec = directObj.text;
         var matches = currency_spec.match(/^([\d\.]+)\s+(\w+)\s+to\s+(\w+)$/);
+        if (!matches || matches.length<3) return;
         var amount = matches[1];
         var curr_from = matches[2].toUpperCase();
         var curr_to = matches[3].toUpperCase();
@@ -692,7 +693,6 @@ CmdUtils.CreateCommand({
     execute: CmdUtils.SimpleUrlBasedCommand("http://validator.w3.org/check?uri={location}")
 });
 
-//review
 CmdUtils.CreateCommand({
     name: "wayback",
     homepage: "http://www.pendor.com.ar/ubiquity",
@@ -716,7 +716,6 @@ CmdUtils.CreateCommand({
     }
 });
 
-//review
 CmdUtils.CreateCommand({
     name: "weather",
     description: "Show the weather forecast for",
@@ -724,13 +723,10 @@ CmdUtils.CreateCommand({
     icon: "http://www.accuweather.com/favicon.ico",
     homepage: "",
     license: "",
-    preview: "Show the weather forecast for",
-    execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://www.wunderground.com/cgi-bin/findweather/getForecast?query={text}"
-    )
+    preview: "Show the weather forecast",
+    execute: CmdUtils.SimpleUrlBasedCommand("http://www.wunderground.com/cgi-bin/findweather/getForecast?query={text}")
 });
 
-//review
 CmdUtils.CreateCommand({
     name: "wikipedia",
     description: "Search Wikipedia for the given words",
@@ -771,7 +767,6 @@ CmdUtils.CreateCommand({
     execute: CmdUtils.SimpleUrlBasedCommand("http://en.wikipedia.org/wiki/Special:Search?search={text}")
 });
 
-//review
 CmdUtils.CreateCommand({
     name: "yahoo-answers",
     description: "Search Yahoo! Answers for",
@@ -785,7 +780,6 @@ CmdUtils.CreateCommand({
     )
 });
 
-//review
 CmdUtils.CreateCommand({
     name: "yahoo-search",
     description: "Search Yahoo! for",
@@ -799,7 +793,6 @@ CmdUtils.CreateCommand({
     )
 });
 
-//review
 CmdUtils.CreateCommand({
     name: "youtube",
     description: "Search for videos on YouTube",
@@ -813,7 +806,6 @@ CmdUtils.CreateCommand({
     )
 });
 
-//review
 CmdUtils.CreateCommand({
     name: "calc",
     description: desc = "evals math expressions",
@@ -837,17 +829,15 @@ CmdUtils.CreateCommand({
     }
 });
 
-//review
 CmdUtils.CreateCommand({
     name: "edit-ubiquity-commands",
     icon: "res/icon-128.png",
     description: "Takes you to the Ubiquity command <a href=options.html target=_blank>editor page</a>.",
-    execute: function (args) { 
+    execute: function () { 
     	chrome.runtime.openOptionsPage();
     }
 });
 
-//review
 CmdUtils.CreateCommand({
     name: "define",
     description: "Gives the meaning of a word, using answers.com.",
@@ -870,7 +860,6 @@ CmdUtils.CreateCommand({
         }
 });
 
-//review
 CmdUtils.CreateCommand({
     names: ["base64decode","b64d","atob"],
     description: "base64decode",
@@ -879,16 +868,12 @@ CmdUtils.CreateCommand({
     },
     license: "GPL",
     execute: function execute({text:text}) {
-        //if (text === "") text = CmdUtils.htmlSelection;
         CmdUtils.setSelection(atob(text));
     },
     preview: function preview(pblock, {text:text}) {
-        //if (text === "") text = CmdUtils.htmlSelection;
         pblock.innerHTML = atob(text);
     },
 });
-
-//------------------------------------
 
 CmdUtils.CreateCommand({
     names: ["base64encode","b64e", "btoa"],
@@ -898,11 +883,9 @@ CmdUtils.CreateCommand({
     },
     license: "GPL",
     execute: function execute({text:text}) {
-        //if (text === "") text = CmdUtils.htmlSelection;
         CmdUtils.setSelection(btoa(text));
     },
     preview: function preview(pblock, {text:text}) {
-        //if (text === "") text = CmdUtils.htmlSelection;
         pblock.innerHTML = btoa(text);
     },
 });

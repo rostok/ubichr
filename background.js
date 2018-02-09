@@ -19,11 +19,11 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 });
 
 chrome.tabs.onUpdated.addListener( function(tabId, changeInfo, tab) {
-    if (CmdUtils.DEBUG) console.log("onUpdated", tab.url);  
+    if (CmdUtils.DEBUG) if (tab) console.log("onUpdated", tab.url);  
     CmdUtils.updateActiveTab();  
 })
 
 chrome.tabs.onActivated.addListener(function(tabId, changeInfo, tab) {
-    if (CmdUtils.DEBUG) console.log("onActivated", tab.url);
+    if (CmdUtils.DEBUG) if (tab) console.log("onActivated", tab.url);
     CmdUtils.updateActiveTab();  
 });
