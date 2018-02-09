@@ -23,7 +23,13 @@ chrome.tabs.onUpdated.addListener( function(tabId, changeInfo, tab) {
     CmdUtils.updateActiveTab();  
 })
 
-chrome.tabs.onActivated.addListener(function(tabId, changeInfo, tab) {
-    if (CmdUtils.DEBUG) if (tab) console.log("onActivated", tab.url);
+chrome.tabs.onActivated.addListener(function(actInfo) {
+    if (CmdUtils.DEBUG) console.log("onActivated", actInfo);
     CmdUtils.updateActiveTab();  
 });
+
+chrome.tabs.onHighlighted.addListener( function(higInfo) {
+    if (CmdUtils.DEBUG) console.log("onHighlighted", higInfo);  
+    CmdUtils.updateActiveTab();  
+})
+

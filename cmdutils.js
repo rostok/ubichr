@@ -200,8 +200,8 @@ CmdUtils.updateSelection = function () {
     chrome.tabs.executeScript( {
         code: "window ? window.getSelection().toString() : '';"
       }, function(selection) {
-        if (selection && selection.length>0) selectedText = selection[0] || "";
-        if (CmdUtils.DEBUG) console.log("selectedText is ", selectedText);  
+        if (selection && selection.length>0) CmdUtils.selectedText = selection[0] || "";
+        if (CmdUtils.DEBUG) console.log("selectedText is ", CmdUtils.selectedText);  
     });
 };
 
