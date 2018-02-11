@@ -52,10 +52,11 @@ CmdUtils.CreateCommand({
     icon: "http://www.imdb.com/favicon.ico",
     preview: async function preview(pblock, {text: text}) {
         pblock.innerHTML = "Searches for movies on IMDb";
-        if (text.trim()!="") jQuery(pblock).load("http://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr table.findList");
+        var doc = await CmdUtils.get("http://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr" );
+        pblock.innerHTML = "<table>"+jQuery("table.findList", doc).html()+"</table>";
     },
     execute: CmdUtils.SimpleUrlBasedCommand("http://www.imdb.com/find?q={text}&s=tt&ref_=fn_al_tt_mr")
 });
 ```
 
-Here the ```preview``` function is defined with ```async``` keyword. This will allow to avoid callback hell when getting data with GET request (```CmdUtils.get(url)```). Note the destructuring assignment singling out the ```text``` parameter in ```preview``` function.
+Here the ```preview``` function is defined with ```async``` keyword. This will allow to avoid callback hell when getting data with GET request (```CmdUtils.get(url)```). Note the destructuring assignment singling out the ```text``` parameter in ```preview``` function. Note: final implementation uses one liner with ```jQuery.load()```.
