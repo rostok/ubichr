@@ -263,7 +263,7 @@ function ubiq_show_matching_commands(text) {
     // Don't navigate outside boundaries of the list of matches
     if (ubiq_selected_command >= matches.length) {
         ubiq_selected_command = matches.length - 1;
-    } else if (ubiq_selected_command == -1) {
+    } else if (ubiq_selected_command < 0) {
         ubiq_selected_command = 0;
     }
 
@@ -305,13 +305,13 @@ function ubiq_show_matching_commands(text) {
 
 var lcmd = "";
 
-function ubiq_key_handler(userjs_event) {
+function ubiq_key_handler(evt) {
 	// measure the input 
 	CmdUtils.inputUpdateTime = performance.now();
 	ubiq_save_input();
 
-    if (!userjs_event) return;
-    var kc = userjs_event.keyCode;
+    if (!evt) return;
+    var kc = evt.keyCode;
 
     // On ENTER, execute the given command
     if (kc == 13) {
@@ -326,7 +326,7 @@ function ubiq_key_handler(userjs_event) {
     }
 
     // Ctrl+C copies preview to clipboard
-    if (kc == 67 && userjs_event.ctrlKey) {
+    if (kc == 67 && evt.ctrlKey) {
         backgroundPage.console.log("copy to clip");
         var el = document.getElementById('ubiq-command-preview');
         if (!el) return;
@@ -335,32 +335,20 @@ function ubiq_key_handler(userjs_event) {
 
     // Cursor up
     if (kc == 38) {
-        ubiq_select_prev_command();
+        ubiq_selected_command--;
         lcmd = "";
+        evt.preventDefault();
     }
     // Cursor Down
     else if (kc == 40) {
-        ubiq_select_next_command();
+        ubiq_selected_command++;
         lcmd = "";
+        evt.preventDefault();
     }
 
     if (lcmd==ubiq_command()) return;
     ubiq_show_matching_commands();
     lcmd=ubiq_command();
-}
-
-function ubiq_select_prev_command() {
-    if (ubiq_selected_command > 0) {
-        ubiq_selected_command--;
-    }
-}
-
-function ubiq_select_next_command() {
-    ubiq_selected_command++;
-}
-
-function ubiq_xml(node) {
-    return (node && node.nodeType) ? new XMLSerializer().serializeToString(node) : '(' + node + ')';
 }
 
 function ubiq_save_input() {
@@ -386,7 +374,7 @@ if (typeof CmdUtils !== 'undefined' && typeof Utils !== 'undefined' && typeof ba
     ubiq_load_input();
 
     // Add event handler to window 
-    document.addEventListener('keyup', function(e) { ubiq_key_handler(e); }, false);
+    document.addEventListener('keydown', function(e) { ubiq_key_handler(e); }, false);
 
     console.log("hello from UbiChr");
 } else {
