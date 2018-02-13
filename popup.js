@@ -187,7 +187,7 @@ function ubiq_match_first_command(text) {
     if (text.length > 0) {
         for (var c in CmdUtils.CommandList) {
             c = CmdUtils.CommandList[c].name;
-            if (c.match('^' + text)) {
+            if (c.match(RegExp('^'+text,"i"))) {
                 first_match = c;
                 break;
             }
@@ -237,11 +237,11 @@ function ubiq_show_matching_commands(text) {
             var cmd = CmdUtils.CommandList[c].name;
             var cmdnames = CmdUtils.CommandList[c].names;
             // Starting match only /^command/
-            if (show_all || cmd.match('^' + text) || cmdnames.some((e)=>{return e.match("^"+text);})) {
+            if (show_all || cmd.match(RegExp('^'+text,"i")) || cmdnames.some((e)=>{return e.match(RegExp('^'+text,"i"));})) {
                 matches.push(c);
             }
             // Substring matching as well, in a separate list
-            else if (cmd.match(text) || cmdnames.some((e)=>{return e.match(text);})) {
+            else if (cmd.match(RegExp(text,"i")) || cmdnames.some((e)=>{return e.match(RegExp(text,"i"));})) {
                 substr_matches.push(c);
             }
         }
