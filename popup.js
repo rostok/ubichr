@@ -18,20 +18,28 @@ function ubiq_set_tip(v) {
     ubiq_set_preview(v);
 }
 
-// sets result panel, prepend allows to add new contnet to the top separated by HR
-function ubiq_set_result(v, prepend) {
-    prepend = prepend === true; 
-    var el = document.getElementById('ubiq-result-panel');
-    if (!el) return;
-    el.innerHTML = v + (prepend ? "<hr/>" + el.innerHTML : "");
+function ubiq_preview_el() {
+    return document.getElementById('ubiq-command-preview');
 }
 
 // sets preview panel, prepend allows to add new contnet to the top separated by HR
 function ubiq_set_preview(v, prepend) {
+    v = v || "";
     prepend = prepend === true; 
-    var el = document.getElementById('ubiq-command-preview');
+    var el = ubiq_preview_el();
     if (!el) return;
     el.innerHTML = v + (prepend ? "<hr/>" + el.innerHTML : "");
+    if (v!="") ubiq_set_result("");
+}
+
+// sets result panel, prepend allows to add new contnet to the top separated by HR
+function ubiq_set_result(v, prepend) {
+    v = v || "";
+    prepend = prepend === true; 
+    var el = document.getElementById('ubiq-result-panel');
+    if (!el) return;
+    el.innerHTML = v + (prepend ? "<hr/>" + el.innerHTML : "");
+    if (v!="") ubiq_set_preview("");
 }
 
 // clears tip, result and preview panels
@@ -43,20 +51,15 @@ function ubiq_clear() {
 
 // shows preview for command, cmd is command index
 function ubiq_show_preview(cmd, args) {
-    var el = document.getElementById('ubiq-command-preview');
-    if (!el) return;
-    if (!cmd) {
-        el.innerHTML = '';
-        return;
-    }
+    if (!cmd) return;
     preview_func = CmdUtils.CommandList[cmd].preview;
     switch(typeof preview_func)
     {
     case 'undefined':
-        	el.innerHTML = CmdUtils.CommandList[cmd].description;
+        	ubiq_set_preview( CmdUtils.CommandList[cmd].description );
         	break;
     case 'string': 
-        	el.innerHTML = preview_func;
+            ubiq_set_preview( preview_func );
         	break;
     default:
         var words = ubiq_command().split(' ');
@@ -74,7 +77,7 @@ function ubiq_show_preview(cmd, args) {
 
         var pfunc = ()=>{
             try {
-                preview_func(el, directObj);
+                preview_func(ubiq_preview_el(), directObj);
             } catch (e) {
                 CmdUtils.notify(e.toString(), "preview function error")
             }
@@ -222,6 +225,7 @@ function ubiq_replace_first_word(w) {
 
 // will also call preview
 function ubiq_show_matching_commands(text) {
+    CmdUtils.backgroundWindow.console.log("last:",lcmd," this:",ubiq_command());
     if (!text) text = ubiq_command();
 
     // Always consider 1st word only
@@ -266,10 +270,8 @@ function ubiq_show_matching_commands(text) {
     } else if (ubiq_selected_command < 0) {
         ubiq_selected_command = 0;
     }
-
     // We have matches, show a list
     if (matches.length > 0) {
-
         var suggestions_div = document.createElement('div');
         var suggestions_list = document.createElement('ul');
         ubiq_set_tip( CmdUtils.CommandList[ matches[ubiq_selected_command] ].description );
@@ -328,7 +330,7 @@ function ubiq_key_handler(evt) {
     // Ctrl+C copies preview to clipboard
     if (kc == 67 && evt.ctrlKey) {
         backgroundPage.console.log("copy to clip");
-        var el = document.getElementById('ubiq-command-preview');
+        var el = ubiq_preview_el();
         if (!el) return;
         CmdUtils.setClipboard( el.innerText );
     }
@@ -356,12 +358,13 @@ function ubiq_save_input() {
     if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.set({ 'lastCmd': cmd.value });
 }
 
-function ubiq_load_input() {
+function ubiq_load_input(callback) {
 	cmd = document.getElementById('ubiq_input');
     if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.get('lastCmd', function(result) {
         lastCmd = result.lastCmd || "";
         cmd.value = lastCmd;
         cmd.select();
+        callback();
     });
 }
 
@@ -371,10 +374,11 @@ if (typeof CmdUtils !== 'undefined' && typeof Utils !== 'undefined' && typeof ba
     CmdUtils.popupWindow = window;
     CmdUtils.updateActiveTab();
     
-    ubiq_load_input();
-
+    ubiq_load_input(()=>{ubiq_show_matching_commands();});
+    
     // Add event handler to window 
     document.addEventListener('keydown', function(e) { ubiq_key_handler(e); }, false);
+    document.addEventListener('keyup', function(e) { ubiq_key_handler(e); }, false);
 
     console.log("hello from UbiChr");
 } else {

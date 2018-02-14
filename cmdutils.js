@@ -6,9 +6,11 @@ if (!CmdUtils) var CmdUtils = {
     DEBUG: false,
     CommandList: [],
     jQuery: jQuery,
+    backgroundWindow: window,
     popupWindow: null,
     active_tab: null,   // tab that is currently active, updated via background.js 
     selectedText: "",   // currently selected text, update via content script selection.js
+    selectedHTML: "",   // currently selected text, update via content script selection.js
     setPreview: function setPreview(message, prepend) { console.log(message); },
     setResult: function setResult(message, prepend) { console.log(message); },
 };
