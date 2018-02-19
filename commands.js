@@ -341,9 +341,14 @@ CmdUtils.CreateCommand({
     homepage: "",
     timeout: 500,
     license: "",
-    require: "https://maps.googleapis.com/maps/api/js?sensor=false",
+    //require: "https://maps.googleapis.com/maps/api/js?sensor=false",
+    requirePopup: "https://maps.googleapis.com/maps/api/js?sensor=false",
     preview: async function mapsPreview(previewBlock, args) {
-    	// http://jsfiddle.net/user2314737/u9no8te4/
+//         var GM = google.maps;
+//         var GM = args.GM;
+        var GM = CmdUtils.popupWindow.google.maps;
+        
+        // http://jsfiddle.net/user2314737/u9no8te4/
         var text = args.text.trim();
         if (text=="") {
             previewBlock.innerHTML = "show objects or routes on google maps.<p>syntax: <p>maps [place]<p>maps [start] to [finish]"; 
@@ -351,18 +356,17 @@ CmdUtils.CreateCommand({
         }
         from = text.split(' to ')[0];
         dest = text.split(' to ').slice(1).join();
-//        previewBlock = previewBlock.ownerDocument.body;
         var A = await CmdUtils.get("https://nominatim.openstreetmap.org/search.php?q="+encodeURIComponent(from)+"&polygon_geojson=1&viewbox=&format=json");
         if (!A[0]) return;
         CmdUtils.deblog("A",A[0]);
         previewBlock.innerHTML = '<div id="map-canvas" style="width:480px;height:503px"></div>';
 
-    	var pointA = new google.maps.LatLng(A[0].lat, A[0].lon);
+    	var pointA = new GM.LatLng(A[0].lat, A[0].lon);
         var myOptions = {
             zoom: 10,
             center: pointA
         };
-        var map = new google.maps.Map(previewBlock.ownerDocument.getElementById('map-canvas'), myOptions);
+        var map = new GM.Map(previewBlock.ownerDocument.getElementById('map-canvas'), myOptions);
 /*
         setTimeout(function () {
             $('*', previewBlock).filter(function() {
@@ -375,7 +379,7 @@ CmdUtils.CreateCommand({
 */         
         //return;
     
-        var markerA = new google.maps.Marker({
+        var markerA = new GM.Marker({
             position: pointA,
             title: from,
             label: "A",
@@ -386,18 +390,18 @@ CmdUtils.CreateCommand({
         if (dest.trim()!='') {
             var B = await CmdUtils.get("https://nominatim.openstreetmap.org/search.php?q="+encodeURIComponent(dest)+"&polygon_geojson=1&viewbox=&format=json");
             if (!B[0]) { 
-                map.fitBounds( new google.maps.LatLngBounds( new google.maps.LatLng(A[0].boundingbox[0],A[0].boundingbox[2]), new google.maps.LatLng(A[0].boundingbox[1],A[0].boundingbox[3]) ) );
+                map.fitBounds( new GM.LatLngBounds( new GM.LatLng(A[0].boundingbox[0],A[0].boundingbox[2]), new GM.LatLng(A[0].boundingbox[1],A[0].boundingbox[3]) ) );
                 map.setZoom(map.getZoom()-1);
                 return;
             }
             CmdUtils.deblog("B", B[0]);
-            var pointB = new google.maps.LatLng(B[0].lat, B[0].lon);
+            var pointB = new GM.LatLng(B[0].lat, B[0].lon);
             // Instantiate a directions service.
-            directionsService = new google.maps.DirectionsService();
-            directionsDisplay = new google.maps.DirectionsRenderer({
+            directionsService = new GM.DirectionsService();
+            directionsDisplay = new GM.DirectionsRenderer({
                 map: map
             });
-            this.markerB = new google.maps.Marker({
+            this.markerB = new GM.Marker({
                 position: pointB,
                 title: dest,
                 label: "B",
@@ -410,9 +414,9 @@ CmdUtils.CreateCommand({
                 destination: pointB,
                 avoidTolls: true,
                 avoidHighways: false,
-                travelMode: google.maps.TravelMode.DRIVING
+                travelMode: GM.TravelMode.DRIVING
             }, function (response, status) {
-                if (status == google.maps.DirectionsStatus.OK) {
+                if (status == GM.DirectionsStatus.OK) {
                     directionsDisplay.setDirections(response);
                 } else {
                     window.alert('Directions request failed due to ' + status);
@@ -973,6 +977,7 @@ CmdUtils.CreateCommand({
 CmdUtils.CommandList.forEach((c)=>{c['builtIn']=true;});
 
 // load custom scripts
+if (typeof chrome!=='undefined')
 if (chrome.storage)
 chrome.storage.local.get('customscripts', function(result) {
 	try {
