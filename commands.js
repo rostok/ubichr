@@ -227,6 +227,14 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
+    names: ["debug-popup"],
+    description: "Open popup in window",
+    icon: "res/icon-128.png",
+    preview: "lists all avaiable commands",
+    execute: CmdUtils.SimpleUrlBasedCommand("debug.html")
+});
+
+CmdUtils.CreateCommand({
     names: ["reload-ubiquity", "restart-ubiquity"],
     description: "Reloads Ubiquity extension",
     icon: "res/icon-128.png",
@@ -337,34 +345,52 @@ CmdUtils.CreateCommand({
     preview: async function mapsPreview(previewBlock, args) {
     	// http://jsfiddle.net/user2314737/u9no8te4/
         var text = args.text.trim();
+        if (text=="") {
+            previewBlock.innerHTML = "show objects or routes on google maps.<p>syntax: <p>maps [place]<p>maps [start] to [finish]"; 
+            return;
+        }
         from = text.split(' to ')[0];
         dest = text.split(' to ').slice(1).join();
-
+//        previewBlock = previewBlock.ownerDocument.body;
         var A = await CmdUtils.get("https://nominatim.openstreetmap.org/search.php?q="+encodeURIComponent(from)+"&polygon_geojson=1&viewbox=&format=json");
         if (!A[0]) return;
-        console.log("A",A[0]);
+        CmdUtils.deblog("A",A[0]);
         previewBlock.innerHTML = '<div id="map-canvas" style="width:480px;height:503px"></div>';
+
     	var pointA = new google.maps.LatLng(A[0].lat, A[0].lon);
         var myOptions = {
             zoom: 10,
             center: pointA
         };
         var map = new google.maps.Map(previewBlock.ownerDocument.getElementById('map-canvas'), myOptions);
+/*
+        setTimeout(function () {
+            $('*', previewBlock).filter(function() {
+                return $(this).css('z-index') == 1;
+            }).each(function() {
+                $(this).css('left','0px');   
+                $(this).css('top','0px');   
+            });
+        }, 1000);
+*/         
+        //return;
+    
         var markerA = new google.maps.Marker({
             position: pointA,
             title: from,
             label: "A",
             map: map
         });
-         if (dest.trim()!='') {
+
+        map.data.addGeoJson(geoJson = {"type": "FeatureCollection", "features": [{ "type": "Feature", "geometry": A[0].geojson, "properties": {} }]});
+        if (dest.trim()!='') {
             var B = await CmdUtils.get("https://nominatim.openstreetmap.org/search.php?q="+encodeURIComponent(dest)+"&polygon_geojson=1&viewbox=&format=json");
             if (!B[0]) { 
-                map.data.addGeoJson(geoJson = {"type": "FeatureCollection", "features": [{ "type": "Feature", "geometry": A[0].geojson, "properties": {} }]});
                 map.fitBounds( new google.maps.LatLngBounds( new google.maps.LatLng(A[0].boundingbox[0],A[0].boundingbox[2]), new google.maps.LatLng(A[0].boundingbox[1],A[0].boundingbox[3]) ) );
                 map.setZoom(map.getZoom()-1);
                 return;
             }
-            console.log("B", B[0]);
+            CmdUtils.deblog("B", B[0]);
             var pointB = new google.maps.LatLng(B[0].lat, B[0].lon);
             // Instantiate a directions service.
             directionsService = new google.maps.DirectionsService();
@@ -843,12 +869,17 @@ CmdUtils.CreateCommand({
     description: "Gives the meaning of a word, using answers.com.",
     help: "Try issuing &quot;define aglet&quot;",
     icon: "http://www.answers.com/favicon.ico",
+//    timeout: 500,
     execute: CmdUtils.SimpleUrlBasedCommand(
         "http://answers.com/search?q={text}"
     ),
-    preview: async function define_preview(pblock, {text: word}) {
-        pblock.innerHTML = "Gives the definition of the word "+word;
-        var xml = await CmdUtils.post("http://services.aonaware.com/DictService/DictService.asmx/DefineInDict", { word: word, dictId: "wn" } );
+    preview: async function define_preview(pblock, {text: text}) {
+        if (text.trim()=="") {
+            pblock.innerHTML = "Gives the definition from answers.com";
+            return;
+        }
+        pblock.innerHTML = "Gives the definition of the word "+text;
+        var xml = await CmdUtils.post("http://services.aonaware.com/DictService/DictService.asmx/DefineInDict", { text: text, dictId: "wn" } );
         pblock.innerHTML = (
             jQuery(xml)
             .find("WordDefinition > Definitions > Definition:first-child > WordDefinition")
@@ -942,6 +973,7 @@ CmdUtils.CreateCommand({
 CmdUtils.CommandList.forEach((c)=>{c['builtIn']=true;});
 
 // load custom scripts
+if (chrome.storage)
 chrome.storage.local.get('customscripts', function(result) {
 	try {
 		eval(result.customscripts || "");
