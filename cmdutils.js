@@ -173,23 +173,28 @@ CmdUtils.post = function post(url, data) {
 	});
 };
 
-// loads remote scripts
-CmdUtils.loadedScripts = [];
-CmdUtils.loadScripts = function loadScripts(url, callback) {
+// loads remote scripts into specified window (or backround if not specified)
+CmdUtils.loadScripts = function loadScripts(url, callback, wnd=window) {
+    // this array will hold all loaded scripts into this window
+    wnd.loadedScripts = wnd.loadedScripts || [];
 	url = url || [];
 	if (url.constructor === String) url = [url];
 
+    if (typeof wnd.jQuery === "undefined") {
+        console.error("there's no jQuery at "+wnd+".");
+        return false;
+    }
 	if (url.length == 0) 
 		return callback();
 
 	var thisurl = url.shift();
 	tempfunc = function(data, textStatus, jqXHR) {
-		return loadScripts(url, callback);
+		return loadScripts(url, callback, wnd);
 	};
-	if (CmdUtils.loadedScripts.indexOf(thisurl)==-1) {
+	if (wnd.loadedScripts.indexOf(thisurl)==-1) {
 		console.log("loading :::: ", thisurl);
-		CmdUtils.loadedScripts.push(thisurl);
-    	jQuery.ajax({
+		wnd.loadedScripts.push(thisurl);
+    	wnd.jQuery.ajax({
             url: thisurl,
             dataType: 'script',
             success: tempfunc,
