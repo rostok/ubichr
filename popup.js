@@ -32,11 +32,15 @@ function ubiq_set_preview(v, prepend) {
     if (v!="") ubiq_set_result("");
 }
 
+function ubiq_result_el() {
+    return document.getElementById('ubiq-result-panel');
+}
+
 // sets result panel, prepend allows to add new contnet to the top separated by HR
 function ubiq_set_result(v, prepend) {
     v = v || "";
     prepend = prepend === true; 
-    var el = document.getElementById('ubiq-result-panel');
+    var el = ubiq_result_el();
     if (!el) return;
     el.innerHTML = v + (prepend ? "<hr/>" + el.innerHTML : "");
     if (v!="") ubiq_set_preview("");
@@ -80,6 +84,8 @@ function ubiq_show_preview(cmd, args) {
                 preview_func(ubiq_preview_el(), directObj);
             } catch (e) {
                 CmdUtils.notify(e.toString(), "preview function error")
+                console.error(e.stack);
+                CmdUtils.backgroundWindow.error(e.stack);
             }
         }
 
@@ -110,14 +116,7 @@ function ubiq_dispatch_command(line, args) {
     ubiq_replace_first_word(cmd);
 
     // Find command element
-    var cmd_struct;
-    for (var c in CmdUtils.CommandList) {
-        var cmd_name = CmdUtils.CommandList[c].name;
-        if (cmd_name == cmd) {
-            cmd_struct = CmdUtils.CommandList[c];
-            break;
-        }
-    }
+    var cmd_struct = CmdUtils.getcmd( cmd );
 
     if (!cmd_struct) {
         return;
@@ -134,9 +133,12 @@ function ubiq_dispatch_command(line, args) {
 
     // Run command's "execute" function
     try {
+        CmdUtils.deblog("executing [", cmd,"] [", text,"]");
         cmd_func(directObj);
     } catch (e) {
         CmdUtils.notify(e.toString(), "execute function error")
+        console.error(e.stack);
+        CmdUtils.backgroundWindow.error(e.stack);
     }
 
     return;
@@ -225,7 +227,6 @@ function ubiq_replace_first_word(w) {
 
 // will also call preview
 function ubiq_show_matching_commands(text) {
-    CmdUtils.backgroundWindow.console.log("last:",lcmd," this:",ubiq_command());
     if (!text) text = ubiq_command();
 
     // Always consider 1st word only
@@ -294,7 +295,7 @@ function ubiq_show_matching_commands(text) {
         }
 
         suggestions_div.appendChild(suggestions_list);
-        ubiq_set_result( suggestions_div.innerHTML );
+        ubiq_result_el().innerHTML = suggestions_div.innerHTML; // shouldn't clear the preview
 
     } else {
         ubiq_selected_command = -1;
@@ -307,7 +308,7 @@ function ubiq_show_matching_commands(text) {
 
 var lcmd = "";
 
-function ubiq_key_handler(evt) {
+function ubiq_keydown_handler(evt) {
 	// measure the input 
 	CmdUtils.inputUpdateTime = performance.now();
 	ubiq_save_input();
@@ -353,6 +354,10 @@ function ubiq_key_handler(evt) {
     lcmd=ubiq_command();
 }
 
+function ubiq_keyup_handler(evt) {
+    ubiq_show_matching_commands();
+}
+
 function ubiq_save_input() {
 	cmd = document.getElementById('ubiq_input');
     if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.set({ 'lastCmd': cmd.value });
@@ -368,25 +373,28 @@ function ubiq_load_input(callback) {
     });
 }
 
-if (typeof CmdUtils !== 'undefined' && typeof Utils !== 'undefined' && typeof backgroundPage !== 'undefined' ) {
-    CmdUtils.setPreview = ubiq_set_preview;
-    CmdUtils.setResult = ubiq_set_result;
-    CmdUtils.popupWindow = window;
-    CmdUtils.updateActiveTab();
-    
-    ubiq_load_input(()=>{ubiq_show_matching_commands();});
-    
-    // Add event handler to window 
-    document.addEventListener('keydown', function(e) { ubiq_key_handler(e); }, false);
-    document.addEventListener('keyup', function(e) { ubiq_key_handler(e); }, false);
 
-    console.log("hello from UbiChr");
-} else {
-    chrome.tabs.create({ "url": "chrome://extensions" });
-    chrome.notifications.create({
-        "type": "basic",
-        "iconUrl": chrome.extension.getURL("res/icon-128.png"),
-        "title": "UbiChr",
-        "message": "there is something wrong, try restarting UbiChr"
-    });
-}
+$(window).on('load', function() {
+    if (typeof CmdUtils !== 'undefined' && typeof Utils !== 'undefined' && typeof backgroundPage !== 'undefined' ) {
+        CmdUtils.setPreview = ubiq_set_preview;
+        CmdUtils.setResult = ubiq_set_result;
+        CmdUtils.popupWindow = window;
+        CmdUtils.updateActiveTab();
+        
+        ubiq_load_input(()=>{ubiq_show_matching_commands();});
+        
+        // Add event handler to window 
+        document.addEventListener('keydown', function(e) { ubiq_keydown_handler(e); }, false);
+        document.addEventListener('keyup', function(e) { ubiq_keyup_handler(e); }, false);
+
+        console.log("hello from UbiChr");
+    } else {
+        chrome.tabs.create({ "url": "chrome://extensions" });
+        chrome.notifications.create({
+            "type": "basic",
+            "iconUrl": chrome.extension.getURL("res/icon-128.png"),
+            "title": "UbiChr",
+            "message": "there is something wrong, try restarting UbiChr"
+        });
+    }
+});
