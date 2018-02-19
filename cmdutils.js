@@ -8,12 +8,20 @@ if (!CmdUtils) var CmdUtils = {
     jQuery: jQuery,
     backgroundWindow: window,
     popupWindow: null,
+    log: console.log,
     active_tab: null,   // tab that is currently active, updated via background.js 
     selectedText: "",   // currently selected text, update via content script selection.js
     selectedHTML: "",   // currently selected text, update via content script selection.js
     setPreview: function setPreview(message, prepend) { console.log(message); },
     setResult: function setResult(message, prepend) { console.log(message); },
 };
+
+// debug log
+CmdUtils.deblog = function () {
+    if(CmdUtils.DEBUG){
+        console.log.apply(console, arguments);
+    }
+}
 
 // creates command and adds it to command array, name or names must be provided and preview execute functions
 CmdUtils.CreateCommand = function CreateCommand(args) {
@@ -24,16 +32,14 @@ CmdUtils.CreateCommand = function CreateCommand(args) {
         CmdUtils.CommandList = CmdUtils.CommandList.filter( cmd => cmd.name !== args.name );
     }
     //console.log("command created ", args.name);
-    var to = parseFloat(args.timeout);
+    var to = parseFloat(args.timeout || 0);
     if (to>0) {
     	args.timeoutFunc = null;
     	if (typeof args.preview == 'function') {
 		    args.preview_timeout = args.preview;
 			args.preview = function(b,a) {
-                if (args.timeoutFunc !== null) {
-                    clearTimeout(args.timeoutFunc);
-                }
-                args.timeoutFunc = setTimeout(function () { 
+                if (args.preview_timeoutFunc !== null) clearTimeout(args.preview_timeoutFunc);
+                args.preview_timeoutFunc = setTimeout(function () { 
                 	args.preview_timeout(b, a); 
                 }, to);
 			};
@@ -41,10 +47,8 @@ CmdUtils.CreateCommand = function CreateCommand(args) {
     	if (typeof args.execute == 'function') {
 		    args.execute_timeout = args.execute;
 			args.execute = function(a) {
-                if (args.timeoutFunc !== null) {
-                    clearTimeout(args.timeoutFunc);
-                }
-                args.timeoutFunc = setTimeout(function () {
+                if (args.execute_timeoutFunc !== null) clearTimeout(args.execute_timeoutFunc);
+                args.execute_timeoutFunc = setTimeout(function () {
 					args.execute_timeout(a);
                 }, to);
 			};
@@ -76,7 +80,7 @@ CmdUtils.addTab = function addTab(url) {
 	if (typeof browser !== 'undefined') {
 		browser.tabs.create({ "url": url });
 	} else 
-	if (typeof chrome !== 'undefined') {
+	if (typeof chrome !== 'undefined' && typeof chrome.tabs !== 'undefined') {
 		chrome.tabs.create({ "url": url });
 	} else {
 		window.open(url);
@@ -198,21 +202,20 @@ CmdUtils.loadScripts = function loadScripts(url, callback) {
 };
 
 // updates selectedText variable
-CmdUtils.updateSelection = function () {
-    chrome.tabs.executeScript( {
-        code: "window ? window.getSelection().toString() : '';"
-      }, function(selection) {
+CmdUtils.updateSelection = function (tab_id) {
+    chrome.tabs.executeScript( tab_id, { code: "window ? window.getSelection().toString() : '';" }, function(selection) {
         if (selection && selection.length>0) CmdUtils.selectedText = selection[0] || "";
-        if (CmdUtils.DEBUG) console.log("selectedText is ", CmdUtils.selectedText);  
+        CmdUtils.deblog("selectedText is ", CmdUtils.selectedText);  
     });
 };
 
 // called when tab is switched or changed, updates selectedText and activeTab
 CmdUtils.updateActiveTab = function () {
+    if (chrome.tabs && chrome.tabs.getSelected)
     chrome.tabs.getSelected(null, function(tab) {
         if (tab.url.match('^https?://')){
             CmdUtils.active_tab = tab;
-            CmdUtils.updateSelection();
+            CmdUtils.updateSelection(tab.id);
         }
     });
 };
