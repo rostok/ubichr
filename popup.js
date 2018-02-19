@@ -92,7 +92,10 @@ function ubiq_show_preview(cmd, args) {
 		if (typeof cmd_struct.require !== 'undefined')
 	        CmdUtils.loadScripts( cmd_struct.require, ()=>{ pfunc(); } );
 	    else
-        	pfunc();
+            if (typeof cmd_struct.requirePopup !== 'undefined')
+                CmdUtils.loadScripts( cmd_struct.requirePopup, ()=>{ pfunc(); }, window );
+            else
+                pfunc();
     }
     return;
 }
