@@ -2,7 +2,7 @@
 My humble attempt to create [Ubiquity](https://wiki.mozilla.org/Labs/Ubiquity) alternative for Chrome and Firefox Quantum browsers.
 
 # installation
-To install use chrome web store https://chrome.google.com/webstore/search/ubichr?hl=pl
+To install use chrome web store https://chrome.google.com/webstore/search/ubichr
 
 # how to install dev version
 To install latest commited version please follow 'Load the extension' section here https://developer.chrome.com/extensions/getstarted
