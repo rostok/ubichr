@@ -57,6 +57,16 @@ CmdUtils.CreateCommand = function CreateCommand(args) {
     CmdUtils.CommandList.push(args);
 };
 
+// create search command using url
+CmdUtils.makeSearchCommand = function makeSearchCommand(args) {
+    args.execute = function(a) {
+        var url = args.url.replace(/\{QUERY\}/g, encodeURIComponent(a.text));
+        CmdUtils.addTab(url);
+    }
+    CmdUtils.CreateCommand(args);
+};
+
+
 // closes current tab
 CmdUtils.closeTab = function closeTab() {
 	chrome.tabs.query({active:true,currentWindow:true},function(tabs){
