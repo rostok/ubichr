@@ -95,7 +95,9 @@ function ubiq_show_preview(cmd, args) {
             } catch (e) {
                 CmdUtils.notify(e.toString(), "preview function error")
                 console.error(e.stack);
-                CmdUtils.backgroundWindow.error(e.stack);
+                if (CmdUtils.backgroundWindow && CmdUtils.backgroundWindow.error) {
+                    CmdUtils.backgroundWindow.error(e.stack);
+                }
             }
         }
 
