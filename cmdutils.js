@@ -338,6 +338,8 @@ CmdUtils.updateSelection = function (tab_id) {
 
 // called when tab is switched or changed, updates selectedText and activeTab
 CmdUtils.updateActiveTab = function () {
+    CmdUtils.active_tab = null;
+    CmdUtils.selectedText = '';
     if (chrome.tabs && chrome.tabs.getSelected)
     chrome.tabs.getSelected(null, function(tab) {
         if (tab.url.match('^https?://')){
