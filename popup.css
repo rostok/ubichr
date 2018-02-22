@@ -25,19 +25,19 @@ body {
 
 #ubiq-input-panel {
     border: 0;
-    display: block;
-    float: left;
     margin: 0;
     width: 100%;
-    height: 55px
+    height: 24pt;
 }
 
 #ubiq_input {
+    border: 1px solid #3D3D3D;
     width: 100%;
-    border: 0px;
-    height: 55px;
+    height: 100%;
     margin: 0px;
-    background: lightgray;
+    padding-left: 4pt;
+    padding-right: 4pt;
+    background: #d3d3d3;
     color: #333;
     font-size: 18pt;
     -webkit-appearance: none;
@@ -56,56 +56,86 @@ body {
     display: block;
 }
 
+#ubiq-bottom-panel {
+    height: 100%;
+}
+#ubiq-command-panel {
+    width: 540px; height: 100%;
+    vertical-align: top;
+}
+
 #ubiq-command-tip {
-    position: absolute;
-    left: 300px;
-    top: 57px;
     color: #ddd;
     font-style: italic;
+    width: 540px; height: 0px;
 }
 
 #ubiq-command-preview {
-    position: absolute;
-    left: 300px;
-    top: 57px;
     color: #ddd;
+    width: 540px; height: 525px;
+    position: relative;
 }
 
 #ubiq-command-preview a {
     color:white;
     text-decoration: bold;
-    font-size: 11.5pt
+    font-size: 11.5pt;
+}
+#ubiq-command-preview #ubiq-preview-div {
+    --zoom: 1.0;
+    transform: scale(var(--zoom)); transform-origin: 0px 0px;
+    -moz-transform: scale(var(--zoom)); -moz-transform-origin: 0 0;
+    -webkit-transform: scale(var(--zoom)); -webkit-transform-origin: 0 0;
+    width: calc(100% / var(--zoom) / 1.02) !important;
+    height: calc(100% / var(--zoom)) !important;
+    overflow: auto; position: relative; border:0px;
+}
+#ubiq-preview-div #ubiq-preview-frm {
+    --scrollX: 0px;
+    --scrollY: 0px;
+    width: calc(100% - 4px + var(--scrollX)) !important; 
+    height: calc(100% - 4px + var(--scrollY)) !important;
+    background-color: transparent;
+    border: 0px;
 }
 
 #ubiq-result-panel {
+    vertical-align: top;
     width: 100%;
     margin: 0;
-    float: left;
     clear: both;
     text-align: left;
     padding-top: 2px;
     color: white;
-    height: 502px;
+    height: 525px;
 }
-
+#ubiq-result-panel.result {
+  padding-left: 4pt;
+  padding-right: 4pt;
+}
 #ubiq-result-panel ul {
 	padding:0; 
-	margin:0
+	margin:0;
+    width: 248px; 
+    height: 100%;
 }
 
 #ubiq-result-panel li {
 	color: black; 
 	list-style: none; 
 	margin: 0; 
-	padding-top: 8px; 
+    padding-top: 2pt;
+	vertical-align: middle;
 	padding-left: 12px;
-	font-size: 14px; 
-	height: 26px;
-	width: 288px; 
+	font-size: 12pt;
+	height: 22pt;
 	background-color: #a9a9a9; 
 	background-repeat: repeat;
 }
+#ubiq-result-panel li img {
+    height: 20pt;
+}
 
 #ubiq-result-panel li.selected {
-	background-color: gray; 
+	background-color: #d3d3d3; 
 }

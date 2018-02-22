@@ -22,6 +22,15 @@ function ubiq_preview_el() {
     return document.getElementById('ubiq-command-preview');
 }
 
+function ubiq_preview_set_visible(v) {
+    document.getElementById('ubiq-command-panel').style.display = v ? '' : 'none';
+    if (!v)
+        ubiq_result_el().classList.add("result");
+    else
+        ubiq_result_el().classList.remove("result");
+}
+
+
 // sets preview panel, prepend allows to add new contnet to the top separated by HR
 function ubiq_set_preview(v, prepend) {
     v = v || "";
@@ -44,6 +53,7 @@ function ubiq_set_result(v, prepend) {
     if (!el) return;
     el.innerHTML = v + (prepend ? "<hr/>" + el.innerHTML : "");
     if (v!="") ubiq_set_preview("");
+    ubiq_preview_set_visible(false);
 }
 
 // clears tip, result and preview panels
@@ -55,12 +65,15 @@ function ubiq_clear() {
 
 // shows preview for command, cmd is command index
 function ubiq_show_preview(cmd, args) {
+    ubiq_preview_set_visible(true);
     if (!cmd) return;
-    preview_func = CmdUtils.CommandList[cmd].preview;
+    var cmd_struct = CmdUtils.CommandList[cmd];
+    if (!cmd_struct || !cmd_struct.preview) return;
+    preview_func = cmd_struct.preview;
     switch(typeof preview_func)
     {
     case 'undefined':
-        	ubiq_set_preview( CmdUtils.CommandList[cmd].description );
+        	ubiq_set_preview( cmd_struct.description );
         	break;
     case 'string': 
             ubiq_set_preview( preview_func );
@@ -72,7 +85,6 @@ function ubiq_show_preview(cmd, args) {
         var text = words.join(' ').trim();
         if (text=="") text = CmdUtils.selectedText;
     
-        var cmd_struct = CmdUtils.CommandList[cmd];
         var directObj = {
             text: text,
             _selection: text==CmdUtils.selectedText,
@@ -81,7 +93,7 @@ function ubiq_show_preview(cmd, args) {
 
         var pfunc = ()=>{
             try {
-                preview_func(ubiq_preview_el(), directObj);
+                (preview_func.bind(cmd_struct))(ubiq_preview_el(), directObj);
             } catch (e) {
                 CmdUtils.notify(e.toString(), "preview function error")
                 console.error(e.stack);
@@ -204,12 +216,15 @@ function ubiq_match_first_command(text) {
     return first_match;
 }
 
+function _ubiq_image_error(elm) { 
+    elm.src = 'res/spacer.png';
+};
 function ubiq_command_icon(c) {
     var icon = CmdUtils.CommandList[c].icon;
     if (!icon) {
         icon = 'res/spacer.png';
     }
-    icon = '<img src="' + icon + '" width="16" height="16" border="0" alt="" align="absmiddle"> ';
+    icon = '<img src="' + icon + '" border="0" alt="" onerror="_ubiq_image_error(this);" align="absmiddle"> ';
     return icon;
 }
 
@@ -228,8 +243,59 @@ function ubiq_replace_first_word(w) {
     return;
 }
 
+function ubiq_fuzzy_search(needle, haystack) {
+  var rc, prefpart, prev;
+      hlen = haystack.length,
+      nlen = needle.length;
+  if (nlen > hlen) {
+    return false;
+  }
+  needle = needle.toLocaleLowerCase();
+  haystack = haystack.toLocaleLowerCase();
+  if (nlen === hlen && needle === haystack) {
+    return 0x7fffffff;
+  }
+  if (nlen < hlen && haystack.substr(0, nlen) === needle) {
+    if (haystack.charAt(nlen).match(/\W/)) {
+      return nlen * 16;
+    }
+    return nlen * 8;
+  }
+  prefpart = 0;
+  for (var i = nlen; i >= 2; i--) {
+    if (haystack.substr(0, i) === needle.substr(0, i)) {
+      prefpart = i;
+      break;
+    }
+  }
+  rc = prefpart * 4;
+  prev = prefpart;
+  mcycle: for (var i = prefpart, j = prefpart; i < nlen; i++) {
+    var nch = needle.charAt(i);
+    while (j < hlen) {
+      if (haystack.charAt(j++) === nch) {
+        rc += (nlen - i)*1.5 / (j - prev);
+        prev = j;
+        continue mcycle;
+      }
+    }
+    return 0;
+  }
+  return rc > 0 ? rc : 0;
+}
+
+// html-escape
+// todo: rewrite it without inline div creation...
+var ubiq_html_encoder = null;
+function ubiq_html_encode(text) {
+    if (!ubiq_html_encoder)
+        ubiq_html_encoder = $('<div>')
+    return ubiq_html_encoder.html(text).text();
+}
+
 // will also call preview
 function ubiq_show_matching_commands(text) {
+    const max_matches = 15;
     if (!text) text = ubiq_command();
 
     // Always consider 1st word only
@@ -239,33 +305,54 @@ function ubiq_show_matching_commands(text) {
 
     var show_all = text == '*all';
     var matches = [];
-    var substr_matches = [];
+    var fuzzy_matches = [];
     if (text.length > 0) {
         for (var c in CmdUtils.CommandList) {
-            var cmd = CmdUtils.CommandList[c].name;
-            var cmdnames = CmdUtils.CommandList[c].names;
-            // Starting match only /^command/
-            if (show_all || cmd.match(RegExp('^'+text,"i")) || cmdnames.some((e)=>{return e.match(RegExp('^'+text,"i"));})) {
+            if (show_all) {
                 matches.push(c);
+                continue;
             }
-            // Substring matching as well, in a separate list
-            else if (cmd.match(RegExp(text,"i")) || cmdnames.some((e)=>{return e.match(RegExp(text,"i"));})) {
-                substr_matches.push(c);
+            var cmdnames = CmdUtils.CommandList[c].names;
+            var sr2, sr = [c, null, 0];
+            for (var cmd of cmdnames) {
+                sr2 = ubiq_fuzzy_search(text, cmd);
+                if (sr2 > sr[2]) {
+                    sr[1] = cmd;
+                    sr[2] = sr2;
+                }
+            }
+            if (!sr[2]) continue;
+            if (sr == 0x7fffffff) {
+                matches.push(sr);
+            } else {
+                fuzzy_matches.push(sr);
             }
         }
     }
 
     // Some substring matches found, append to list of matches
-    if (substr_matches.length > 0) {
-        var full_matches = matches.length;
-        for (var m in substr_matches) {
-            matches.push(substr_matches[m]);
-            // Too long lists overflow from the layer
-            if ((parseInt(m) + full_matches) > 11) {
-                matches.push('...');
+    if (fuzzy_matches.length && matches.length <= max_matches) {
+        // sort by weights (desc) and found name (asc):
+        fuzzy_matches = fuzzy_matches.sort(function(a, b) {
+            // if equal weights:
+            if (b[2] == a[2]) {
+                // alphabetical:
+                return a[1].localeCompare(b[1]);
+            }
+            // larger weights first:
+            return b[2] - a[2];
+        })
+        for (var c of fuzzy_matches) {
+            matches.push(c);
+            if (matches.length > max_matches) {
                 break;
             }
         }
+    }
+    // Too long lists overflow from the layer
+    if (matches.length > max_matches) {
+        matches.length = max_matches;
+        matches.push('...');
     }
 
     // Don't navigate outside boundaries of the list of matches
@@ -278,8 +365,9 @@ function ubiq_show_matching_commands(text) {
     if (matches.length > 0) {
         var suggestions_div = document.createElement('div');
         var suggestions_list = document.createElement('ul');
-        ubiq_set_tip( CmdUtils.CommandList[ matches[ubiq_selected_command] ].description );
-        ubiq_show_preview(matches[ubiq_selected_command]);
+        var selcmdidx = matches[ubiq_selected_command][0];
+        ubiq_set_tip( CmdUtils.CommandList[ selcmdidx ].description );
+        ubiq_show_preview(selcmdidx);
 
         for (var c in matches) {
             var is_selected = (c == ubiq_selected_command);
@@ -288,10 +376,13 @@ function ubiq_show_matching_commands(text) {
             if (c == '...') {
                 li.innerHTML = c;
             } else {
-                var icon = ubiq_command_icon(c);
+                var foundname = c[1];
+                c = c[0];
                 var cmd = ubiq_command_name(c);
+                var icon = ubiq_command_icon(c);
                 if (is_selected) ubiq_first_match = cmd;
-                li.innerHTML = icon + cmd;
+                //if (foundname != cmd) { foundname = cmd + " (" + foundname + ")" };
+                li.innerHTML = icon + ubiq_html_encode(foundname);
             }
             li.setAttribute('class', is_selected ? 'selected' : '');
             suggestions_list.appendChild(li);
@@ -304,6 +395,8 @@ function ubiq_show_matching_commands(text) {
         ubiq_selected_command = -1;
         ubiq_clear();
         ubiq_set_result( ubiq_help() );
+        if (text.length)
+            ubiq_set_result( 'no commands found for <b>'+ ubiq_html_encode(text) +'</b>', true );
     }
 
     return;

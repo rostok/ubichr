@@ -1,8 +1,10 @@
 // jshint esversion: 6
 
-// inserts simple notify command 
-function insertNotifyStub() {
-    var stub = 
+// inserts stub (example command)
+function insertExampleStub() {
+
+    var stubs = {
+  'insertnotifystub': // simple notify command 
 `/* This is a template command. */
 CmdUtils.CreateCommand({
     name: "1example",
@@ -17,14 +19,8 @@ CmdUtils.CreateCommand({
     },
 });
 
-`;
-    editor.replaceRange(stub, editor.getCursor());
-    saveScripts();
-}
-
-// inserts simple search / preview command
-function insertSearchStub() {
-    var stub = 
+`
+, 'insertsearchstub': // simple search / preview command (e. g. using ajax)
 `/* This is a template command. */
 CmdUtils.CreateCommand({
     name: "2example",
@@ -41,11 +37,27 @@ CmdUtils.CreateCommand({
     },
 });
 
-`;
+`
+, 'insertenhsearchstub': // enhanced search / preview command
+`/* This is a template command. */
+CmdUtils.makeSearchCommand({
+  name: ["3example"],
+  description: "Searches quant.com",
+  author: {name: "Your Name", email: "your-mail@example.com"},
+  icon: "https://www.qwant.com/favicon-152.png?1503916917494",
+  url: "https://www.qwant.com/?q={QUERY}&t=all",
+  prevAttrs: {zoom: 0.75, scroll: [100/*x*/, 0/*y*/], anchor: ["c_13", "c_22"]},
+});
+
+`
+    };
+
+    var stub = stubs[this.id];
     editor.replaceRange(stub, editor.getCursor());
 
     //editor.setValue( stub + editor.getValue() );
     saveScripts();
+    return false;
 }
 
 // evaluates and saves scripts from editor
@@ -88,8 +100,9 @@ editor = CodeMirror.fromTextArea( document.getElementById("code"), {
 editor.on("blur", saveScripts);
 editor.on("change", saveScripts);
 
-$("#insertnotifystub").click( insertNotifyStub );	
-$("#insertsearchstub").click( insertSearchStub );	
+$("#insertnotifystub").click( insertExampleStub );
+$("#insertsearchstub").click( insertExampleStub );
+$("#insertenhsearchstub").click( insertExampleStub );
 
 // load scrtips
 if (typeof chrome !== 'undefined' && chrome.storage) {

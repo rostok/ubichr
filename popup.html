@@ -8,17 +8,22 @@
 
 <body>
     <div id="ubiq_window">
-        <div id="ubiq-input-panel">
-            <input id="ubiq_input" autofocus autocomplete="off" spellcheck="false" type="text" size="60" maxlength="500">
-        </div>
-        <br>
-        <div id="ubiq-result-panel">
+    <table border="0" cellpadding="0" cellspacing="0">
+        <tr><td colspan="2" id="ubiq-input-panel">
+            <input id="ubiq_input" autofocus autocomplete="off" spellcheck="false" type="text" size="60" maxlength="500"/>
+        </td></tr>
+        <tr id="ubiq-bottom-panel">
+            <td id="ubiq-result-panel">
             <p style="font-size:17px; padding:8px; font-weight:normal">
                 Type the name of a command and press enter to execute it.
             </p>
-        </div>
-        <div id="ubiq-command-tip"></div>
-        <div id="ubiq-command-preview"></div>
+            </td>
+            <td id="ubiq-command-panel">
+                <div id="ubiq-command-tip"></div>
+                <div id="ubiq-command-preview"></div>
+            </td>
+        </tr>
+    </table>
     </div>
     UbiChr 0.1
 </body>
