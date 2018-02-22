@@ -129,8 +129,11 @@ body {
 	padding-left: 12px;
 	font-size: 12pt;
 	height: 22pt;
-	background-color: #a9a9a9; 
+    width: 225px;
+	background-color: #a9a9a9;
 	background-repeat: repeat;
+    border: 1px outset #ddd;
+    cursor: default;
 }
 #ubiq-result-panel li img {
     height: 20pt;
@@ -138,4 +141,24 @@ body {
 
 #ubiq-result-panel li.selected {
 	background-color: #d3d3d3; 
+    background: linear-gradient(#efefef, #b0b0b0);
+    position:relative;
+    width: 225px;
+}
+#ubiq-result-panel .more-commands {
+    width: 225px;
+    line-height: 10px;
+    text-align: center;
+}
+#ubiq-result-panel li.selected::after {
+    position:absolute;
+    top:0%;
+    left:100%;
+    content:"";
+    margin-left:0px;
+    width: 0; 
+    height: 0; 
+    border-top: 11pt solid transparent;
+    border-bottom: 12pt solid transparent;
+    border-left: 7pt solid #d3d3d3;
 }

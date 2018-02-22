@@ -53,7 +53,6 @@ function ubiq_set_result(v, prepend) {
     if (!el) return;
     el.innerHTML = v + (prepend ? "<hr/>" + el.innerHTML : "");
     if (v!="") ubiq_set_preview("");
-    ubiq_preview_set_visible(false);
 }
 
 // clears tip, result and preview panels
@@ -65,7 +64,6 @@ function ubiq_clear() {
 
 // shows preview for command, cmd is command index
 function ubiq_show_preview(cmd, args) {
-    ubiq_preview_set_visible(true);
     if (!cmd) return;
     var cmd_struct = CmdUtils.CommandList[cmd];
     if (!cmd_struct || !cmd_struct.preview) return;
@@ -371,11 +369,14 @@ function ubiq_show_matching_commands(text) {
 
         for (var c in matches) {
             var is_selected = (c == ubiq_selected_command);
-            var li = document.createElement('li');
             c = matches[c];
+            var li;
             if (c == '...') {
+                li = document.createElement('DIV');
+                li.setAttribute('class', 'more-commands');
                 li.innerHTML = c;
             } else {
+                li = document.createElement('LI');
                 var foundname = c[1];
                 c = c[0];
                 var cmd = ubiq_command_name(c);
@@ -384,14 +385,16 @@ function ubiq_show_matching_commands(text) {
                 //if (foundname != cmd) { foundname = cmd + " (" + foundname + ")" };
                 li.innerHTML = icon + ubiq_html_encode(foundname);
             }
-            li.setAttribute('class', is_selected ? 'selected' : '');
+            if (is_selected)
+                li.setAttribute('class', 'selected');
             suggestions_list.appendChild(li);
         }
 
         suggestions_div.appendChild(suggestions_list);
         ubiq_result_el().innerHTML = suggestions_div.innerHTML; // shouldn't clear the preview
-
+        ubiq_preview_set_visible(true);
     } else {
+        ubiq_preview_set_visible(false);
         ubiq_selected_command = -1;
         ubiq_clear();
         ubiq_set_result( ubiq_help() );
