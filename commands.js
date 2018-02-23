@@ -231,7 +231,7 @@ CmdUtils.CreateCommand({
     description: "Open popup in window",
     icon: "res/icon-128.png",
     preview: "lists all avaiable commands",
-    execute: CmdUtils.SimpleUrlBasedCommand("debug.html")
+    execute: CmdUtils.SimpleUrlBasedCommand("popup.html")
 });
 
 CmdUtils.CreateCommand({
@@ -264,7 +264,10 @@ CmdUtils.CreateCommand({
     license: "",
     preview: async function define_preview(pblock, {text: text}) {
         pblock.innerHTML = "Searches for movies on IMDb";
-        if (text.trim()!="") jQuery(pblock).load("http://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr table.findList");
+        if (text.trim()!="") 
+        // jQuery(pblock).load("http://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr table.findList")
+        // .blankify("http://imdb.com");
+        jQuery(pblock).loadAbs("http://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr table.findList");
     },
     execute: CmdUtils.SimpleUrlBasedCommand(
         "http://www.imdb.com/find?s=tt&ref_=fn_al_tt_mr&q={text}"
