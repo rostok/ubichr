@@ -1,4 +1,4 @@
-console.log("hello from UbiChr background script");
+console.log("UbiChr v"+CmdUtils.VERSION+" background script says hello");
 
 // setup selection event sink
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
