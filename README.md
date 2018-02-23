@@ -1,8 +1,11 @@
 # ubichr
 My humble attempt to create [Ubiquity](https://wiki.mozilla.org/Labs/Ubiquity) alternative for Chrome and Firefox Quantum browsers.
 
-# how to
-Currently this is only a dev repo. To use it follow 'Load the extension' section here https://developer.chrome.com/extensions/getstarted
+# installation
+To install use chrome web store https://chrome.google.com/webstore/search/ubichr
+
+# how to install dev version
+To install latest commited version please follow 'Load the extension' section here https://developer.chrome.com/extensions/getstarted
 
 People wanting to remove irritating 'disable developer mode popup' please follow [the neat binary hack of chrome.dll](https://stackoverflow.com/questions/30287907/how-to-get-rid-of-disable-developer-mode-extensions-pop-up/30361260)
 
