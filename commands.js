@@ -847,6 +847,8 @@ CmdUtils.CreateCommand({
     preview: pr = function preview(previewBlock, {text:text}) {
     	if (text.trim()!='') {
     		var m = new math.parser();
+    		text = text.replace(",",".");
+    		text = text.replace(" ","");
 	        previewBlock.innerHTML = m.eval(text);
 	        //CmdUtils.ajaxGet("http://api.mathjs.org/v1/?expr="+encodeURIComponent(args.text), (r)=>{ previewBlock.innerHTML = r; });
 	    }
@@ -856,6 +858,8 @@ CmdUtils.CreateCommand({
     execute: function ({text:text}) { 
     	if (text.trim()!='') {
     		var m = new math.parser();
+    		text = text.replace(",",".");
+    		text = text.replace(" ","");
             text = m.eval(text);
             CmdUtils.setSelection(text); 
         }

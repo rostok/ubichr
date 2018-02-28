@@ -354,6 +354,13 @@ function url_domain(data) {
                 if (value.substr(0,1) !== "/") value = "/" + value;
                 return url + value;
             });
+            result.find("img")
+                    .not('[src^="http"],[src^="//:"],[src^="mailto:"],[src^="#"]')
+                    .attr('src', function(index, value) {
+                if (typeof value === "undefined") return url;
+                if (value.substr(0,1) !== "/") value = "/" + value;
+                return url + value;
+            });
             if (typeof complete === 'function') complete();
         });
     };
