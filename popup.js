@@ -64,10 +64,10 @@ function ubiq_clear() {
 
 // shows preview for command, cmd is command index
 function ubiq_show_preview(cmd, args) {
-    if (!cmd) return;
+    if (cmd == null) return;
     var cmd_struct = CmdUtils.CommandList[cmd];
     if (!cmd_struct || !cmd_struct.preview) return;
-    preview_func = cmd_struct.preview;
+    var preview_func = cmd_struct.preview;
     switch(typeof preview_func)
     {
     case 'undefined':
