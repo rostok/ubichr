@@ -25,8 +25,13 @@ CmdUtils.deblog = function () {
 
 // creates command and adds it to command array, name or names must be provided and preview execute functions
 CmdUtils.CreateCommand = function CreateCommand(args) {
-    args.name = args.name || args.names[0];
-    args.names = args.names || [args.name];
+    if (Array.isArray(args.name)) {
+        args.names = args.name;
+        args.name = args.name[0];
+    } else {
+        args.name = args.name || args.names[0];
+        args.names = args.names || [args.name];
+    }
     if (CmdUtils.getcmd(args.name)) {
         // remove previously defined command with this name
         CmdUtils.CommandList = CmdUtils.CommandList.filter( cmd => cmd.name !== args.name );
@@ -56,6 +61,123 @@ CmdUtils.CreateCommand = function CreateCommand(args) {
     }
     CmdUtils.CommandList.push(args);
 };
+
+// create search command using url
+CmdUtils.makeSearchCommand = function makeSearchCommand(args) {
+    args.execute = function(a) {
+        var url = args.url.replace(/\{QUERY\}/g, encodeURIComponent(a.text));
+        CmdUtils.addTab(url);
+    }
+    if ((typeof args.preview != 'function') && args.preview != 'none') {
+        args.preview = CmdUtils._searchCommandPreview;
+        if (args.prevAttrs == null) {
+            args.prevAttrs = {zoom: 0.85};
+        }
+    }
+    CmdUtils.CreateCommand(args);
+};
+
+// helper to avoid stealing focus in preview
+CmdUtils._restoreFocusToInput = function(event) {
+    var wnd = event.currentTarget || event.view;
+    var doc;
+    if (!wnd.closed && !((doc = wnd.document).hidden || doc.webkitHidden || doc.mozHidden || doc.msHidden)) {
+        wnd.setTimeout( function() {
+            wnd.document.getElementById('ubiq_input').focus();
+        }, 0);
+        var self = wnd._ubiq_recent_cmd;
+        // may be scrolled by set of focus - so restore it now:
+        if (self.prevAttrs.scroll) {
+            var scrollOffs = self.prevAttrs.scroll;
+            wnd.setTimeout( function() {
+                var pblock = wnd.document.getElementById('ubiq-preview-div');
+                pblock.scrollLeft = scrollOffs[0];
+                pblock.scrollTop = scrollOffs[1];
+            }, 0);
+        }
+        wnd.setTimeout(function() {
+            wnd.removeEventListener("blur", CmdUtils._restoreFocusToInput, { capture: true });
+        }, 150);
+    } else {
+        wnd.removeEventListener("blur", CmdUtils._restoreFocusToInput, { capture: true });
+    }
+};
+
+CmdUtils._afterLoadPreview = function(ifrm) {
+    var doc = ifrm.ownerDocument;
+    var wnd = doc.defaultView || doc.parentWindow;
+    wnd.focus();
+    // jump to anchor (try multiple one by one):
+    if (this.prevAttrs.anchor != null) {
+      var url = ifrm.src;
+      for (var ha of this.prevAttrs.anchor) {
+        ifrm.src = url.replace(/(?:\#[^#]+)?$/, '#' + ha);
+      }
+    }
+    // restore focus:
+    wnd.focus();
+    wnd.removeEventListener("blur", CmdUtils._restoreFocusToInput, { capture: true });
+}
+
+// default common preview for search commands
+CmdUtils._searchCommandPreview = function _searchCommandPreview( pblock, {text: text} ) {
+    var q = text;
+    var code = (this.description || "Search") + " for <b> '" + (q || "...") + "'</b>";
+    pblock.innerHTML = code;
+    if (q == null || q == '') {
+      return;
+    }
+    if (!this.prevAttrs) this.prevAttrs = {};
+    var url = (this.prevAttrs.url || this.url).replace(/\{QUERY\}/g, q);
+    // hash-anchor:
+    var hashanch = null;
+    if (this.prevAttrs.anchor != null) {
+      var hashanch = this.prevAttrs.anchor;
+      if (!Array.isArray(hashanch)) {
+        hashanch = this.prevAttrs.anchor = [hashanch];
+      }
+      url += '#'+hashanch[0];
+    }
+    var zoom = this.prevAttrs.zoom || 0.85;
+    //pblock.style.overflow = 'hidden'; 
+    var doc = pblock.ownerDocument;
+    var wnd = doc.defaultView || doc.parentWindow;
+    if (wnd._ubi_prevTO != null) {
+      wnd.clearTimeout(wnd._ubi_prevTO);
+      wnd._ubi_prevTO = null;
+    }
+    var to = 300;
+    var self = this;
+    // show it:
+    wnd._ubi_prevTO = wnd.setTimeout(function () {
+      // avoid stealing focus (and re-scroll):
+      wnd.removeEventListener("blur", CmdUtils._restoreFocusToInput, { capture: true });
+      wnd.addEventListener("blur", CmdUtils._restoreFocusToInput, { capture: true });
+      wnd._ubiq_recent_cmd = self;
+      // parent block in order to handle scroll ("cross origin" issue) and to provide zoom
+      pblock.innerHTML = 
+    '<div id="ubiq-preview-div" style="--zoom:'+ zoom +'">'+ code +'</div>';
+      pblock = pblock.lastChild;
+      // scrollTo in frame cross origin not allowed in some browsers - scroll later inside parent div:
+      var scrollOffs = [0, 0];
+      if (self.prevAttrs.scroll) {
+        scrollOffs = self.prevAttrs.scroll;
+      }
+      pblock.innerHTML =
+     '<iframe id="ubiq-preview-frm"' +
+       ' sandbox="allow-same-origin allow-scripts allow-popups allow-forms"' +
+       ' style="--scrollX:'+ scrollOffs[0] +'px; --scrollY:'+ scrollOffs[1] +'px; "'+
+       ' src="' + url + '"/>';
+      var ifrm = pblock.lastChild;
+      ifrm.onload = function() { (CmdUtils._afterLoadPreview.bind(self))(pblock.lastChild); };
+      if (scrollOffs[0] || scrollOffs[1]) {
+        wnd.setTimeout(function() {
+          pblock.scrollLeft = scrollOffs[0];
+          pblock.scrollTop = scrollOffs[1];
+        }, 10);
+      }
+    }, to);
+}
 
 // closes current tab
 CmdUtils.closeTab = function closeTab() {
@@ -216,6 +338,8 @@ CmdUtils.updateSelection = function (tab_id) {
 
 // called when tab is switched or changed, updates selectedText and activeTab
 CmdUtils.updateActiveTab = function () {
+    CmdUtils.active_tab = null;
+    CmdUtils.selectedText = '';
     if (chrome.tabs && chrome.tabs.getSelected)
     chrome.tabs.getSelected(null, function(tab) {
         if (tab.url.match('^https?://')){
