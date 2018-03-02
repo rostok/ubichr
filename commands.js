@@ -344,22 +344,26 @@ CmdUtils.CreateCommand({
     homepage: "",
     timeout: 500,
     license: "",
-    //require: "https://maps.googleapis.com/maps/api/js?sensor=false",
     requirePopup: "https://maps.googleapis.com/maps/api/js?sensor=false",
     preview: async function mapsPreview(previewBlock, args) {
-//         var GM = google.maps;
-//         var GM = args.GM;
         var GM = CmdUtils.popupWindow.google.maps;
         
         // http://jsfiddle.net/user2314737/u9no8te4/
         var text = args.text.trim();
         if (text=="") {
-            previewBlock.innerHTML = "show objects or routes on google maps.<p>syntax: <p>maps [place]<p>maps [start] to [finish]"; 
+            previewBlock.innerHTML = "show objects or routes on google maps.<p>syntax: <pre>\tmaps [place] [-l]\n\tmaps [start] to [finish] [-l]\n\n -l narrow search to your location</pre>"; 
             return;
+        }
+        cc = "";
+        if (text.substr(-2)=="-l") {
+	        var geoIP = await CmdUtils.get("http://freegeoip.net/json/"); // search locally
+    	    var cc = geoIP.country_code || "";
+        	cc = cc.toLowerCase();
+        	text = text.slice(0,-2);
         }
         from = text.split(' to ')[0];
         dest = text.split(' to ').slice(1).join();
-        var A = await CmdUtils.get("https://nominatim.openstreetmap.org/search.php?q="+encodeURIComponent(from)+"&polygon_geojson=1&viewbox=&format=json");
+        var A = await CmdUtils.get("https://nominatim.openstreetmap.org/search.php?q="+encodeURIComponent(from)+"&polygon_geojson=1&viewbox=&format=json&countrycodes="+cc);
         if (!A[0]) return;
         CmdUtils.deblog("A",A[0]);
         previewBlock.innerHTML = '<div id="map-canvas" style="width:480px;height:503px"></div>';
@@ -370,18 +374,6 @@ CmdUtils.CreateCommand({
             center: pointA
         };
         var map = new GM.Map(previewBlock.ownerDocument.getElementById('map-canvas'), myOptions);
-/*
-        setTimeout(function () {
-            $('*', previewBlock).filter(function() {
-                return $(this).css('z-index') == 1;
-            }).each(function() {
-                $(this).css('left','0px');   
-                $(this).css('top','0px');   
-            });
-        }, 1000);
-*/         
-        //return;
-    
         var markerA = new GM.Marker({
             position: pointA,
             title: from,
@@ -427,9 +419,10 @@ CmdUtils.CreateCommand({
             });
         }
     },
-    execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://maps.google.com/maps?q={text}"
-    )
+    execute: function({text:text}) {
+        if (text.substr(-2)=="-l") text = text.slice(0,-2);
+        CmdUtils.addTab("http://maps.google.com/maps?q="+encodeURIComponent(text));
+    }
 });
 
 CmdUtils.CreateCommand({
