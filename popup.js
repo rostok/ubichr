@@ -365,8 +365,6 @@ function ubiq_show_matching_commands(text) {
     return;
 }
 
-var lcmd = "";
-
 function ubiq_keydown_handler(evt) {
 	// measure the input 
 	CmdUtils.inputUpdateTime = performance.now();
@@ -394,23 +392,6 @@ function ubiq_keydown_handler(evt) {
         if (!el) return;
         CmdUtils.setClipboard( el.innerText );
     }
-
-    // Cursor up
-    if (kc == 38) {
-        ubiq_selected_command--;
-        lcmd = "";
-        evt.preventDefault();
-    }
-    // Cursor Down
-    else if (kc == 40) {
-        ubiq_selected_command++;
-        lcmd = "";
-        evt.preventDefault();
-    }
-
-    if (lcmd==ubiq_command()) return;
-    ubiq_show_matching_commands();
-    lcmd=ubiq_command();
 }
 
 function ubiq_keyup_handler(evt) {
