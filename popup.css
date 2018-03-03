@@ -18,20 +18,20 @@ body {
     border: 0px;
     padding: 0px;
     z-index: 99999;
-    background: #3D3D3D;
-    overflow-x: hidden;
-    overflow-y: auto;
+    background: #2d2d2d;
+    overflow: hidden;
 }
 
 #ubiq-input-panel {
     border: 0;
     margin: 0;
-    width: 100%;
-    height: 24pt;
+    width: 780px;
+    height: 55px;
 }
 
 #ubiq_input {
-    border: 1px solid #3D3D3D;
+    border: 0px; 
+    border-bottom: 1px outset gray;
     width: 100%;
     height: 100%;
     margin: 0px;
@@ -60,20 +60,25 @@ body {
     height: 100%;
 }
 #ubiq-command-panel {
-    width: 540px; height: 100%;
+    width: 540px; 
+    height: 100%;
     vertical-align: top;
 }
 
 #ubiq-command-tip {
     color: #ddd;
     font-style: italic;
-    width: 540px; height: 0px;
+    width: 540px; 
+    height: 0px;
 }
 
 #ubiq-command-preview {
     color: #ddd;
-    width: 540px; height: 525px;
+    /* width: 540px;  */
+    width: 100%; 
+    height: 505px;
     position: relative;
+    overflow-y: auto;
 }
 
 #ubiq-command-preview a {
@@ -102,22 +107,25 @@ body {
 #ubiq-result-panel {
     vertical-align: top;
     width: 100%;
+    height: 505px;
     margin: 0;
     clear: both;
     text-align: left;
-    padding-top: 2px;
     color: white;
-    height: 525px;
 }
+/* 
 #ubiq-result-panel.result {
-  padding-left: 4pt;
-  padding-right: 4pt;
+    padding-left: 4pt;
+    padding-right: 4pt;
 }
+ */
 #ubiq-result-panel ul {
 	padding:0; 
 	margin:0;
-    width: 248px; 
+    width: 240px; 
     height: 100%;
+    background: linear-gradient(90deg, #3b3b3b 90%, transparent 10%, rgba(0,0,0,0) 0), #2d2d2d;
+    background-size: 257px auto;
 }
 
 #ubiq-result-panel li {
@@ -126,13 +134,12 @@ body {
 	margin: 0; 
     padding-top: 2pt;
 	vertical-align: middle;
-	padding-left: 12px;
+	padding-left: 6px;
 	font-size: 12pt;
 	height: 22pt;
     width: 225px;
 	background-color: #a9a9a9;
 	background-repeat: repeat;
-    border: 1px outset #ddd;
     cursor: default;
 }
 #ubiq-result-panel li img {
@@ -141,7 +148,7 @@ body {
 
 #ubiq-result-panel li.selected {
 	background-color: #d3d3d3; 
-    background: linear-gradient(#efefef, #b0b0b0);
+    /* background: linear-gradient(#efefef, #b0b0b0); */
     position:relative;
     width: 225px;
 }
@@ -158,7 +165,7 @@ body {
     margin-left:0px;
     width: 0; 
     height: 0; 
-    border-top: 11pt solid transparent;
+    border-top: 12pt solid transparent;
     border-bottom: 12pt solid transparent;
-    border-left: 7pt solid #d3d3d3;
+    border-left: 6pt solid #d3d3d3;
 }

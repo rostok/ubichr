@@ -366,7 +366,7 @@ CmdUtils.CreateCommand({
         var A = await CmdUtils.get("https://nominatim.openstreetmap.org/search.php?q="+encodeURIComponent(from)+"&polygon_geojson=1&viewbox=&format=json&countrycodes="+cc);
         if (!A[0]) return;
         CmdUtils.deblog("A",A[0]);
-        previewBlock.innerHTML = '<div id="map-canvas" style="width:480px;height:503px"></div>';
+        previewBlock.innerHTML = '<div id="map-canvas" style="width:540px;height:505px"></div>';
 
     	var pointA = new GM.LatLng(A[0].lat, A[0].lon);
         var myOptions = {
@@ -644,7 +644,7 @@ function msTranslator(method, params, back) {
 CmdUtils.CreateCommand({
     name: "translate",
     description: "Translates from one language to another.",
-    icon: "chrome://ubiquity/skin/icons/translate_bing.ico",
+    icon: "https://www.bing.com/translator/favicon.ico",
     help: '\
     You can specify the language to translate to,\
     and the language to translate from.\
