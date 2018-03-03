@@ -114,6 +114,111 @@ function ubiq_show_preview(cmd, args) {
     return;
 }
 
+function ubiq_basic_parse() {
+    var text = ubiq_command();
+    var words = text.split(' ');
+    var command = words.shift();
+
+    var input = words.join(' ').trim();
+    if (text === "") input = CmdUtils.selectedText;
+
+    // Find command element
+    var cmd_struct = CmdUtils.getcmd(command);
+    if (!cmd_struct) return;
+
+    var parsed_object = {
+        text: text,
+        command: command,
+        input: input,
+    };
+
+    if ("options" in cmd_struct) {
+        // Init the parsed object, if possible with default values for all
+        // options.
+        for (var key in cmd_struct["options"]) {
+            if ("def" in cmd_struct["options"][key])
+                parsed_object[key] = [cmd_struct["options"][key]["def"]];
+            else
+                parsed_object[key] = null;
+        }
+        parsed_object["args"] = [];
+        parsed_object["input"] = "";
+
+        var current_key = null;
+        var current_value = [];
+        var value_open = false
+
+        var update_parsed = function(key, value) {
+            if (!value || value === "") return;
+            if (key !== null) {
+                if (!parsed_object[key]) parsed_object[key] = [value];
+                else parsed_object[key].push(value);
+                // Add the new key in the args, so that they are sorted by
+                // apparition.
+                if (parsed_object["args"].indexOf(key) === -1)
+                    parsed_object["args"].push(key);
+            } else {
+                parsed_object["input"] = parsed_object["input"].concat(" ").concat(value);
+            }
+        };
+
+        for (var i = 0; i < words.length; i++) {
+            // Option names bypass quotes
+            if (words[i].startsWith("-") && words[i].substr(1) in cmd_struct["options"]) {
+                // If a multi-token word was open, but we got the option, we
+                // add what we had anyway to the previous key.
+                if (value_open !== false) {
+                    update_parsed(current_key, current_value.join(' '));
+                    value_open = false
+                    current_value = []
+                }
+                // Then we signal we're going to add a word to this key now.
+                current_key = words[i].substr(1);
+                continue;
+            }
+            // If in the middle of parsing a multi-word token
+            if (value_open !== false) {
+                // If it does not end with the same token with which it
+                // started, we add it to the list.
+                if (!words[i].endsWith(value_open)) {
+                    current_value.push(words[i]);
+                    continue;
+                }
+                // Otherwise we are done, and we merge the various tokens.
+                current_value.push(words[i].slice(0, -1));
+                value_open = false
+
+                current_value = current_value.join(' ');
+            } else if ((words[i].startsWith("'") || words[i].startsWith('"')) && value_open === false) {
+                // If the word starts with a quote, check if it also ends with
+                // it, otherwise start a new multi-token word.
+                if (words[i].endsWith(words[i][0])) {
+                    current_value = words[i].slice(1, -1);
+                } else {
+                    value_open = words[i][0];
+
+                    current_value.push(words[i].substr(1));
+                    continue;
+                }
+            } else {
+                // If no quotes, we simply add the word as-is
+                current_value = words[i];
+            }
+            // Add value to key
+            update_parsed(current_key, current_value);
+            // Clear both value and key
+            current_value = []
+            current_key = null
+        }
+        // Add options that were defaulted and not specified
+        for (key in cmd_struct["options"]) {
+            if ("def" in cmd_struct["options"][key] && parsed_object["args"].indexOf(key) === -1)
+                parsed_object["args"].push(key);
+    }
+
+    return parsed_object;
+}
+
 function ubiq_execute() {
     var words = ubiq_command().split(' ');
     var command = words.shift();
