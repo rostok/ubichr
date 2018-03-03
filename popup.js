@@ -179,7 +179,7 @@ function ubiq_input() {
 }
 
 function ubiq_command() {
-    var cmd = document.getElementById('ubiq_input');
+    var cmd = ubiq_input();
 
     if (!cmd) return '';
     return cmd.value;
