@@ -162,7 +162,7 @@ function ubiq_help() {
 }
 
 function ubiq_focus() {
-    el = ubiq_command();
+    el = ubiq_input();
     if (el.createTextRange) {
         var oRange = el.createTextRange();
         oRange.moveStart("character", 0);
@@ -172,6 +172,10 @@ function ubiq_focus() {
         el.setSelectionRange(0, el.value.length);
     }
     el.focus();
+}
+
+function ubiq_input() {
+    return document.getElementById('ubiq_input');
 }
 
 function ubiq_command() {
@@ -414,12 +418,12 @@ function ubiq_keyup_handler(evt) {
 }
 
 function ubiq_save_input() {
-	cmd = ubiq_command();
+	cmd = ubiq_input();
     if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.set({ 'lastCmd': cmd.value });
 }
 
 function ubiq_load_input(callback) {
-	cmd = ubiq_command();
+	cmd = ubiq_input();
     if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.get('lastCmd', function(result) {
         lastCmd = result.lastCmd || "";
         cmd.value = lastCmd;
