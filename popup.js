@@ -115,29 +115,15 @@ function ubiq_show_preview(cmd, args) {
 }
 
 function ubiq_execute() {
-    var cmd = ubiq_command();
-    if (!cmd) return false;
-    ubiq_dispatch_command(cmd);
-    return false;
-}
-
-function ubiq_dispatch_command(line, args) {
     var words = ubiq_command().split(' ');
     var command = words.shift();
 
     var text = words.join(' ').trim();
     if (text=="") text = CmdUtils.selectedText;
 
-    // Expand match (typing 'go' will expand to 'google')
-    cmd = ubiq_match_first_command(cmd);
-    ubiq_replace_first_word(cmd);
-
     // Find command element
-    var cmd_struct = CmdUtils.getcmd( cmd );
-
-    if (!cmd_struct) {
-        return;
-    }
+    cmd_struct = CmdUtils.getcmd(command);
+    if (!cmd_struct) return;
 
     // Create a fake Ubiquity-like object, to pass to
     // command's "execute" function
@@ -176,7 +162,7 @@ function ubiq_help() {
 }
 
 function ubiq_focus() {
-    el = document.getElementById('ubiq_input');
+    el = ubiq_command();
     if (el.createTextRange) {
         var oRange = el.createTextRange();
         oRange.moveStart("character", 0);
@@ -190,32 +176,9 @@ function ubiq_focus() {
 
 function ubiq_command() {
     var cmd = document.getElementById('ubiq_input');
-    if (!cmd) {
-        ubiq_selected_command = -1;
-        return '';
-    }
+
+    if (!cmd) return '';
     return cmd.value;
-}
-
-function ubiq_match_first_command(text) {
-    if (!text) text = ubiq_command();
-    var first_match = '';
-
-    // Command selected through cursor UP/DOWN
-    if (ubiq_first_match) {
-        return ubiq_first_match;
-    }
-
-    if (text.length > 0) {
-        for (var c in CmdUtils.CommandList) {
-            c = CmdUtils.CommandList[c].name;
-            if (c.match(RegExp('^'+text,"i"))) {
-                first_match = c;
-                break;
-            }
-        }
-    }
-    return first_match;
 }
 
 function _ubiq_image_error(elm) { 
@@ -232,17 +195,6 @@ function ubiq_command_icon(c) {
 
 function ubiq_command_name(c) {
     return CmdUtils.CommandList[c].name;
-}
-
-function ubiq_replace_first_word(w) {
-    if (!w) return;
-    var text = ubiq_command();
-    var words = text.split(' ');
-    words[0] = w;
-    var cmd_line = document.getElementById('ubiq_input');
-    if (!cmd_line) return;
-    cmd_line.value = words.join(' ');
-    return;
 }
 
 function ubiq_fuzzy_search(needle, haystack) {
@@ -462,12 +414,12 @@ function ubiq_keyup_handler(evt) {
 }
 
 function ubiq_save_input() {
-	cmd = document.getElementById('ubiq_input');
+	cmd = ubiq_command();
     if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.set({ 'lastCmd': cmd.value });
 }
 
 function ubiq_load_input(callback) {
-	cmd = document.getElementById('ubiq_input');
+	cmd = ubiq_command();
     if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.get('lastCmd', function(result) {
         lastCmd = result.lastCmd || "";
         cmd.value = lastCmd;
