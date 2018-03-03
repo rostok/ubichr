@@ -90,6 +90,8 @@ function ubiq_show_preview(cmd, args) {
         };
 
         var pfunc = ()=>{
+            // zoom overflow dirty fix
+            CmdUtils.popupWindow.jQuery("#ubiq-command-preview").css("overflow-y", "auto"); 
             try {
                 (preview_func.bind(cmd_struct))(ubiq_preview_el(), directObj);
             } catch (e) {

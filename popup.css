@@ -78,7 +78,9 @@ body {
     width: 100%; 
     height: 505px;
     position: relative;
-    overflow-y: auto;
+    /* overflow-y: auto; */
+    /* zoom overflow dirty fix */
+    overflow-y: hidden;
 }
 
 #ubiq-command-preview a {
@@ -91,15 +93,17 @@ body {
     transform: scale(var(--zoom)); transform-origin: 0px 0px;
     -moz-transform: scale(var(--zoom)); -moz-transform-origin: 0 0;
     -webkit-transform: scale(var(--zoom)); -webkit-transform-origin: 0 0;
-    width: calc(100% / var(--zoom) / 1.02) !important;
+    width: calc(100% / var(--zoom)) !important;
     height: calc(100% / var(--zoom)) !important;
-    overflow: auto; position: relative; border:0px;
+    height: 100%;
+    overflow: hidden; 
+    position: relative; border:0px;
 }
 #ubiq-preview-div #ubiq-preview-frm {
     --scrollX: 0px;
     --scrollY: 0px;
-    width: calc(100% - 4px + var(--scrollX)) !important; 
-    height: calc(100% - 4px + var(--scrollY)) !important;
+    width: calc(100%  + var(--scrollX)) !important; 
+    height: calc(100% + var(--scrollY)) !important;
     background-color: transparent;
     border: 0px;
 }

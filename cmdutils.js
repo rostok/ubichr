@@ -169,7 +169,11 @@ CmdUtils._searchCommandPreview = function _searchCommandPreview( pblock, {text: 
        ' style="--scrollX:'+ scrollOffs[0] +'px; --scrollY:'+ scrollOffs[1] +'px; "'+
        ' src="' + url + '"/>';
       var ifrm = pblock.lastChild;
-      ifrm.onload = function() { (CmdUtils._afterLoadPreview.bind(self))(pblock.lastChild); };
+      ifrm.onload = function() { 
+        (CmdUtils._afterLoadPreview.bind(self))(pblock.lastChild); 
+      };
+      // zoom overflow dirty fix
+      CmdUtils.popupWindow.jQuery("#ubiq-command-preview").css("overflow-y", "hidden"); 
       if (scrollOffs[0] || scrollOffs[1]) {
         wnd.setTimeout(function() {
           pblock.scrollLeft = scrollOffs[0];
