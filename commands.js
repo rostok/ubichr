@@ -748,10 +748,10 @@ CmdUtils.CreateCommand({
         email: "admin@pendor.com.ar"
     },
     description: "Search old versions of a site using the Wayback Machine (archive.org)",
-    help: "wayback <i>sitio a buscar</i>",
+    help: "wayback <i>of the website to search</i>",
     icon: "http://web.archive.org/static/images/archive.ico",
-    preview: function (pblock, theShout) {
-        pblock.innerHTML = "Buscar versiones antiguas del sitio <b>" + theShout.text + "</b>";
+    preview: function (pblock, obj) {
+        pblock.innerHTML = "Search old versions of the site <b>" + obj.input + "</b>";
     },
     execute: function (directObj) {
         CmdUtils.closePopup();
