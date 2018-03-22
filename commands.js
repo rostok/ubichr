@@ -93,7 +93,7 @@ CmdUtils.CreateCommand({
     homepage: "",
     license: "",
     preview: "Perform a clustered search through yippy.com",
-    execute: async function execute({text:text}) {
+    execute: async function execute({input:text}) {
             var xtoken = CmdUtils.get("http://yippy.com/");
             xtoken = jQuery("#xtoken", xtoken).val();
             CmdUtils.postNewTab("http://yippy.com/search/?v%3Aproject=clusty-new&query=kakao&xtoken="+xtoken);//, {"v:project":"clusty-new", xtoken:xtoken});
@@ -140,7 +140,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: async function (pblock, directObj) {
         pblock.innerHTML = "Convert currency values using xe.com converter service.";
-        var currency_spec = directObj.text;
+        var currency_spec = directObj.input;
         var matches = currency_spec.match(/^([\d\.]+)\s+(\w+)\s+to\s+(\w+)$/);
         if (!matches || matches.length<3) return;
         var amount = matches[1];
@@ -151,7 +151,7 @@ CmdUtils.CreateCommand({
         jQuery(pblock).load( xe_url+" .uccAmountWrap");
     },
     execute: function (directObj) {
-        var currency_spec = directObj.text;
+        var currency_spec = directObj.input;
         var matches = currency_spec.match(/^([\d\.]+)\s+(\w+)\s+to\s+(\w+)$/);
         var amount = matches[1];
         var curr_from = matches[2].toUpperCase();
@@ -172,10 +172,10 @@ CmdUtils.CreateCommand({
     help: "Try issuing &quot;dictionary ubiquity&quot;",
     license: "MPL",
     icon: "http://dictionary.reference.com/favicon.ico",
-    execute: function ({text: text}) {
+    execute: function ({input: text}) {
         CmdUtils.addTab("http://dictionary.reference.com/search?q=" + escape(text));
     },
-    preview: async function define_preview(pblock, {text: text}) {
+    preview: async function define_preview(pblock, {input: text}) {
         pblock.innerHTML = "Gives the meaning of a word.";
         var doc = await CmdUtils.get("http://dictionary.reference.com/search?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr" );
         doc = jQuery("div.source-box", doc)
@@ -241,14 +241,6 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
-    names: ["help", "command-list"],
-    description: "Provides basic help on using Ubiquity",
-    icon: "res/icon-128.png",
-    preview: "lists all avaiable commands",
-    execute: CmdUtils.SimpleUrlBasedCommand("help.html")
-});
-
-CmdUtils.CreateCommand({
     names: ["debug-popup"],
     description: "Open popup in window",
     icon: "res/icon-128.png",
@@ -284,7 +276,7 @@ CmdUtils.CreateCommand({
     icon: "http://www.imdb.com/favicon.ico",
     homepage: "",
     license: "",
-    preview: async function define_preview(pblock, {text: text}) {
+    preview: async function define_preview(pblock, {input: text}) {
         pblock.innerHTML = "Searches for movies on IMDb";
         if (text.trim()!="") 
         // jQuery(pblock).load("http://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr table.findList")
@@ -315,7 +307,7 @@ CmdUtils.CreateCommand({
     preview: function (pblock, directObject) {
         //ubiq_show_preview(urlString);
         //searchText = jQuery.trim(directObject.text);
-        var host = directObject.text;
+        var host = directObject.input;
         if (host.length < 1) {
             pblock.innerHTML = "Checks if URL is down";
             return;
@@ -325,7 +317,7 @@ CmdUtils.CreateCommand({
     },
     execute: async function (directObject) {
         var url = "http://downforeveryoneorjustme.com/{QUERY}";
-        var query = directObject.text;
+        var query = directObject.input;
         CmdUtils.setPreview("checking "+query);
         // Get the hostname from url
         if (!query) {
@@ -475,7 +467,7 @@ CmdUtils.CreateCommand({
     homepage: "",
     license: "",
     preview: "Open a new tab (or window) with the specified URL",
-    execute: function ({text:text}) {
+    execute: function ({input:text}) {
         if (!text.match('^https?://')) text = "http://"+text;
         CmdUtils.addTab(text);
     }
@@ -497,7 +489,7 @@ CmdUtils.CreateCommand({
     icon: "http://www.google.com/favicon.ico",
     homepage: "",
     license: "",
-    preview: async function define_preview(pblock, {text: text}) {
+    preview: async function define_preview(pblock, {input: text}) {
         text = text.trim();
         pblock.innerHTML = "Search on Google for "+text;
         if (text!="") {
@@ -528,7 +520,7 @@ CmdUtils.CreateCommand({
         email: "cosimo@cpan.org"
     },
     license: "GPL",
-    preview: async function (pblock, {text:text}) {
+    preview: async function (pblock, {input:text}) {
         var words = text.split(' ');
         var host = words[1];
         pblock.innerHTML = "Shortens an URL (or the current tab) with bit.ly";
@@ -687,7 +679,7 @@ CmdUtils.CreateCommand({
     <a href="http://www.microsofttranslator.com">Bing Translator</a> toolbar.\
   ',
     author: "based on original ubiquity translate command",
-    execute: async function translate_execute({text: text, _selection: _selection}) {
+    execute: async function translate_execute({input: text, _selection: _selection}) {
         var words = text.split(/\s+/);
         var dest = 'en';
 
@@ -713,7 +705,7 @@ CmdUtils.CreateCommand({
             CmdUtils.setPreview("text is too short or too long. try translating <a target=_blank href=https://www.bing.com/translator/>manually</a>");
         }
     },
-    preview: async function translate_preview(pblock, {text: text}) {
+    preview: async function translate_preview(pblock, {input: text}) {
         var words = text.split(/\s+/);
         var dest = 'en';
 
@@ -763,7 +755,7 @@ CmdUtils.CreateCommand({
     },
     execute: function (directObj) {
         CmdUtils.closePopup();
-        var url = directObj.text;
+        var url = directObj.input;
         if (!url) url = CmdUtils.getLocation();
         var wayback_machine = "http://web.archive.org/web/*/" + url;
         // Take me back!
@@ -791,12 +783,12 @@ CmdUtils.CreateCommand({
     license: "",
     preview: function wikipedia_preview(previewBlock, args) {
         var args_format_html = "English";
-        var searchText = args.text.trim();
+        var searchText = args.input.trim();
         if (!searchText) {
             previewBlock.innerHTML = "Searches Wikipedia in " + args_format_html + ".";
             return;
         }
-        previewBlock.innerHTML = "Searching Wikipedia for <b>" + args.text + "</b> ...";
+        previewBlock.innerHTML = "Searching Wikipedia for <b>" + args.input + "</b> ...";
 
         function onerror() {
             previewBlock.innerHTML =
@@ -866,7 +858,7 @@ CmdUtils.CreateCommand({
     description: desc = "evals math expressions",
     icon: "https://png.icons8.com/metro/50/000000/calculator.png",
     require: "https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.20.1/math.min.js",
-    preview: pr = function preview(previewBlock, {text:text}) {
+    preview: pr = function preview(previewBlock, {input:text}) {
     	if (text.trim()!='') {
     		var m = new math.parser();
     		text = text.replace(",",".");
@@ -877,7 +869,7 @@ CmdUtils.CreateCommand({
 		else
 	        previewBlock.innerHTML = desc;
     },
-    execute: function ({text:text}) { 
+    execute: function ({input:text}) { 
     	if (text.trim()!='') {
     		var m = new math.parser();
     		text = text.replace(",",".");
@@ -906,7 +898,7 @@ CmdUtils.CreateCommand({
     execute: CmdUtils.SimpleUrlBasedCommand(
         "http://answers.com/search?q={text}"
     ),
-    preview: async function define_preview(pblock, {text: text}) {
+    preview: async function define_preview(pblock, {input: text}) {
         if (text.trim()=="") {
             pblock.innerHTML = "Gives the definition from answers.com";
             return;
@@ -931,10 +923,10 @@ CmdUtils.CreateCommand({
         name: "von rostock",
     },
     license: "GPL",
-    execute: function execute({text:text}) {
+    execute: function execute({input:text}) {
         CmdUtils.setSelection(atob(text));
     },
-    preview: function preview(pblock, {text:text}) {
+    preview: function preview(pblock, {input:text}) {
         pblock.innerHTML = atob(text);
     },
 });
@@ -946,10 +938,10 @@ CmdUtils.CreateCommand({
         name: "von rostock",
     },
     license: "GPL",
-    execute: function execute({text:text}) {
+    execute: function execute({input:text}) {
         CmdUtils.setSelection(btoa(text));
     },
-    preview: function preview(pblock, {text:text}) {
+    preview: function preview(pblock, {input:text}) {
         pblock.innerHTML = btoa(text);
     },
 });
@@ -1014,5 +1006,13 @@ chrome.storage.local.get('customscripts', function(result) {
 	} catch (e) {
 		console.error("custom scripts eval failed", e);
 	}
+});
+
+CmdUtils.CreateCommand({
+    names: ["help", "command-list"],
+    description: "Provides basic help on using Ubiquity",
+    icon: "res/icon-128.png",
+    preview: CmdUtils.CommandList.map( cmd => cmd.names.join(", ") ).concat(["help", "command-list"]).sort().join(", "),
+    execute: CmdUtils.SimpleUrlBasedCommand("help.html")
 });
 

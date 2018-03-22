@@ -120,7 +120,7 @@ CmdUtils._afterLoadPreview = function(ifrm) {
 }
 
 // default common preview for search commands
-CmdUtils._searchCommandPreview = function _searchCommandPreview( pblock, {text: text} ) {
+CmdUtils._searchCommandPreview = function _searchCommandPreview( pblock, {input: text} ) {
     var q = text;
     var code = (this.description || "Search") + " for <b> '" + (q || "...") + "'</b>";
     pblock.innerHTML = code;
@@ -242,7 +242,7 @@ CmdUtils.SimpleUrlBasedCommand = function SimpleUrlBasedCommand(url) {
     if (!url) return;
     var search_func = function(directObj) {
         if (!directObj) return;
-        var text = directObj.text;
+        var text = directObj.input;
         text = encodeURIComponent(text);
         var finalurl = url;
         finalurl = finalurl.replace('{text}', text);
