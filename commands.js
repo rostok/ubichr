@@ -64,6 +64,28 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
+    name: "test",
+    takes: {},
+    description: "Close the current tab",
+    author: {},
+    icon: "",
+    homepage: "",
+    license: "",
+    preview: "Close the current tab",
+    execute: function (directObj) {
+        message = ""
+        for (var key in directObj)
+            message += key + " == " + String(directObj[key]) + "\n"
+        console.log(message)
+    },
+    options: {
+        from: { type: "string" },
+        to: { type: "string" },
+        time: { type: "string", def: "now" },
+    },
+});
+
+CmdUtils.CreateCommand({
     name: "yippy",
     description: "Perform a clustered search through yippy.com",
     author: {},
