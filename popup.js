@@ -99,7 +99,7 @@ function ubiq_basic_parse() {
     var command = words.shift();
 
     var input = words.join(' ').trim();
-    if (text === "") input = CmdUtils.selectedText;
+    if (text === "") input = CmdUtils.selectedText.trim();
 
     // Find command element
     var cmd_struct = CmdUtils.getcmd(command);
@@ -130,9 +130,9 @@ function ubiq_basic_parse() {
             if (key !== null) {
                 switch (cmd_struct["options"][key]["type"]) {
                     case "boolean": parsed_object[key] = value; break;
-                    case "string": parsed_object[key] = value; break;
+                    case "string": parsed_object[key] = value.trim(); break;
                     case "list": {
-                        if (!parsed_object[key]) parsed_object[key] = [value];
+                        if (!parsed_object[key]) parsed_object[key] = [value.trim()];
                         else parsed_object[key].push(value);
                         break;
                     }
@@ -142,7 +142,7 @@ function ubiq_basic_parse() {
                 if (parsed_object["args"].indexOf(key) === -1)
                     parsed_object["args"].push(key);
             } else {
-                parsed_object["input"] = parsed_object["input"].concat(" ").concat(value);
+                parsed_object["input"] = parsed_object["input"].concat(" ").concat(value).trim();
             }
         };
 
