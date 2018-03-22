@@ -376,7 +376,7 @@ CmdUtils.CreateCommand({
         var GM = CmdUtils.popupWindow.google.maps;
         
         // http://jsfiddle.net/user2314737/u9no8te4/
-        from = args.input || args.from;
+        var from = args.input || args.from;
         if (!from) {
             previewBlock.innerHTML = "show objects or routes on google maps.<p>syntax: <pre>\tmaps [place] [-l]\n\tmaps -from [start] -to [finish] [-l]\n\n</pre><pre>-l</pre> narrow search to your location"; 
             return;
@@ -387,7 +387,7 @@ CmdUtils.CreateCommand({
     	    var cc = geoIP.country_code || "";
         	cc = cc.toLowerCase();
         }
-        dest = args.finish;
+        var dest = args.to;
         var A = await CmdUtils.get("https://nominatim.openstreetmap.org/search.php?q="+encodeURIComponent(from)+"&polygon_geojson=1&viewbox=&format=json&countrycodes="+cc);
         if (!A[0]) return;
         CmdUtils.deblog("A",A[0]);
