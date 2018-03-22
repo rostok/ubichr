@@ -232,11 +232,11 @@ function ubiq_execute() {
     // Create a fake Ubiquity-like object, to pass to
     // command's "execute" function
     var cmd_func = cmd_struct.execute;
-    var directObj = { 
-        text: text,
-        _selection: text==CmdUtils.selectedText,
-        _cmd: cmd_struct
-    };
+    var directObj = ubiq_basic_parse();
+    if (!directObj) return;
+
+    directObj._selection = (text==CmdUtils.selectedText);
+    directObj._cmd = cmd_struct;
 
     // Run command's "execute" function
     try {
