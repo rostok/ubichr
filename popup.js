@@ -527,6 +527,16 @@ function ubiq_keydown_handler(evt) {
         return;
     }
 
+    // On TAB, try to autocomplete command
+    if (kc == 9) {
+        command = ubiq_complete_command();
+        if (command !== null) {
+            ubiq_input().value = command;
+        }
+        ubiq_focus();
+        return;
+    }
+
     // On F5 restart extension
     if (kc == 116) {
         chrome.runtime.reload();
