@@ -553,7 +553,7 @@ function ubiq_keydown_handler(evt) {
 }
 
 function ubiq_keyup_handler(evt) {
-    ubiq_show_matching_commands();
+    ubiq_show_command_options();
 }
 
 function ubiq_save_input() {
