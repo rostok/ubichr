@@ -347,6 +347,58 @@ function ubiq_html_encode(text) {
     return ubiq_html_encoder.html(text).text();
 }
 
+function ubiq_complete_command(text) {
+    if (!text) text = ubiq_command();
+
+    var words = text.split(' ');
+    if (words.length > 1) return null;
+
+    var command = words[0];
+    if (command.length == 0) return null;
+
+    matches = [];
+    for (var c in CmdUtils.CommandList) {
+        var cmdnames = CmdUtils.CommandList[c].names;
+        for (var cmd of cmdnames)
+            if (cmd.startsWith(command))
+                matches.push(cmd);
+    }
+
+    if (matches.length == 0) return null;
+    if (matches.length == 1) return matches[0];
+
+    ubiq_set_preview(matches.join(', '));
+    return null;
+}
+
+function ubiq_show_command_options() {
+    var parsed = ubiq_basic_parse();
+    if (!parsed) return;
+
+    var cmd_struct = CmdUtils.getcmd(parsed.command);
+    if (!("options" in cmd_struct)) return;
+
+    var options_div = document.createElement('div');
+    var options_list = document.createElement('ul');
+
+    for (var key in cmd_struct["options"]) {
+        li = document.createElement('LI');
+        var val = cmd_struct["options"][key]["type"];
+        if (parsed[key])
+            val = String(parsed[key]);
+        li.innerHTML = ubiq_html_encode(key + " => " + val);
+
+        options_list.appendChild(li);
+    }
+
+    li = document.createElement('LI');
+    li.innerHTML = ubiq_html_encode("input => " + parsed["input"]);
+    options_list.appendChild(li);
+
+    options_div.appendChild(options_list);
+    ubiq_result_el().innerHTML = options_div.innerHTML;
+}
+
 // will also call preview
 function ubiq_show_matching_commands(text) {
     const max_matches = 15;
