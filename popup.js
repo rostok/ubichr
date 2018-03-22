@@ -124,7 +124,7 @@ function ubiq_basic_parse() {
 
     // Find command element
     var cmd_struct = CmdUtils.getcmd(command);
-    if (!cmd_struct) return;
+    if (!cmd_struct) return null;
 
     var parsed_object = {
         text: text,
@@ -133,14 +133,10 @@ function ubiq_basic_parse() {
     };
 
     if ("options" in cmd_struct) {
-        // Init the parsed object, if possible with default values for all
-        // options.
-        for (var key in cmd_struct["options"]) {
-            if ("def" in cmd_struct["options"][key])
-                parsed_object[key] = [cmd_struct["options"][key]["def"]];
-            else
-                parsed_object[key] = null;
-        }
+        // Init the parsed object
+        for (var key in cmd_struct["options"])
+            parsed_object[key] = null;
+
         parsed_object["args"] = [];
         parsed_object["input"] = "";
 
@@ -149,7 +145,7 @@ function ubiq_basic_parse() {
         var value_open = false
 
         var update_parsed = function(key, value) {
-            if (!value || value === "") return;
+            if (!value || value === "") return null;
             if (key !== null) {
                 if (!parsed_object[key]) parsed_object[key] = [value];
                 else parsed_object[key].push(value);
@@ -212,8 +208,11 @@ function ubiq_basic_parse() {
         }
         // Add options that were defaulted and not specified
         for (key in cmd_struct["options"]) {
-            if ("def" in cmd_struct["options"][key] && parsed_object["args"].indexOf(key) === -1)
+            if ("def" in cmd_struct["options"][key] && parsed_object["args"].indexOf(key) === -1) {
                 parsed_object["args"].push(key);
+                parsed_object[key] = [cmd_struct["options"][key]["def"]];
+            }
+        }
     }
 
     return parsed_object;
