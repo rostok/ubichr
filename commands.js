@@ -188,6 +188,29 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
+    name: "wordreference",
+    description: "Translates from one to another language.",
+    options: {
+        from: { type: "string" },
+        to: { type: "string" },
+    },
+    preview: async function define_preview(pblock, obj) {
+        pblock.innerHTML = "Gives the meaning of a word.";
+        var text = obj.input;
+        if (!text) return;
+        var from = obj.from || "en";
+        var to = obj.to || "en";
+        var doc = await CmdUtils.get("http://wordreference.com/" + escape(from + to) + "/" + escape(obj.input));
+        doc = jQuery("#articleWRD", doc)
+                .html();
+        pblock.innerHTML = doc;
+    },
+    execute: function (obj) {
+        CmdUtils.addTab("http://wordreference.com/" + escape(obj.from + obj.to) + "/" + escape(obj.input));
+    },
+});
+
+CmdUtils.CreateCommand({
     name: "dramatic-chipmunk",
     takes: {},
     description: "Prepare for a dramatic moment of your life",
