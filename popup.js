@@ -1,11 +1,11 @@
 //
 // UbiChr a Ubiquity for Chrome
 // rostok@3e.pl
-// 
+//
 // based on http://github.com/cosimo/ubiquity-chrome/ by Cosimo Streppone, <cosimo@cpan.org>
 //
 // Original Ubiquity Project: http://labs.mozilla.org/ubiquity/
-// jshint esversion: 6 
+// jshint esversion: 6
 
 var ubiq_selected_command = 0;
 var ubiq_first_match;
@@ -34,7 +34,7 @@ function ubiq_preview_set_visible(v) {
 // sets preview panel, prepend allows to add new contnet to the top separated by HR
 function ubiq_set_preview(v, prepend) {
     v = v || "";
-    prepend = prepend === true; 
+    prepend = prepend === true;
     var el = ubiq_preview_el();
     if (!el) return;
     el.innerHTML = v + (prepend ? "<hr/>" + el.innerHTML : "");
@@ -48,7 +48,7 @@ function ubiq_result_el() {
 // sets result panel, prepend allows to add new contnet to the top separated by HR
 function ubiq_set_result(v, prepend) {
     v = v || "";
-    prepend = prepend === true; 
+    prepend = prepend === true;
     var el = ubiq_result_el();
     if (!el) return;
     el.innerHTML = v + (prepend ? "<hr/>" + el.innerHTML : "");
@@ -73,16 +73,16 @@ function ubiq_show_preview(cmd, args) {
     case 'undefined':
         	ubiq_set_preview( cmd_struct.description );
         	break;
-    case 'string': 
+    case 'string':
             ubiq_set_preview( preview_func );
         	break;
     default:
         var words = ubiq_command().split(' ');
         var command = words.shift();
-    
+
         var text = words.join(' ').trim();
         if (text=="") text = CmdUtils.selectedText;
-    
+
         var directObj = {
             text: text,
             _selection: text==CmdUtils.selectedText,
@@ -91,7 +91,7 @@ function ubiq_show_preview(cmd, args) {
 
         var pfunc = ()=>{
             // zoom overflow dirty fix
-            CmdUtils.popupWindow.jQuery("#ubiq-command-preview").css("overflow-y", "auto"); 
+            CmdUtils.popupWindow.jQuery("#ubiq-command-preview").css("overflow-y", "auto");
             try {
                 (preview_func.bind(cmd_struct))(ubiq_preview_el(), directObj);
             } catch (e) {
@@ -290,7 +290,7 @@ function ubiq_command() {
     return cmd.value;
 }
 
-function _ubiq_image_error(elm) { 
+function _ubiq_image_error(elm) {
     elm.src = 'res/spacer.png';
 };
 function ubiq_command_icon(c) {
@@ -471,7 +471,7 @@ function ubiq_show_matching_commands(text) {
 }
 
 function ubiq_keydown_handler(evt) {
-	// measure the input 
+	// measure the input
 	CmdUtils.inputUpdateTime = performance.now();
 	ubiq_save_input();
 
@@ -525,10 +525,10 @@ $(window).on('load', function() {
         CmdUtils.setResult = ubiq_set_result;
         CmdUtils.popupWindow = window;
         CmdUtils.updateActiveTab();
-        
+
         ubiq_load_input(()=>{ubiq_show_matching_commands();});
-        
-        // Add event handler to window 
+
+        // Add event handler to window
         document.addEventListener('keydown', function(e) { ubiq_keydown_handler(e); }, false);
         document.addEventListener('keyup', function(e) { ubiq_keyup_handler(e); }, false);
 
