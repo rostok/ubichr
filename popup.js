@@ -22,15 +22,6 @@ function ubiq_preview_el() {
     return document.getElementById('ubiq-command-preview');
 }
 
-function ubiq_preview_set_visible(v) {
-    document.getElementById('ubiq-command-panel').style.display = v ? '' : 'none';
-    if (!v)
-        ubiq_result_el().classList.add("result");
-    else
-        ubiq_result_el().classList.remove("result");
-}
-
-
 // sets preview panel, prepend allows to add new contnet to the top separated by HR
 function ubiq_set_preview(v, prepend) {
     v = v || "";
@@ -38,7 +29,6 @@ function ubiq_set_preview(v, prepend) {
     var el = ubiq_preview_el();
     if (!el) return;
     el.innerHTML = v + (prepend ? "<hr/>" + el.innerHTML : "");
-    if (v!="") ubiq_set_result("");
 }
 
 function ubiq_result_el() {
@@ -63,11 +53,12 @@ function ubiq_clear() {
 }
 
 // shows preview for command, cmd is command index
-function ubiq_show_preview(cmd, args) {
-    if (cmd == null) return;
-    var cmd_struct = CmdUtils.CommandList[cmd];
-    if (!cmd_struct || !cmd_struct.preview) return;
+function ubiq_show_preview(parsed) {
+    if (!parsed) return;
+
+    var cmd_struct = parsed._cmd;
     var preview_func = cmd_struct.preview;
+
     switch(typeof preview_func)
     {
     case 'undefined':
@@ -77,23 +68,11 @@ function ubiq_show_preview(cmd, args) {
             ubiq_set_preview( preview_func );
         	break;
     default:
-        var words = ubiq_command().split(' ');
-        var command = words.shift();
-
-        var text = words.join(' ').trim();
-        if (text=="") text = CmdUtils.selectedText;
-
-        var directObj = {
-            text: text,
-            _selection: text==CmdUtils.selectedText,
-            _cmd: cmd_struct
-        };
-
         var pfunc = ()=>{
             // zoom overflow dirty fix
             CmdUtils.popupWindow.jQuery("#ubiq-command-preview").css("overflow-y", "auto");
             try {
-                (preview_func.bind(cmd_struct))(ubiq_preview_el(), directObj);
+                (preview_func.bind(cmd_struct))(ubiq_preview_el(), parsed);
             } catch (e) {
                 CmdUtils.notify(e.toString(), "preview function error")
                 console.error(e.stack);
@@ -130,6 +109,8 @@ function ubiq_basic_parse() {
         text: text,
         command: command,
         input: input,
+        _selection: (input==CmdUtils.selectedText),
+        _cmd: cmd_struct
     };
 
     if ("options" in cmd_struct) {
@@ -145,10 +126,17 @@ function ubiq_basic_parse() {
         var value_open = false
 
         var update_parsed = function(key, value) {
-            if (!value || value === "") return null;
+            if (value === null || value === "") return null;
             if (key !== null) {
-                if (!parsed_object[key]) parsed_object[key] = [value];
-                else parsed_object[key].push(value);
+                switch (cmd_struct["options"][key]["type"]) {
+                    case "boolean": parsed_object[key] = value; break;
+                    case "string": parsed_object[key] = value; break;
+                    case "list": {
+                        if (!parsed_object[key]) parsed_object[key] = [value];
+                        else parsed_object[key].push(value);
+                        break;
+                    }
+                };
                 // Add the new key in the args, so that they are sorted by
                 // apparition.
                 if (parsed_object["args"].indexOf(key) === -1)
@@ -170,6 +158,12 @@ function ubiq_basic_parse() {
                 }
                 // Then we signal we're going to add a word to this key now.
                 current_key = words[i].substr(1);
+                // But if the key is a bool (matters only if it is present or
+                // not), then we simply set it as true and we're done.
+                if (cmd_struct["options"][current_key]["type"] === "boolean") {
+                    update_parsed(current_key, true);
+                    current_key = null;
+                }
                 continue;
             }
             // If in the middle of parsing a multi-word token
@@ -207,12 +201,9 @@ function ubiq_basic_parse() {
             current_key = null
         }
         // Add options that were defaulted and not specified
-        for (key in cmd_struct["options"]) {
-            if ("def" in cmd_struct["options"][key] && parsed_object["args"].indexOf(key) === -1) {
-                parsed_object["args"].push(key);
-                parsed_object[key] = [cmd_struct["options"][key]["def"]];
-            }
-        }
+        for (key in cmd_struct["options"])
+            if ("def" in cmd_struct["options"][key] && parsed_object["args"].indexOf(key) === -1)
+                update_parsed(key, cmd_struct["options"][key]["def"]);
     }
 
     return parsed_object;
@@ -234,9 +225,6 @@ function ubiq_execute() {
     var cmd_func = cmd_struct.execute;
     var directObj = ubiq_basic_parse();
     if (!directObj) return;
-
-    directObj._selection = (text==CmdUtils.selectedText);
-    directObj._cmd = cmd_struct;
 
     // Run command's "execute" function
     try {
@@ -371,11 +359,10 @@ function ubiq_complete_command(text) {
     return null;
 }
 
-function ubiq_show_command_options() {
-    var parsed = ubiq_basic_parse();
+function ubiq_show_command_options(parsed) {
     if (!parsed) return;
 
-    var cmd_struct = CmdUtils.getcmd(parsed.command);
+    var cmd_struct = parsed._cmd;
     if (!("options" in cmd_struct)) return;
 
     var options_div = document.createElement('div');
@@ -384,7 +371,7 @@ function ubiq_show_command_options() {
     for (var key in cmd_struct["options"]) {
         li = document.createElement('LI');
         var val = cmd_struct["options"][key]["type"];
-        if (parsed[key])
+        if (parsed[key] !== null)
             val = String(parsed[key]);
         li.innerHTML = ubiq_html_encode(key + " => " + val);
 
@@ -500,9 +487,9 @@ function ubiq_show_matching_commands(text) {
 
         suggestions_div.appendChild(suggestions_list);
         ubiq_result_el().innerHTML = suggestions_div.innerHTML; // shouldn't clear the preview
-        ubiq_preview_set_visible(true);
+        // ubiq_preview_set_visible(true);
     } else {
-        ubiq_preview_set_visible(false);
+        // ubiq_preview_set_visible(false);
         ubiq_selected_command = -1;
         ubiq_clear();
         ubiq_set_result( ubiq_help() );
@@ -553,7 +540,9 @@ function ubiq_keydown_handler(evt) {
 }
 
 function ubiq_keyup_handler(evt) {
-    ubiq_show_command_options();
+    var parsed = ubiq_basic_parse();
+    ubiq_show_command_options(parsed);
+    ubiq_show_preview(parsed);
 }
 
 function ubiq_save_input() {
@@ -579,7 +568,7 @@ $(window).on('load', function() {
         CmdUtils.popupWindow = window;
         CmdUtils.updateActiveTab();
 
-        ubiq_load_input(()=>{ubiq_show_matching_commands();});
+        ubiq_load_input(()=>{ubiq_keyup_handler(null);});
 
         // Add event handler to window
         document.addEventListener('keydown', function(e) { ubiq_keydown_handler(e); }, false);
