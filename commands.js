@@ -79,7 +79,7 @@ CmdUtils.CreateCommand({
         console.log(message)
     },
     options: {
-        from: { type: "string" },
+        from: { type: "list", def: ["lol", "lal"] },
         to: { type: "string" },
         time: { type: "string", def: "now" },
     },
@@ -367,24 +367,27 @@ CmdUtils.CreateCommand({
     timeout: 500,
     license: "",
     requirePopup: "https://maps.googleapis.com/maps/api/js?sensor=false",
+    options: {
+        from: { type: "string" },
+        to: { type: "string" },
+        l: { type: "boolean", def: false },
+    },
     preview: async function mapsPreview(previewBlock, args) {
         var GM = CmdUtils.popupWindow.google.maps;
         
         // http://jsfiddle.net/user2314737/u9no8te4/
-        var text = args.text.trim();
-        if (text=="") {
-            previewBlock.innerHTML = "show objects or routes on google maps.<p>syntax: <pre>\tmaps [place] [-l]\n\tmaps [start] to [finish] [-l]\n\n -l narrow search to your location</pre>"; 
+        from = args.input || args.from;
+        if (!from) {
+            previewBlock.innerHTML = "show objects or routes on google maps.<p>syntax: <pre>\tmaps [place] [-l]\n\tmaps -from [start] -to [finish] [-l]\n\n</pre><pre>-l</pre> narrow search to your location"; 
             return;
         }
         cc = "";
-        if (text.substr(-2)=="-l") {
+        if (args.l) {
 	        var geoIP = await CmdUtils.get("http://freegeoip.net/json/"); // search locally
     	    var cc = geoIP.country_code || "";
         	cc = cc.toLowerCase();
-        	text = text.slice(0,-2);
         }
-        from = text.split(' to ')[0];
-        dest = text.split(' to ').slice(1).join();
+        dest = args.finish;
         var A = await CmdUtils.get("https://nominatim.openstreetmap.org/search.php?q="+encodeURIComponent(from)+"&polygon_geojson=1&viewbox=&format=json&countrycodes="+cc);
         if (!A[0]) return;
         CmdUtils.deblog("A",A[0]);
@@ -404,7 +407,7 @@ CmdUtils.CreateCommand({
         });
 
         map.data.addGeoJson(geoJson = {"type": "FeatureCollection", "features": [{ "type": "Feature", "geometry": A[0].geojson, "properties": {} }]});
-        if (dest.trim()!='') {
+        if (dest) {
             var B = await CmdUtils.get("https://nominatim.openstreetmap.org/search.php?q="+encodeURIComponent(dest)+"&polygon_geojson=1&viewbox=&format=json");
             if (!B[0]) { 
                 map.fitBounds( new GM.LatLngBounds( new GM.LatLng(A[0].boundingbox[0],A[0].boundingbox[2]), new GM.LatLng(A[0].boundingbox[1],A[0].boundingbox[3]) ) );
@@ -441,9 +444,13 @@ CmdUtils.CreateCommand({
             });
         }
     },
-    execute: function({text:text}) {
-        if (text.substr(-2)=="-l") text = text.slice(0,-2);
-        CmdUtils.addTab("http://maps.google.com/maps?q="+encodeURIComponent(text));
+    execute: function(directObj) {
+        message = ""
+        for (var key in directObj)
+            message += key + " == " + String(directObj[key]) + "\n"
+        console.log(message)
+        //if (text.substr(-2)=="-l") text = text.slice(0,-2);
+        //CmdUtils.addTab("http://maps.google.com/maps?q="+encodeURIComponent(text));
     }
 });
 
