@@ -267,15 +267,7 @@ function ubiq_help() {
 
 function ubiq_focus() {
     el = ubiq_input();
-    if (el.createTextRange) {
-        var oRange = el.createTextRange();
-        oRange.moveStart("character", 0);
-        oRange.moveEnd("character", el.value.length);
-        oRange.select();
-    } else if (el.setSelectionRange) {
-        el.setSelectionRange(0, el.value.length);
-    }
-    el.focus();
+    setTimeout("el.focus()", 50);
 }
 
 function ubiq_input() {
