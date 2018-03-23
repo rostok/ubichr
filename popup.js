@@ -1,11 +1,11 @@
 //
 // UbiChr a Ubiquity for Chrome
 // rostok@3e.pl
-// 
+//
 // based on http://github.com/cosimo/ubiquity-chrome/ by Cosimo Streppone, <cosimo@cpan.org>
 //
 // Original Ubiquity Project: http://labs.mozilla.org/ubiquity/
-// jshint esversion: 6 
+// jshint esversion: 6
 
 var ubiq_selected_command = 0;
 var ubiq_first_match;
@@ -22,23 +22,13 @@ function ubiq_preview_el() {
     return document.getElementById('ubiq-command-preview');
 }
 
-function ubiq_preview_set_visible(v) {
-    document.getElementById('ubiq-command-panel').style.display = v ? '' : 'none';
-    if (!v)
-        ubiq_result_el().classList.add("result");
-    else
-        ubiq_result_el().classList.remove("result");
-}
-
-
 // sets preview panel, prepend allows to add new contnet to the top separated by HR
 function ubiq_set_preview(v, prepend) {
     v = v || "";
-    prepend = prepend === true; 
+    prepend = prepend === true;
     var el = ubiq_preview_el();
     if (!el) return;
     el.innerHTML = v + (prepend ? "<hr/>" + el.innerHTML : "");
-    if (v!="") ubiq_set_result("");
 }
 
 function ubiq_result_el() {
@@ -48,7 +38,7 @@ function ubiq_result_el() {
 // sets result panel, prepend allows to add new contnet to the top separated by HR
 function ubiq_set_result(v, prepend) {
     v = v || "";
-    prepend = prepend === true; 
+    prepend = prepend === true;
     var el = ubiq_result_el();
     if (!el) return;
     el.innerHTML = v + (prepend ? "<hr/>" + el.innerHTML : "");
@@ -63,37 +53,26 @@ function ubiq_clear() {
 }
 
 // shows preview for command, cmd is command index
-function ubiq_show_preview(cmd, args) {
-    if (cmd == null) return;
-    var cmd_struct = CmdUtils.CommandList[cmd];
-    if (!cmd_struct || !cmd_struct.preview) return;
+function ubiq_show_preview(parsed) {
+    if (!parsed) return;
+
+    var cmd_struct = parsed._cmd;
     var preview_func = cmd_struct.preview;
+
     switch(typeof preview_func)
     {
     case 'undefined':
         	ubiq_set_preview( cmd_struct.description );
         	break;
-    case 'string': 
+    case 'string':
             ubiq_set_preview( preview_func );
         	break;
     default:
-        var words = ubiq_command().split(' ');
-        var command = words.shift();
-    
-        var text = words.join(' ').trim();
-        if (text=="") text = CmdUtils.selectedText;
-    
-        var directObj = {
-            text: text,
-            _selection: text==CmdUtils.selectedText,
-            _cmd: cmd_struct
-        };
-
         var pfunc = ()=>{
             // zoom overflow dirty fix
-            CmdUtils.popupWindow.jQuery("#ubiq-command-preview").css("overflow-y", "auto"); 
+            CmdUtils.popupWindow.jQuery("#ubiq-command-preview").css("overflow-y", "auto");
             try {
-                (preview_func.bind(cmd_struct))(ubiq_preview_el(), directObj);
+                (preview_func.bind(cmd_struct))(ubiq_preview_el(), parsed);
             } catch (e) {
                 CmdUtils.notify(e.toString(), "preview function error")
                 console.error(e.stack);
@@ -114,39 +93,138 @@ function ubiq_show_preview(cmd, args) {
     return;
 }
 
-function ubiq_execute() {
-    var cmd = ubiq_command();
-    if (!cmd) return false;
-    ubiq_dispatch_command(cmd);
-    return false;
+function ubiq_basic_parse() {
+    var text = ubiq_command();
+    var words = text.split(' ');
+    var command = words.shift();
+
+    var input = words.join(' ').trim();
+    if (text === "") input = CmdUtils.selectedText.trim();
+
+    // Find command element
+    var cmd_struct = CmdUtils.getcmd(command);
+    if (!cmd_struct) return null;
+
+    var parsed_object = {
+        text: text,
+        command: command,
+        input: input,
+        _selection: (input==CmdUtils.selectedText),
+        _cmd: cmd_struct
+    };
+
+    if ("options" in cmd_struct) {
+        // Init the parsed object
+        for (var key in cmd_struct["options"])
+            parsed_object[key] = null;
+
+        parsed_object["args"] = [];
+        parsed_object["input"] = "";
+
+        var current_key = null;
+        var current_value = [];
+        var value_open = false
+
+        var update_parsed = function(key, value) {
+            if (value === null || value === "") return null;
+            if (key !== null) {
+                switch (cmd_struct["options"][key]["type"]) {
+                    case "boolean": parsed_object[key] = value; break;
+                    case "string": parsed_object[key] = value.trim(); break;
+                    case "list": {
+                        if (!parsed_object[key]) parsed_object[key] = [value.trim()];
+                        else parsed_object[key].push(value);
+                        break;
+                    }
+                };
+                // Add the new key in the args, so that they are sorted by
+                // apparition.
+                if (parsed_object["args"].indexOf(key) === -1)
+                    parsed_object["args"].push(key);
+            } else {
+                parsed_object["input"] = parsed_object["input"].concat(" ").concat(value).trim();
+            }
+        };
+
+        for (var i = 0; i < words.length; i++) {
+            // Option names bypass quotes
+            if (words[i].startsWith("-") && words[i].substr(1) in cmd_struct["options"]) {
+                // If a multi-token word was open, but we got the option, we
+                // add what we had anyway to the previous key.
+                if (value_open !== false) {
+                    update_parsed(current_key, current_value.join(' '));
+                    value_open = false
+                    current_value = []
+                }
+                // Then we signal we're going to add a word to this key now.
+                current_key = words[i].substr(1);
+                // But if the key is a bool (matters only if it is present or
+                // not), then we simply set it as true and we're done.
+                if (cmd_struct["options"][current_key]["type"] === "boolean") {
+                    update_parsed(current_key, true);
+                    current_key = null;
+                }
+                continue;
+            }
+            // If in the middle of parsing a multi-word token
+            if (value_open !== false) {
+                // If it does not end with the same token with which it
+                // started, we add it to the list.
+                if (!words[i].endsWith(value_open)) {
+                    current_value.push(words[i]);
+                    continue;
+                }
+                // Otherwise we are done, and we merge the various tokens.
+                current_value.push(words[i].slice(0, -1));
+                value_open = false
+
+                current_value = current_value.join(' ');
+            } else if ((words[i].startsWith("'") || words[i].startsWith('"')) && value_open === false) {
+                // If the word starts with a quote, check if it also ends with
+                // it, otherwise start a new multi-token word.
+                if (words[i].endsWith(words[i][0])) {
+                    current_value = words[i].slice(1, -1);
+                } else {
+                    value_open = words[i][0];
+
+                    current_value.push(words[i].substr(1));
+                    continue;
+                }
+            } else {
+                // If no quotes, we simply add the word as-is
+                current_value = words[i];
+            }
+            // Add value to key
+            update_parsed(current_key, current_value);
+            // Clear both value and key
+            current_value = []
+            current_key = null
+        }
+        // Add options that were defaulted and not specified
+        for (key in cmd_struct["options"])
+            if ("def" in cmd_struct["options"][key] && parsed_object["args"].indexOf(key) === -1)
+                update_parsed(key, cmd_struct["options"][key]["def"]);
+    }
+
+    return parsed_object;
 }
 
-function ubiq_dispatch_command(line, args) {
+function ubiq_execute() {
     var words = ubiq_command().split(' ');
     var command = words.shift();
 
     var text = words.join(' ').trim();
     if (text=="") text = CmdUtils.selectedText;
 
-    // Expand match (typing 'go' will expand to 'google')
-    cmd = ubiq_match_first_command(cmd);
-    ubiq_replace_first_word(cmd);
-
     // Find command element
-    var cmd_struct = CmdUtils.getcmd( cmd );
-
-    if (!cmd_struct) {
-        return;
-    }
+    cmd_struct = CmdUtils.getcmd(command);
+    if (!cmd_struct) return;
 
     // Create a fake Ubiquity-like object, to pass to
     // command's "execute" function
     var cmd_func = cmd_struct.execute;
-    var directObj = { 
-        text: text,
-        _selection: text==CmdUtils.selectedText,
-        _cmd: cmd_struct
-    };
+    var directObj = ubiq_basic_parse();
+    if (!directObj) return;
 
     // Run command's "execute" function
     try {
@@ -176,49 +254,22 @@ function ubiq_help() {
 }
 
 function ubiq_focus() {
-    el = document.getElementById('ubiq_input');
-    if (el.createTextRange) {
-        var oRange = el.createTextRange();
-        oRange.moveStart("character", 0);
-        oRange.moveEnd("character", el.value.length);
-        oRange.select();
-    } else if (el.setSelectionRange) {
-        el.setSelectionRange(0, el.value.length);
-    }
-    el.focus();
+    el = ubiq_input();
+    setTimeout("el.focus()", 50);
+}
+
+function ubiq_input() {
+    return document.getElementById('ubiq_input');
 }
 
 function ubiq_command() {
-    var cmd = document.getElementById('ubiq_input');
-    if (!cmd) {
-        ubiq_selected_command = -1;
-        return '';
-    }
+    var cmd = ubiq_input();
+
+    if (!cmd) return '';
     return cmd.value;
 }
 
-function ubiq_match_first_command(text) {
-    if (!text) text = ubiq_command();
-    var first_match = '';
-
-    // Command selected through cursor UP/DOWN
-    if (ubiq_first_match) {
-        return ubiq_first_match;
-    }
-
-    if (text.length > 0) {
-        for (var c in CmdUtils.CommandList) {
-            c = CmdUtils.CommandList[c].name;
-            if (c.match(RegExp('^'+text,"i"))) {
-                first_match = c;
-                break;
-            }
-        }
-    }
-    return first_match;
-}
-
-function _ubiq_image_error(elm) { 
+function _ubiq_image_error(elm) {
     elm.src = 'res/spacer.png';
 };
 function ubiq_command_icon(c) {
@@ -232,17 +283,6 @@ function ubiq_command_icon(c) {
 
 function ubiq_command_name(c) {
     return CmdUtils.CommandList[c].name;
-}
-
-function ubiq_replace_first_word(w) {
-    if (!w) return;
-    var text = ubiq_command();
-    var words = text.split(' ');
-    words[0] = w;
-    var cmd_line = document.getElementById('ubiq_input');
-    if (!cmd_line) return;
-    cmd_line.value = words.join(' ');
-    return;
 }
 
 function ubiq_fuzzy_search(needle, haystack) {
@@ -293,6 +333,57 @@ function ubiq_html_encode(text) {
     if (!ubiq_html_encoder)
         ubiq_html_encoder = $('<div>')
     return ubiq_html_encoder.html(text).text();
+}
+
+function ubiq_complete_command(text) {
+    if (!text) text = ubiq_command();
+
+    var words = text.split(' ');
+    if (words.length > 1) return null;
+
+    var command = words[0];
+    if (command.length == 0) return null;
+
+    matches = [];
+    for (var c in CmdUtils.CommandList) {
+        var cmdnames = CmdUtils.CommandList[c].names;
+        for (var cmd of cmdnames)
+            if (cmd.startsWith(command))
+                matches.push(cmd);
+    }
+
+    if (matches.length == 0) return null;
+    if (matches.length == 1) return matches[0];
+
+    ubiq_set_preview(matches.join(', '));
+    return null;
+}
+
+function ubiq_show_command_options(parsed) {
+    if (!parsed) return;
+
+    var cmd_struct = parsed._cmd;
+    if (!("options" in cmd_struct)) return;
+
+    var options_div = document.createElement('div');
+    var options_list = document.createElement('ul');
+
+    for (var key in cmd_struct["options"]) {
+        li = document.createElement('LI');
+        var val = cmd_struct["options"][key]["type"];
+        if (parsed[key] !== null)
+            val = String(parsed[key]);
+        li.innerHTML = ubiq_html_encode(key + " => " + val);
+
+        options_list.appendChild(li);
+    }
+
+    li = document.createElement('LI');
+    li.innerHTML = ubiq_html_encode("input => " + parsed["input"]);
+    options_list.appendChild(li);
+
+    options_div.appendChild(options_list);
+    ubiq_result_el().innerHTML = options_div.innerHTML;
 }
 
 // will also call preview
@@ -396,9 +487,9 @@ function ubiq_show_matching_commands(text) {
 
         suggestions_div.appendChild(suggestions_list);
         ubiq_result_el().innerHTML = suggestions_div.innerHTML; // shouldn't clear the preview
-        ubiq_preview_set_visible(true);
+        // ubiq_preview_set_visible(true);
     } else {
-        ubiq_preview_set_visible(false);
+        // ubiq_preview_set_visible(false);
         ubiq_selected_command = -1;
         ubiq_clear();
         ubiq_set_result( ubiq_help() );
@@ -409,10 +500,8 @@ function ubiq_show_matching_commands(text) {
     return;
 }
 
-var lcmd = "";
-
 function ubiq_keydown_handler(evt) {
-	// measure the input 
+	// measure the input
 	CmdUtils.inputUpdateTime = performance.now();
 	ubiq_save_input();
 
@@ -422,6 +511,16 @@ function ubiq_keydown_handler(evt) {
     // On ENTER, execute the given command
     if (kc == 13) {
         ubiq_execute();
+        return;
+    }
+
+    // On TAB, try to autocomplete command
+    if (kc == 9) {
+        command = ubiq_complete_command();
+        if (command !== null) {
+            ubiq_input().value = command;
+        }
+        ubiq_focus();
         return;
     }
 
@@ -438,36 +537,21 @@ function ubiq_keydown_handler(evt) {
         if (!el) return;
         CmdUtils.setClipboard( el.innerText );
     }
-
-    // Cursor up
-    if (kc == 38) {
-        ubiq_selected_command--;
-        lcmd = "";
-        evt.preventDefault();
-    }
-    // Cursor Down
-    else if (kc == 40) {
-        ubiq_selected_command++;
-        lcmd = "";
-        evt.preventDefault();
-    }
-
-    if (lcmd==ubiq_command()) return;
-    ubiq_show_matching_commands();
-    lcmd=ubiq_command();
 }
 
 function ubiq_keyup_handler(evt) {
-    ubiq_show_matching_commands();
+    var parsed = ubiq_basic_parse();
+    ubiq_show_command_options(parsed);
+    ubiq_show_preview(parsed);
 }
 
 function ubiq_save_input() {
-	cmd = document.getElementById('ubiq_input');
+	cmd = ubiq_input();
     if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.set({ 'lastCmd': cmd.value });
 }
 
 function ubiq_load_input(callback) {
-	cmd = document.getElementById('ubiq_input');
+	cmd = ubiq_input();
     if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.get('lastCmd', function(result) {
         lastCmd = result.lastCmd || "";
         cmd.value = lastCmd;
@@ -483,10 +567,10 @@ $(window).on('load', function() {
         CmdUtils.setResult = ubiq_set_result;
         CmdUtils.popupWindow = window;
         CmdUtils.updateActiveTab();
-        
-        ubiq_load_input(()=>{ubiq_show_matching_commands();});
-        
-        // Add event handler to window 
+
+        ubiq_load_input(()=>{ubiq_keyup_handler(null);});
+
+        // Add event handler to window
         document.addEventListener('keydown', function(e) { ubiq_keydown_handler(e); }, false);
         document.addEventListener('keyup', function(e) { ubiq_keyup_handler(e); }, false);
 

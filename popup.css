@@ -8,6 +8,10 @@ body {
     font-weight: normal;
 }
 
+pre {
+    display: inline;
+}
+
 #ubiq_window {
     position: fixed;
     left: 0px;
@@ -109,6 +113,7 @@ body {
 }
 
 #ubiq-result-panel {
+    background: #3b3b3b;
     vertical-align: top;
     width: 100%;
     height: 505px;
@@ -126,10 +131,8 @@ body {
 #ubiq-result-panel ul {
 	padding:0; 
 	margin:0;
-    width: 240px; 
+    width: 100%; 
     height: 100%;
-    background: linear-gradient(90deg, #3b3b3b 90%, transparent 10%, rgba(0,0,0,0) 0), #2d2d2d;
-    background-size: 257px auto;
 }
 
 #ubiq-result-panel li {
@@ -141,7 +144,7 @@ body {
 	padding-left: 6px;
 	font-size: 12pt;
 	height: 22pt;
-    width: 225px;
+    width: 100% - 6px;
 	background-color: #a9a9a9;
 	background-repeat: repeat;
     cursor: default;
@@ -154,10 +157,10 @@ body {
 	background-color: #d3d3d3; 
     /* background: linear-gradient(#efefef, #b0b0b0); */
     position:relative;
-    width: 225px;
+    width: 100%;
 }
 #ubiq-result-panel .more-commands {
-    width: 225px;
+    width: 100%;
     line-height: 10px;
     text-align: center;
 }
