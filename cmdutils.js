@@ -165,8 +165,8 @@ CmdUtils._searchCommandPreview = function _searchCommandPreview( pblock, {text: 
       }
       pblock.innerHTML =
      '<iframe id="ubiq-preview-frm"' +
-       ' sandbox="allow-same-origin allow-scripts allow-popups allow-forms"' +
-       ' style="--scrollX:'+ scrollOffs[0] +'px; --scrollY:'+ scrollOffs[1] +'px; "'+
+       ' sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation"' +
+       ' style="--scrollX:'+ scrollOffs[0] +'px; --scrollY:'+ scrollOffs[1] +'px; background-color:'+self.prevAttrs.backgroundColor+'; "'+
        ' src="' + url + '"/>';
       var ifrm = pblock.lastChild;
       ifrm.onload = function() { 

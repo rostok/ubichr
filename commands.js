@@ -926,6 +926,36 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
+    names: ["urldecode"],
+    description: "urldecode",
+    author: {
+        name: "von rostock",
+    },
+    license: "GPL",
+    execute: function execute({text:text}) {
+        CmdUtils.setSelection(decodeURI(text));
+    },
+    preview: function preview(pblock, {text:text}) {
+        pblock.innerHTML = decodeURI(text);
+    },
+});
+
+CmdUtils.CreateCommand({
+    names: ["urlencode"],
+    description: "urlencode",
+    author: {
+        name: "von rostock",
+    },
+    license: "GPL",
+    execute: function execute({text:text}) {
+        CmdUtils.setSelection(encodeURI(text));
+    },
+    preview: function preview(pblock, {text:text}) {
+        pblock.innerHTML = encodeURI(text);
+    },
+});
+
+CmdUtils.CreateCommand({
     name: "invert",
     description: "Inverts all colors on current page<br><br>Based on <a target=_blank href=https://stackoverflow.com/questions/4766201/javascript-invert-color-on-all-elements-of-a-page>this</a>.",
     execute: function execute(){

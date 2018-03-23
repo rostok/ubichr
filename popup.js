@@ -451,14 +451,15 @@ function ubiq_keydown_handler(evt) {
         lcmd = "";
         evt.preventDefault();
     }
-
     if (lcmd==ubiq_command()) return;
     ubiq_show_matching_commands();
     lcmd=ubiq_command();
 }
 
 function ubiq_keyup_handler(evt) {
+    if (lcmd==ubiq_command()) return;
     ubiq_show_matching_commands();
+    lcmd=ubiq_command();
 }
 
 function ubiq_save_input() {
