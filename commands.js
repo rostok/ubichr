@@ -460,12 +460,8 @@ CmdUtils.CreateCommand({
         }
     },
     execute: function(directObj) {
-        message = ""
-        for (var key in directObj)
-            message += key + " == " + String(directObj[key]) + "\n"
-        console.log(message)
-        //if (text.substr(-2)=="-l") text = text.slice(0,-2);
-        //CmdUtils.addTab("http://maps.google.com/maps?q="+encodeURIComponent(text));
+        if (text.substr(-2)=="-l") text = text.slice(0,-2);
+        CmdUtils.addTab("http://maps.google.com/maps?q="+encodeURIComponent(text));
     }
 });
 
