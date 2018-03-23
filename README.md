@@ -63,3 +63,18 @@ CmdUtils.CreateCommand({
 ```
 
 Here the ```preview``` function is defined with ```async``` keyword. This will allow to avoid callback hell when getting data with GET request (```CmdUtils.get(url)```). Note the destructuring assignment singling out the ```text``` parameter in ```preview``` function. Note: final implementation uses one liner with ```jQuery.load()```.
+
+
+## search command with iframe preview
+```javascript
+CmdUtils.makeSearchCommand({
+  name: ["qwant"],
+  description: "Searches quant.com",
+  author: {name: "Your Name", email: "your-mail@example.com"},
+  icon: "https://www.qwant.com/favicon-152.png?1503916917494",
+  url: "https://www.qwant.com/?q={QUERY}&t=all",
+  prevAttrs: {zoom: 0.75, scroll: [100/*x*/, 0/*y*/], anchor: ["c_13", "c_22"]},
+});
+
+```
+The ```CmdUtils.makeSearchCommand()``` (provided by Sebres) simplifies even more common web fetching. Instead of loading part of HTML and parsing it with JQuery an iframe is created in UbiChr results area. Extra parameters allow to scale and translate it.
