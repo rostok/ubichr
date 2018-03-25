@@ -99,7 +99,12 @@ function ubiq_basic_parse() {
     var command = words.shift();
 
     var input = words.join(' ').trim();
-    if (text === "") input = CmdUtils.selectedText.trim();
+
+    var selection = false;
+    if (input === "") {
+        input = CmdUtils.selectedText.trim();
+        selection = true;
+    }
 
     // Find command element
     var cmd_struct = CmdUtils.getcmd(command);
@@ -109,7 +114,7 @@ function ubiq_basic_parse() {
         text: text,
         command: command,
         input: input,
-        _selection: (input==CmdUtils.selectedText),
+        _selection: selection,
         _cmd: cmd_struct
     };
 
@@ -119,7 +124,6 @@ function ubiq_basic_parse() {
             parsed_object[key] = null;
 
         parsed_object["args"] = [];
-        parsed_object["input"] = "";
 
         var current_key = null;
         var current_value = [];
@@ -213,9 +217,6 @@ function ubiq_execute() {
     var words = ubiq_command().split(' ');
     var command = words.shift();
 
-    var text = words.join(' ').trim();
-    if (text=="") text = CmdUtils.selectedText;
-
     // Find command element
     cmd_struct = CmdUtils.getcmd(command);
     if (!cmd_struct) return;
@@ -228,7 +229,7 @@ function ubiq_execute() {
 
     // Run command's "execute" function
     try {
-        CmdUtils.deblog("executing [", cmd,"] [", text,"]");
+        CmdUtils.deblog("executing [", directObj.cmd ,"] [", directObj.input ,"]");
         cmd_func(directObj);
     } catch (e) {
         CmdUtils.notify(e.toString(), "execute function error")
