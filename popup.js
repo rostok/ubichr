@@ -113,7 +113,7 @@ function ubiq_basic_parse() {
     var parsed_object = {
         text: text,
         command: command,
-        input: input,
+        input: selection ? input : "",
         _selection: selection,
         _cmd: cmd_struct
     };
@@ -130,13 +130,23 @@ function ubiq_basic_parse() {
         var value_open = false
 
         var update_parsed = function(key, value) {
-            if (value === null || value === "") return null;
+            if (value === null) return;
             if (key !== null) {
                 switch (cmd_struct["options"][key]["type"]) {
-                    case "boolean": parsed_object[key] = value; break;
-                    case "string": parsed_object[key] = value.trim(); break;
+                    case "boolean": {
+                        parsed_object[key] = Boolean(value); 
+                        break;
+                    }
+                    case "string": {
+                        value = String(value).trim();
+                        if (value === "") return;
+                        parsed_object[key] = value;
+                        break;
+                    }
                     case "list": {
-                        if (!parsed_object[key]) parsed_object[key] = [value.trim()];
+                        value = String(value).trim();
+                        if (value === "") return;
+                        if (!parsed_object[key]) parsed_object[key] = [value];
                         else parsed_object[key].push(value);
                         break;
                     }
