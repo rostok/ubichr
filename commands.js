@@ -840,8 +840,8 @@ CmdUtils.CreateCommand({
     preview: pr = function preview(previewBlock, {text:text}) {
     	if (text.trim()!='') {
     		var m = new math.parser();
-    		text = text.replace(",",".");
-    		text = text.replace(" ","");
+    		text = text.replace(/,/g,".");
+    		text = text.replace(/ /g,"");
 	        previewBlock.innerHTML = m.eval(text);
 	        //CmdUtils.ajaxGet("http://api.mathjs.org/v1/?expr="+encodeURIComponent(args.text), (r)=>{ previewBlock.innerHTML = r; });
 	    }
@@ -899,7 +899,7 @@ CmdUtils.CreateCommand({
     names: ["base64decode","b64d","atob"],
     description: "base64decode",
     author: {
-        name: "von rostock",
+        name: "rostok",
     },
     license: "GPL",
     execute: function execute({text:text}) {
@@ -914,7 +914,7 @@ CmdUtils.CreateCommand({
     names: ["base64encode","b64e", "btoa"],
     description: "base64encode",
     author: {
-        name: "von rostock",
+        name: "rostok",
     },
     license: "GPL",
     execute: function execute({text:text}) {
@@ -929,7 +929,7 @@ CmdUtils.CreateCommand({
     names: ["urldecode"],
     description: "urldecode",
     author: {
-        name: "von rostock",
+        name: "rostok",
     },
     license: "GPL",
     execute: function execute({text:text}) {
@@ -944,7 +944,7 @@ CmdUtils.CreateCommand({
     names: ["urlencode"],
     description: "urlencode",
     author: {
-        name: "von rostock",
+        name: "rostok",
     },
     license: "GPL",
     execute: function execute({text:text}) {
@@ -999,9 +999,273 @@ CmdUtils.CreateCommand({
         `})
     },
 });
-// - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  - 
-// - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  - 
-// - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  - 
+
+CmdUtils.CreateCommand({
+    names: ["grep"],
+    icon: "https://www.iconsdb.com/icons/download/black/search-13-32.png",
+    description: "grep pages for patterns",
+    author: {
+        name: "rostok"
+    },
+    license: "MIT",
+    execute: ()=> {
+      CmdUtils.addTab("result.html");
+    },
+    preview: function preview(pblock, {text, _cmd}) {
+        text = text.trim();
+        if (text.length <= 2) {
+            pblock.innerHTML = _cmd.description+"<br><br>to grep make the argument longer ("+text.length+"/3)";
+        } else {
+            var arr = [];
+            chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
+            chrome.tabs.query({}, (t)=>{
+            t.map((b)=>{
+              if (b.url.match('^https?://'))
+              chrome.tabs.executeScript(b.id, 
+                                        {code:"document.body.innerText.toString();"}, 
+                                        (ret)=>{
+                                          if (typeof ret==='undefined') return;
+                                          //console.log("ret",ret);
+                                          arr = arr.concat( ret[0].split(/\s/).filter(s=>s.indexOf(text)>=0) );
+                						  pblock.innerHTML = arr.filter((v, i, a) => a.indexOf(v) === i).join("<br/>");
+                                          chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
+                                        });
+            });
+          });
+        }
+    },
+});
+
+CmdUtils.CreateCommand( {
+    names: ["regexp"],
+    icon: "http://dl1.cbsistatic.com/i/r/2017/07/06/0804523a-72e9-47ec-bcd9-e003548e6617/thumbnail/64x64/772606befe50fb3181b20c32020629cf/imgingest-1637296860404337622.png",
+    description: "search pages with regexp /<i>param</i>/g pattern",
+    author: {
+        name: "rostok"
+    },
+    execute: ()=> {
+      CmdUtils.addTab("result.html");
+    },
+    preview: function preview(pblock, {text, _cmd}) {
+        text = text.trim();
+        if (text.length <= 2) {
+            pblock.innerHTML = _cmd.description+"<br><br>to regexp make the argument longer ("+text.length+"/3)";
+        } else {
+            var arr = [];
+            chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
+            chrome.tabs.query({}, (t)=>{
+            t.map((b)=>{
+              if (b.url.match('^https?://'))
+              chrome.tabs.executeScript(b.id, 
+                                        {code:"document.body.innerText.toString();"}, 
+                                        (ret)=>{
+                                          if (typeof ret==='undefined') return;
+                						  var re = new RegExp(text, "gi");
+                						  arr = arr.concat(re.exec(ret) || []);
+                						  if (arr.length==0) return;
+                						  pblock.innerHTML = arr.map(e=>"<a data-txt='"+escape(e)+"' href=# class=chtab data-id="+b.id+">"+e+"</a>").sort().join("<br/>")+"<br>";
+                						  jQuery("a.chtab", pblock).click( (e)=>{ chrome.tabs.update(jQuery(e.target).data("id"), {active: true}); } );
+                                          chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
+                                        });
+            });
+          });
+        }
+    },
+});
+
+
+CmdUtils.CreateCommand({
+    names: ["grepInnerHTML"],
+    icon: "https://www.iconsdb.com/icons/download/black/search-13-32.png",
+    description: "grep the HTML of the pages for patterns",
+    author: {
+        name: "rostok"
+    },
+    license: "MIT",
+    execute: ()=> {
+      CmdUtils.addTab("result.html");
+    },
+    preview: function preview(pblock, {text:text, _cmd}) {
+        text = text.trim();
+        if (text.length <= 2) {
+            pblock.innerHTML = _cmd.description+"<br><br>to grep make the argument longer ("+text.length+"/3)";
+        } else {
+            var arr = [];
+            chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
+            chrome.tabs.query({}, (t)=>{
+            t.reduce((a,b)=>{
+              console.log(b.id);
+              chrome.tabs.executeScript(b.id, 
+                                        {code:"document.body.innerHTML.toString();"}, 
+                                        (ret)=>{
+                                          arr = arr.concat( ret[0].split(/\s/).filter(s=>s.indexOf(text)>=0) );
+                						  pblock.innerHTML = arr.filter((v, i, a) => a.indexOf(v) === i).join("<br/>");
+                                          chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
+                                        });
+            });
+          });
+        }
+    },
+});
+
+CmdUtils.CreateCommand({
+    names: ["links"],
+    icon: "https://www.iconsdb.com/icons/download/black/search-13-32.png",
+    description: "search and filter links on all tabs, case insensitive",
+    author: {
+        name: "rostok"
+    },
+    license: "MIT",
+    execute: ()=> {
+      CmdUtils.addTab("result.html");
+    },
+    preview: function preview(pblock, {text:text, _cmd}) {
+        text = text.trim().toLowerCase();
+        var substrings = text.split(/\s+/);
+        if (text.length <= 2) {
+            pblock.innerHTML = _cmd.description+"<br><br>to filter make the argument longer ("+text.length+"/3)";
+        } else {
+            var arr = [];
+            chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
+            chrome.tabs.query({}, (t)=>{
+            t.reduce((a,b)=>{
+              console.log(b.id);
+              chrome.tabs.executeScript(b.id, 
+                                        {code:"document.body.innerHTML.toString();"}, 
+                                        (ret)=>{
+                                          arr = arr.concat( 
+                                            		jQuery('a', ret[0])
+                                            		.map( function() { return jQuery(this).attr('href'); })
+                                            		.get()
+                                            		//.filter(s=>s.indexOf(text)>=0) 
+                                            		.filter(s=>substrings.every(subs => s.toLowerCase().indexOf(subs)>=0))                                             
+                                          );
+                						  pblock.innerHTML = arr.filter((v, i, a) => a.indexOf(v) === i).join("<br/>");
+                                          chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
+                                        });
+            });
+          });
+        }
+    },
+});
+
+
+CmdUtils.CreateCommand({
+    names: ["get-urls"],
+    icon: "",
+    description: "gets all open tab urls, add argument for filter",
+    author: {
+        name: "rostok"
+    },
+    license: "MIT",
+    execute: ()=> {
+      CmdUtils.addTab("result.html");
+    },
+    preview: function preview(pblock, {text:text}) {
+        text = text.trim()+'';
+        var arr = [];
+        chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
+        chrome.tabs.query({}, (t)=>{
+          t.forEach((a)=>{
+            if (text=='' || a.url.indexOf(text)!=-1) 
+              	pblock.innerHTML += "<a target='_blank' href='"+a.url+"'>"+a.url+"</a><br/>";
+ 			chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
+          });
+        });
+    },
+});
+
+CmdUtils.CreateCommand({
+    name: "mobygames",
+    description: "search MobyGames database.",
+    icon: "http://www.mobygames.com/favicon.ico",
+    author: {
+        name: "rostok"
+    },
+    execute: function execute(args) {   
+        CmdUtils.addTab("http://www.mobygames.com/search/quick?q=" + encodeURIComponent(args.text));
+    },
+    preview: function preview(pblock, {text:text}) {
+        pblock.innerHTML = "Search MobyGames";
+        if (text.trim()!="") 
+        	jQuery(pblock).loadAbs("http://www.mobygames.com/search/quick?q=" + encodeURIComponent(text)+" #searchResults");
+    },
+});
+
+CmdUtils.CreateCommand({
+    name: "indexof",
+    icon: "http://www.google.com/favicon.ico",
+    description: "use google to search for files",
+    help: "enter filename to find",
+    author: {
+        name: "rostok"
+    },
+    execute: function execute({text:text}) {   
+        CmdUtils.addTab("http://www.google.com/search?q=intitle%3A\"index of\" %2B\"Last Modified\" "+ encodeURIComponent(text) );
+    },
+    preview: function preview(pblock, args) {
+        pblock.innerHTML = "just press enter and don't delay";
+    },
+});
+
+CmdUtils.CreateCommand({
+    names: ["thesaurus"],
+    description: "Searches different words with the same meaning",
+    icon: "http://cdn.sfdict.com/hp/502812f9.ico",
+    preview: "Searches different words with the same meaning",
+    execute: CmdUtils.SimpleUrlBasedCommand("http://www.thesaurus.com/browse/{text}") 
+});
+
+CmdUtils.CreateCommand({
+    name: "extensions-chrome",
+    description: "opens chrome extensions tab",
+    execute: function execute(args) {
+      chrome.tabs.query({}, (t)=>{
+        var found = false;
+		t.map((b)=>{
+          if (b.url=="chrome://extensions/") {
+            chrome.tabs.update(b.id, {highlighted: true});
+            found = true;
+          	return;
+          }
+        });
+        if (!found) CmdUtils.addTab("chrome://extensions/");
+      });
+    },
+});
+
+CmdUtils.CreateCommand({
+    name: "settings-chrome",
+    icon: "https://www.iconsdb.com/icons/download/black/settings-32.png",
+    description: "opens chrome settings tab",
+    execute: function execute(args) {
+      chrome.tabs.query({}, (t)=>{
+        var found = false;
+		t.map((b)=>{
+          if (b.url=="chrome://settings/") {
+            chrome.tabs.update(b.id, {highlighted: true});
+            found = true;
+          	return;
+          }
+        });
+        if (!found) CmdUtils.addTab("chrome://settings/");
+      });
+    },
+});
+
+CmdUtils.CreateCommand({
+    name: "replace-selection",
+    icon: "http://www.mozilla.com/favicon.ico",
+    execute: function execute(args) {
+      CmdUtils.setSelection(args.text);
+    },
+    preview: "replace selected text with args",
+});
+
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 // mark built-int commands
 CmdUtils.CommandList.forEach((c)=>{c['builtIn']=true;});
