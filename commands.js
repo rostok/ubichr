@@ -336,8 +336,36 @@ CmdUtils.CreateCommand({
     execute: CmdUtils.SimpleUrlBasedCommand("https://www.last.fm/music/{text}/+similar")
 });
 
+/// since June 2018 Google Maps no longer work without license key
 CmdUtils.CreateCommand({
     name: "maps",
+    description: "Shows a location on the map, iframe version",
+    icon: "http://www.google.com/favicon.ico",
+    execute: function({text:text}) {
+        if (text.substr(-2)=="-l") text = text.slice(0,-2);
+        CmdUtils.addTab("http://maps.google.com/maps?q="+encodeURIComponent(text));
+    },
+    preview: function preview(pblock, {text:text}) {
+        if (text=="") {
+            previewBlock.innerHTML = "show objects or routes on google maps.<p>syntax: <pre>\tmaps [place]\n\tmaps [start] to [finish]</pre>"; 
+            return;
+        }
+        pblock.innerHTML = `
+                <div class="mapouter">
+                    <div class="gmap_canvas">
+                        <iframe width="540" height="505" id="gmap_canvas" src="https://maps.google.com/maps?q=`+encodeURIComponent(text)+`&t=&z=13&ie=UTF8&iwloc=&output=embed" 
+                        frameborder="0" scrolling="no" marginheight="0" marginwidth="0"></iframe>
+                    </div>
+                <style>
+                    .mapouter{text-align:right;height:505px;width:540px;}
+                    .gmap_canvas {overflow:hidden;background:none!important;height:504px;width:540px;}
+                </style>
+                </div>`;
+    },
+});
+
+CmdUtils.CreateCommand({
+    name: "oldmaps",
     description: "Shows a location on the map",
     author: {},
     icon: "http://www.google.com/favicon.ico",
