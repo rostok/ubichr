@@ -347,7 +347,7 @@ CmdUtils.CreateCommand({
     },
     preview: function preview(pblock, {text:text}) {
         if (text=="") {
-            previewBlock.innerHTML = "show objects or routes on google maps.<p>syntax: <pre>\tmaps [place]\n\tmaps [start] to [finish]</pre>"; 
+            pblock.innerHTML = "show objects or routes on google maps.<p>syntax: <pre>\tmaps [place]\n\tmaps [start] to [finish]</pre>"; 
             return;
         }
         pblock.innerHTML = `
