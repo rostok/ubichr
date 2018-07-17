@@ -1083,14 +1083,19 @@ CmdUtils.CreateCommand( {
             chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
             chrome.tabs.query({}, (t)=>{
             t.map((b)=>{
-              if (b.url.match('^https?://'))
+              if (b.url.match('^http'))
               chrome.tabs.executeScript(b.id, 
                                         {code:"document.body.innerText.toString();"}, 
                                         (ret)=>{
                                           if (typeof ret==='undefined') return;
                 						  var re = new RegExp(text, "gi");
-                						  arr = arr.concat(re.exec(ret) || []);
+                						  var m;
+                                          do {
+                                              m = re.exec(ret);
+                                              if (m) arr = arr.concat(m[0]);
+                                          } while (m);
                 						  if (arr.length==0) return;
+                                          arr = Array.from(new Set(arr));
                 						  pblock.innerHTML = arr.map(e=>"<a data-txt='"+escape(e)+"' href=# class=chtab data-id="+b.id+">"+e+"</a>").sort().join("<br/>")+"<br>";
                 						  jQuery("a.chtab", pblock).click( (e)=>{ chrome.tabs.update(jQuery(e.target).data("id"), {active: true}); } );
                                           chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
