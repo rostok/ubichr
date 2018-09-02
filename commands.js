@@ -1299,8 +1299,9 @@ CmdUtils.CreateCommand({
     name: "open",
     description: "opens multiple links from clipboard or argument list in separate tabs",
     author: "rostok",
-    icon: "http://www.mozilla.com/favicon.ico",
+    icon: "res/icon-128.png",
     execute: function execute({text:text}) {
+        if (text=="") text = CmdUtils.getClipboard();
         text.trim().split(/\s+/).forEach( s => CmdUtils.addTab(s) );
     },
     preview: function preview(pblock, {text:text}) {
