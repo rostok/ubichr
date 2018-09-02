@@ -43,8 +43,8 @@ CmdUtils.CreateCommand = function CreateCommand(args) {
     	if (typeof args.preview == 'function') {
 		    args.preview_timeout = args.preview;
 			args.preview = function(b,a) {
-                if (args.preview_timeoutFunc !== null) clearTimeout(args.preview_timeoutFunc);
-                args.preview_timeoutFunc = setTimeout(function () { 
+                clearTimeout(CmdUtils.lastPrevTimeoutID);
+                CmdUtils.lastPrevTimeoutID = setTimeout(function () { 
                 	args.preview_timeout(b, a); 
                 }, to);
 			};
@@ -52,8 +52,8 @@ CmdUtils.CreateCommand = function CreateCommand(args) {
     	if (typeof args.execute == 'function') {
 		    args.execute_timeout = args.execute;
 			args.execute = function(a) {
-                if (args.execute_timeoutFunc !== null) clearTimeout(args.execute_timeoutFunc);
-                args.execute_timeoutFunc = setTimeout(function () {
+                clearTimeout(CmdUtils.lastExecTimeoutID);
+                CmdUtils.lastExecTimeoutID = setTimeout(function () {
 					args.execute_timeout(a);
                 }, to);
 			};

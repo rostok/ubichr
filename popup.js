@@ -93,6 +93,7 @@ function ubiq_show_preview(cmd, args) {
             // zoom overflow dirty fix
             CmdUtils.popupWindow.jQuery("#ubiq-command-preview").css("overflow-y", "auto"); 
             try {
+                clearTimeout(CmdUtils.lastPrevTimeoutID);
                 (preview_func.bind(cmd_struct))(ubiq_preview_el(), directObj);
             } catch (e) {
                 CmdUtils.notify(e.toString(), "preview function error")
@@ -151,6 +152,7 @@ function ubiq_dispatch_command(line, args) {
     // Run command's "execute" function
     try {
         CmdUtils.deblog("executing [", cmd,"] [", text,"]");
+        clearTimeout(CmdUtils.lastExecTimeoutID);
         cmd_func(directObj);
     } catch (e) {
         CmdUtils.notify(e.toString(), "execute function error")
