@@ -370,7 +370,7 @@ CmdUtils.CreateCommand({
     author: {},
     icon: "http://www.google.com/favicon.ico",
     homepage: "",
-    timeout: 500,
+    timeout: 600,
     license: "",
     requirePopup: "https://maps.googleapis.com/maps/api/js?sensor=false",
     preview: async function mapsPreview(previewBlock, args) {
@@ -1301,11 +1301,11 @@ CmdUtils.CreateCommand({
     author: "rostok",
     icon: "res/icon-128.png",
     execute: function execute({text:text}) {
-        if (text=="") text = CmdUtils.getClipboard();
-        text.trim().split(/\s+/).forEach( s => CmdUtils.addTab(s) );
+        if (text.trim()=="") text = CmdUtils.getClipboard();
+        text.trim().split(/\s+/).forEach( s => { if (s.trim()!='') CmdUtils.addTab(s) } );
     },
     preview: function preview(pblock, {text:text}) {
-      	if (text=="") text = CmdUtils.getClipboard();
+        if (text.trim()=="") text = CmdUtils.getClipboard();
         text = text.trim().split(/\s+/).map( (s,a) => { return "<br><a target=_blank href='"+s+"'>"+s+"</a>"; } ).join("");
         pblock.innerHTML = "open:" + text;
     },

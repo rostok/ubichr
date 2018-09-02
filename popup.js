@@ -93,7 +93,9 @@ function ubiq_show_preview(cmd, args) {
             // zoom overflow dirty fix
             CmdUtils.popupWindow.jQuery("#ubiq-command-preview").css("overflow-y", "auto"); 
             try {
-                clearTimeout(CmdUtils.lastPrevTimeoutID);
+                CmdUtils.deblog("prev [", cmd_struct.name ,"] [", text,"]");
+                // CmdUtils.deblog("clear time out ", CmdUtils.lastPrevTimeoutID, ".");
+                CmdUtils.backgroundWindow.clearTimeout(CmdUtils.lastPrevTimeoutID);
                 (preview_func.bind(cmd_struct))(ubiq_preview_el(), directObj);
             } catch (e) {
                 CmdUtils.notify(e.toString(), "preview function error")
@@ -151,8 +153,9 @@ function ubiq_dispatch_command(line, args) {
 
     // Run command's "execute" function
     try {
-        CmdUtils.deblog("executing [", cmd,"] [", text,"]");
-        clearTimeout(CmdUtils.lastExecTimeoutID);
+        CmdUtils.deblog("exec [", cmd_struct.name ,"] [", text,"]");
+        // CmdUtils.deblog("clear time out ", CmdUtils.lastExecTimeoutID, ".");
+        CmdUtils.backgroundWindow.clearTimeout(CmdUtils.lastExecTimeoutID);
         cmd_func(directObj);
     } catch (e) {
         CmdUtils.notify(e.toString(), "execute function error")
@@ -164,7 +167,8 @@ function ubiq_dispatch_command(line, args) {
 }
 
 function ubiq_help() {
-    var html = '<p>Type the name of a command and press Enter to execute it, or <b>help</b> for assistance.</p>';
+    var html = '<div style="position:absolute; top:56px; right:0px; color: #666;">UbiChr v'+chrome.runtime.getManifest().version+'</div>';
+    html += '<p>Type the name of a command and press Enter to execute it, or <b>help</b> for assistance.</p>';
     html += "<p>commands loaded:<BR>";
     html += CmdUtils.CommandList.map((c)=>{
         return "<span fakeattr='"+c.name+"' href=# title='"+c.description+"'>"+(c.builtIn ? c.name : "<u>"+c.name+"</u>")+"</span>";

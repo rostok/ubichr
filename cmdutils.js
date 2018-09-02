@@ -17,9 +17,11 @@ if (!CmdUtils) var CmdUtils = {
 };
 
 // debug log
-CmdUtils.deblog = function () {
-    if(CmdUtils.DEBUG){
-        console.log.apply(console, arguments);
+CmdUtils.deblog = function (...args) {
+    if(CmdUtils.DEBUG) {
+        if (CmdUtils.backgroundWindow) CmdUtils.backgroundWindow.console.log.apply(CmdUtils.backgroundWindow.console, args)
+        if (CmdUtils.popupWindow) CmdUtils.popupWindow.console.log.apply(CmdUtils.popupWindow.console, args)
+        console.log.apply(console, args);
     }
 }
 
@@ -43,10 +45,13 @@ CmdUtils.CreateCommand = function CreateCommand(args) {
     	if (typeof args.preview == 'function') {
 		    args.preview_timeout = args.preview;
 			args.preview = function(b,a) {
+                // CmdUtils.deblog("clear time out ", CmdUtils.lastPrevTimeoutID, ".");
                 clearTimeout(CmdUtils.lastPrevTimeoutID);
                 CmdUtils.lastPrevTimeoutID = setTimeout(function () { 
+                    // CmdUtils.deblog("delated prev ", args.name, ":", to);
                 	args.preview_timeout(b, a); 
                 }, to);
+                // CmdUtils.deblog("CmdUtils.lastPrevTimeoutID is ", CmdUtils.lastPrevTimeoutID);
 			};
     	}
     	if (typeof args.execute == 'function') {
@@ -54,8 +59,10 @@ CmdUtils.CreateCommand = function CreateCommand(args) {
 			args.execute = function(a) {
                 clearTimeout(CmdUtils.lastExecTimeoutID);
                 CmdUtils.lastExecTimeoutID = setTimeout(function () {
+                    // CmdUtils.deblog("delated exec ", args.name, ":", to);
 					args.execute_timeout(a);
                 }, to);
+                // CmdUtils.deblog("CmdUtils.lastExecTimeoutID is ", CmdUtils.lastExecTimeoutID);
 			};
     	}
     }
