@@ -414,6 +414,18 @@ CmdUtils.setClipboard = function setClipboard (t) {
     input.remove();
 };
 
+// gets clipboard
+CmdUtils.getClipboard = function getClipboard () {
+    var input = document.createElement('textarea');
+    document.body.appendChild(input);
+    input.focus();
+    input.select();
+    document.execCommand('paste');
+    var r = input.value;
+    input.remove();
+    return r || "";
+};
+
 CmdUtils.unloadCustomScripts = function unloadCustomScripts() {
     CmdUtils.CommandList = CmdUtils.CommandList.filter((c)=>{
         return c['builtIn']==true;
