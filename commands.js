@@ -1242,10 +1242,21 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
-    names: ["thesaurus"],
+    names: ["thesaurus", "english-thesaurus"],
     description: "Searches different words with the same meaning",
     icon: "http://cdn.sfdict.com/hp/502812f9.ico",
-    preview: "Searches different words with the same meaning",
+	preview: function preview(pblock, {text:text}) {
+        pblock.innerHTML = "Searches different words with the same meaning "+text;
+        if (text=="") return;
+        var url = "http://www.thesaurus.com/browse/" + encodeURIComponent(text);
+        CmdUtils.ajaxGet(url, function(data) {
+            pblock.innerHTML = jQuery(".MainContentContainer", data).html();
+            jQuery("a", pblock).each(function() {
+               $(this).attr("target", "_blank").attr("href", 'http://www.thesaurus.com'+$(this).attr("href"));
+            });
+            if (pblock.innerHTML=="undefined") pblock.innerHTML = "no words";
+        });
+    },
     execute: CmdUtils.SimpleUrlBasedCommand("http://www.thesaurus.com/browse/{text}") 
 });
 
@@ -1308,6 +1319,62 @@ CmdUtils.CreateCommand({
         if (text.trim()=="") text = CmdUtils.getClipboard();
         text = text.trim().split(/\s+/).map( (s,a) => { return "<br><a target=_blank href='"+s+"'>"+s+"</a>"; } ).join("");
         pblock.innerHTML = "open:" + text;
+    },
+});
+
+// requires manifest perms with cookies
+CmdUtils.CreateCommand({
+    name: "cookies",
+    description: "get cookies",
+    author: "Genuinous™", // https://chrome.google.com/webstore/detail/cookiestxt/njabckikapfpffapmjgojcnbfjonfjfg
+    execute: function execute(args) {
+        
+    },
+    preview: function preview(pblock, args) {
+      
+  function toString(p) {
+    var i;
+    for (i in p) {
+      var obj = p[i];
+      var indent = parse(obj.domain) + "\t";
+      indent = indent + (parse((!obj.hostOnly).toString().toUpperCase()) + "\t");
+      indent = indent + (parse(obj.path) + "\t");
+      indent = indent + (parse(obj.secure.toString().toUpperCase()) + "\t");
+      indent = indent + (parse(obj.expirationDate ? Math.round(obj.expirationDate) : "0") + "\t");
+      indent = indent + (parse(obj.name) + "\t");
+      indent = indent + parse(obj.value);
+      indent = indent + "\n";
+      value = value + indent;
+      if (-1 !== obj.domain.indexOf(val)) {
+        s = s + indent;
+      }
+    }
+    return s;
+  }
+  function request(search) {
+    pblock.innerHTML += search;
+    toString(search);
+    var basename = "# HTTP Cookie File downloaded with cookies.txt by Genuinous @genuinous\n";
+    var _DOT_ = "# This file can be used by wget, curl, aria2c and other standard compliant tools.\n";
+    var name = "# Usage Examples:\n";
+    name = name + ('#   1) wget -x --load-cookies cookies.txt "' + parse(b) + '"\n');
+    name = name + ('#   2) curl --cookie cookies.txt "' + parse(b) + '"\n');
+    name = name + ('#   3) aria2c --load-cookies cookies.txt "' + parse(b) + '"\n');
+    name = name + "#\n";
+    var p = "data:application/octet-stream;base64," + btoa(unescape(encodeURIComponent(basename + _DOT_ + name + s)));
+    var k = "<a href=" + p + ' download="cookies.txt">click here</a>';
+    p = "data:application/octet-stream;base64," + btoa(unescape(encodeURIComponent(basename + _DOT_ + name + value)));
+    var c = "<a href=" + p + ' download="cookies.txt">all cookies</a>';
+    var currProj = "# HTTP Cookie File for <b>" + parse(val) + "</b> by Genuinous @genuinous.\n";
+    var repository = "# To download cookies for this tab " + k + ", or download " + c + ".\n";
+    var h = "# Download " + c + ".\n";
+    if (s) {
+      pblock.innerHTML += "<pre>\n" + currProj + repository + name + s + "</pre>";
+    } else {
+      pblock.innerHTML += "<pre># HTTP Cookie File by Genuinous @genuinous.\n# No cookies for " + val + ".\n" + h + "</div></pre>";
+    }
+  }
+  chrome.cookies.getAll({}, request);
     },
 });
 
