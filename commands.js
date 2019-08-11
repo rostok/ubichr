@@ -1168,6 +1168,7 @@ CmdUtils.CreateCommand({
                                         (ret)=>{
                                           arr = arr.concat( 
                                             		jQuery('a', ret[0])
+                                            		.absolutize(CmdUtils.getLocation())
                                             		.map( function() { return jQuery(this).attr('href'); })
                                             		.get()
                                             		//.filter(s=>s.indexOf(text)>=0) 

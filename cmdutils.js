@@ -470,15 +470,14 @@ CmdUtils.notify = function (message, title) {
 
 (function ( $ ) {
     $.fn.blankify = function( url ) {
-        console.log("tryeing to blnk",this.find("a"));
+        console.log("trying to blnk",this.find("a"));
         return this.find("a").not('[href^="http"],[href^="//:"],[href^="mailto:"],[href^="#"]').each(function() {
-            console.log("bln");
             $(this).attr("target", "_blank").attr('href', function(index, value) {
                 if (value.substr(0,1) !== "/") value = "/"+value;
                 return url + value;
             });
-});
-        };
+        });
+    };
 }( jQuery ));
 
 // https://stackoverflow.com/questions/8498592/extract-hostname-name-from-string
@@ -488,6 +487,7 @@ function url_domain(data) {
     return a.hostname;
 }
 
+// loads absolute urls
 (function ( $ ) {
     $.fn.loadAbs = function( url, complete ) {
         var result = this;
@@ -511,4 +511,26 @@ function url_domain(data) {
             if (typeof complete === 'function') complete();
         });
     };
+}( jQuery ));
+
+// changes src and href attributes in jQuery resultset with absoulute urls
+(function ( $ ) {
+    $.fn.absolutize = function( url ) {
+        if (typeof url === "undefined" || url == "") url = window.location;
+        var others = this.find('[href^="http"],[href^="//:"],[href^="mailto:"],[href^="#"]') 
+                         .add('[src^="http"],[src^="//:"],[src^="mailto:"],[src^="#"]');
+        var anchors = this.not('[href^="http"],[href^="//:"],[href^="mailto:"],[href^="#"]')
+                    .attr('href', function(index, value) {
+                        if (typeof value === "undefined") return url;
+                        if (value.substr(0,1) !== "/" && url.substr(-1) !== "/") value = "/" + value;
+                        return url + value;
+                    });
+        var images = this.not('[src^="http"],[src^="//:"],[src^="mailto:"],[src^="#"]')
+                    .attr('src', function(index, value) {
+                        if (typeof value === "undefined") return url;
+                        if (value.substr(0,1) !== "/" && url.substr(-1) !== "/") value = "/" + value;
+                        return url + value;
+                    });
+        return others.add(anchors).add(images);
+        };
 }( jQuery ));
