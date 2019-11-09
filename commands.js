@@ -1323,20 +1323,27 @@ CmdUtils.CreateCommand({
     },
 });
 
-// requires manifest perms with cookies
 CmdUtils.CreateCommand({
     name: "cookies",
-    description: "get cookies",
-    author: "Genuinous™", // https://chrome.google.com/webstore/detail/cookiestxt/njabckikapfpffapmjgojcnbfjonfjfg
+    description: "gets cookies, press Enter to save file, filter by domain or * for all",
+    author: "Genuinous/rostok",
+    require: ["https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js"],
     execute: function execute(args) {
-        
+        var blob = new Blob([CmdUtils.popupWindow.jQuery("#ubiq-command-preview").text()], {type: "text/plain;charset=utf-8"});
+        saveAs(blob, "cookies.txt");
     },
-    preview: function preview(pblock, args) {
+    preview: function preview(pblock, {text:text}) {
+        var b = CmdUtils.getLocation();
       
-  function toString(p) {
+        function parse(a) {
+            return String(a).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+        function request(search) {
+            if(text=="") text = CmdUtils.getLocation().split("//").pop().split("/").shift() || "";
+            var s="";
     var i;
-    for (i in p) {
-      var obj = p[i];
+            for (i in search) {
+                var obj = search[i];
       var indent = parse(obj.domain) + "\t";
       indent = indent + (parse((!obj.hostOnly).toString().toUpperCase()) + "\t");
       indent = indent + (parse(obj.path) + "\t");
@@ -1345,35 +1352,29 @@ CmdUtils.CreateCommand({
       indent = indent + (parse(obj.name) + "\t");
       indent = indent + parse(obj.value);
       indent = indent + "\n";
-      value = value + indent;
-      if (-1 !== obj.domain.indexOf(val)) {
+                if (text=="*") 
+        s = s + indent;
+                else if (obj.domain.includes(text)) {
         s = s + indent;
       }
     }
-    return s;
-  }
-  function request(search) {
-    pblock.innerHTML += search;
-    toString(search);
-    var basename = "# HTTP Cookie File downloaded with cookies.txt by Genuinous @genuinous\n";
-    var _DOT_ = "# This file can be used by wget, curl, aria2c and other standard compliant tools.\n";
-    var name = "# Usage Examples:\n";
-    name = name + ('#   1) wget -x --load-cookies cookies.txt "' + parse(b) + '"\n');
-    name = name + ('#   2) curl --cookie cookies.txt "' + parse(b) + '"\n');
-    name = name + ('#   3) aria2c --load-cookies cookies.txt "' + parse(b) + '"\n');
-    name = name + "#\n";
-    var p = "data:application/octet-stream;base64," + btoa(unescape(encodeURIComponent(basename + _DOT_ + name + s)));
-    var k = "<a href=" + p + ' download="cookies.txt">click here</a>';
-    p = "data:application/octet-stream;base64," + btoa(unescape(encodeURIComponent(basename + _DOT_ + name + value)));
-    var c = "<a href=" + p + ' download="cookies.txt">all cookies</a>';
-    var currProj = "# HTTP Cookie File for <b>" + parse(val) + "</b> by Genuinous @genuinous.\n";
-    var repository = "# To download cookies for this tab " + k + ", or download " + c + ".\n";
-    var h = "# Download " + c + ".\n";
+
+            var info = "# Gets cookies, press Enter to save file, filter by domain or * for all\n#\n";
+            info += "# HTTP Cookie File for <b>" + parse(text) + "</b> by Genuinous @genuinous.\n";
+            info += "# This file can be used by wget, curl, aria2c and other standard compliant tools.\n";
+            info += "# Usage Examples:\n";
+            info += ('#   1) wget -x --load-cookies cookies.txt "' + parse(b) + '"\n');
+            info += ('#   2) curl --cookie cookies.txt "' + parse(b) + '"\n');
+            info += ('#   3) aria2c --load-cookies cookies.txt "' + parse(b) + '"\n');
+            info += "#\n";
+            var data = "data:application/octet-stream;base64," + btoa(unescape(encodeURIComponent(info + s)));
+            var link = "# Download <a href=" + data + ' download="cookies.txt">cookies.txt</a>';
     if (s) {
-      pblock.innerHTML += "<pre>\n" + currProj + repository + name + s + "</pre>";
+                info = "\n" + link + info + s;
     } else {
-      pblock.innerHTML += "<pre># HTTP Cookie File by Genuinous @genuinous.\n# No cookies for " + val + ".\n" + h + "</div></pre>";
+                info = "\n# No cookies for " + text;
     }
+            pblock.innerHTML = "<pre>"+info+"</pre>";
   }
   chrome.cookies.getAll({}, request);
     },
