@@ -69,7 +69,7 @@ body {
     color: #ddd;
     font-style: italic;
     width: 540px; 
-    height: 0px;
+    /* height: 0px; */
 }
 
 #ubiq-command-preview {
@@ -172,4 +172,10 @@ body {
     border-top: 12pt solid transparent;
     border-bottom: 12pt solid transparent;
     border-left: 6pt solid #d3d3d3;
+}
+
+[data-option=selected] {
+    background-color: #404040;
+    /* border-collapse: collapse;  */
+    /* border:1px solid red; */
 }

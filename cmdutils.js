@@ -8,12 +8,14 @@ if (!CmdUtils) var CmdUtils = {
     jQuery: jQuery,
     backgroundWindow: window,
     popupWindow: null,
+    lastKeyEvent:null,
     log: console.log,
     active_tab: null,   // tab that is currently active, updated via background.js 
     selectedText: "",   // currently selected text, update via content script selection.js
     selectedHTML: "",   // currently selected text, update via content script selection.js
     setPreview: function setPreview(message, prepend) { console.log(message); },
     setResult: function setResult(message, prepend) { console.log(message); },
+    setTip: function setTip(message, prepend) { console.log(message); },
 };
 
 // debug log
@@ -468,6 +470,7 @@ CmdUtils.notify = function (message, title) {
     CmdUtils.lastNotification = title+"/"+message;
 };
 
+// changes anchors target to _blank
 (function ( $ ) {
     $.fn.blankify = function( url ) {
         console.log("trying to blnk",this.find("a"));
@@ -533,4 +536,29 @@ function url_domain(data) {
                     });
         return others.add(anchors).add(images);
         };
+}( jQuery ));
+
+// neat function by mike https://stackoverflow.com/questions/2346011/how-do-i-scroll-to-an-element-within-an-overflowed-div
+(function ( $ ) {
+        $.fn.scrollTo = function(elem, speed) {
+        var $this = jQuery(this);
+        var $this_top = $this.offset().top;
+        var $this_bottom = $this_top + $this.height();
+        var $elem = jQuery(elem);
+        var $elem_top = $elem.offset().top;
+        var $elem_bottom = $elem_top + $elem.height();
+    
+        if ($elem_top > $this_top && $elem_bottom < $this_bottom) {
+            // in view so don't do anything
+            return;
+        }
+        var new_scroll_top;
+        if ($elem_top < $this_top) {
+            new_scroll_top = {scrollTop: $this.scrollTop() - $this_top + $elem_top};
+        } else {
+            new_scroll_top = {scrollTop: $elem_bottom - $this_bottom + $this.scrollTop()};
+        }
+        $this.animate(new_scroll_top, speed === undefined ? 100 : speed);
+        return this;
+    };
 }( jQuery ));

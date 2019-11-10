@@ -8,14 +8,15 @@
 // jshint esversion: 6 
 
 var ubiq_selected_command = 0;
+var ubiq_selected_option = -1;
 var ubiq_first_match;
 
 // sets the tip field (for time being this is the preview panel)
 function ubiq_set_tip(v) {
-    // var el = document.getElementById('ubiq-command-tip');
-    // if (!el) return;
-    // el.innerHTML = v;
-    ubiq_set_preview(v);
+    var el = document.getElementById('ubiq-command-tip');
+    if (!el) return;
+    el.innerHTML = v;
+    // ubiq_set_preview(v);
 }
 
 function ubiq_preview_el() {
@@ -148,7 +149,9 @@ function ubiq_dispatch_command(line, args) {
     var directObj = { 
         text: text,
         _selection: text==CmdUtils.selectedText,
-        _cmd: cmd_struct
+        _cmd: cmd_struct,
+        _opt_idx: ubiq_selected_option,
+        _opt_val: $(ubiq_preview_el()).find("[data-option=selected]").data("option-value")
     };
 
     // Run command's "execute" function
@@ -374,7 +377,9 @@ function ubiq_show_matching_commands(text) {
         var suggestions_div = document.createElement('div');
         var suggestions_list = document.createElement('ul');
         var selcmdidx = matches[ubiq_selected_command][0];
-        ubiq_set_tip( CmdUtils.CommandList[ selcmdidx ].description );
+        ubiq_clear();
+        ubiq_set_preview( CmdUtils.CommandList[ selcmdidx ].description );
+        ubiq_selected_option = -1;
         ubiq_show_preview(selcmdidx);
 
         for (var c in matches) {
@@ -411,14 +416,27 @@ function ubiq_show_matching_commands(text) {
         if (text.length)
             ubiq_set_result( 'no commands found for <b>'+ ubiq_html_encode(text) +'</b>', true );
     }
-
     return;
+}
+
+function ubiq_update_options()
+{
+    var size = $(ubiq_preview_el()).find("[data-option]").size();
+    if (ubiq_selected_option<0) ubiq_selected_option=-1;
+    if (ubiq_selected_option>=size) ubiq_selected_option=size-1;
+    // ubiq_set_tip("sel opt"+ubiq_selected_option);
+    $(ubiq_preview_el()).find("[data-option]").attr("data-option","");
+    if (ubiq_selected_option>=0) {
+        $(ubiq_preview_el()).find("[data-option]:eq("+ubiq_selected_option+")").attr("data-option","selected");
+        CmdUtils.jQuery(ubiq_preview_el()).scrollTo($(ubiq_preview_el()).find("[data-option=selected]").first());
+    }
 }
 
 var lcmd = "";
 
 function ubiq_keydown_handler(evt) {
-	// measure the input 
+    // measure the input 
+    CmdUtils.lastKeyEvent = evt;
 	CmdUtils.inputUpdateTime = performance.now();
 	ubiq_save_input();
 
@@ -445,17 +463,35 @@ function ubiq_keydown_handler(evt) {
         CmdUtils.setClipboard( el.innerText );
     }
 
-    // Cursor up
-    if (kc == 38) {
-        ubiq_selected_command--;
-        lcmd = "";
-        evt.preventDefault();
+    // selecting options
+    if (evt.ctrlKey) {
+        // Cursor up
+        if (kc == 38) {
+            ubiq_selected_option--;
+            ubiq_update_options();
+            evt.preventDefault();
+        }
+        // Cursor Down
+        else if (kc == 40) {
+            ubiq_selected_option++;
+            ubiq_update_options();
+            evt.preventDefault();
+        }
     }
-    // Cursor Down
-    else if (kc == 40) {
-        ubiq_selected_command++;
-        lcmd = "";
-        evt.preventDefault();
+    // selecting commands
+    else {
+        // Cursor up
+        if (kc == 38) {
+            ubiq_selected_command--;
+            lcmd = "";
+            evt.preventDefault();
+        }
+        // Cursor Down
+        else if (kc == 40) {
+            ubiq_selected_command++;
+            lcmd = "";
+            evt.preventDefault();
+        }
     }
     if (lcmd==ubiq_command()) return;
     ubiq_show_matching_commands();
@@ -488,6 +524,7 @@ $(window).on('load', function() {
     if (typeof CmdUtils !== 'undefined' && typeof Utils !== 'undefined' && typeof backgroundPage !== 'undefined' ) {
         CmdUtils.setPreview = ubiq_set_preview;
         CmdUtils.setResult = ubiq_set_result;
+        CmdUtils.setTip = ubiq_set_tip;
         CmdUtils.popupWindow = window;
         CmdUtils.updateActiveTab();
         

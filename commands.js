@@ -267,9 +267,23 @@ CmdUtils.CreateCommand({
         if (text.trim()!="") 
         // jQuery(pblock).load("http://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr table.findList")
         // .blankify("http://imdb.com");
-        jQuery(pblock).loadAbs("http://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr table.findList");
+        jQuery(pblock).loadAbs("http://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr table.findList", ()=>{
+            jQuery(pblock).find(".findResult").each((i,e)=>{
+                jQuery(e).attr("data-option","");
+                jQuery(e).attr("data-option-value", jQuery(e).find("a").first().attr("href"));
+            });
+        });
     },
-    execute: CmdUtils.SimpleUrlBasedCommand(
+    execute: function execute(args) {
+        var opt = args._opt_val || "";
+        if(opt.includes("://")) 
+            CmdUtils.addTab(opt);
+        else {
+            var old = CmdUtils.SimpleUrlBasedCommand("http://www.imdb.com/find?s=tt&ref_=fn_al_tt_mr&q={text}");
+            old(args)
+        }
+    },
+    old_execute: CmdUtils.SimpleUrlBasedCommand(
         "http://www.imdb.com/find?s=tt&ref_=fn_al_tt_mr&q={text}"
     )
 });
