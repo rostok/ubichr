@@ -1373,7 +1373,10 @@ CmdUtils.CreateCommand({
       }
     }
 
-            var info = "# Gets cookies, press Enter to save file, filter by domain or * for all\n#\n";
+            var data = "data:application/octet-stream;base64," + btoa(unescape(encodeURIComponent(info + s)));
+            var link = "<a href=" + data + " download='cookies.txt'>cookies.txt</a>";
+            var info = "# Enter to save " + link + "\n";
+            info += "# Filter by domain or * for all\n#\n";
             info += "# HTTP Cookie File for <b>" + parse(text) + "</b> by Genuinous @genuinous.\n";
             info += "# This file can be used by wget, curl, aria2c and other standard compliant tools.\n";
             info += "# Usage Examples:\n";
@@ -1381,10 +1384,8 @@ CmdUtils.CreateCommand({
             info += ('#   2) curl --cookie cookies.txt "' + parse(b) + '"\n');
             info += ('#   3) aria2c --load-cookies cookies.txt "' + parse(b) + '"\n');
             info += "#\n";
-            var data = "data:application/octet-stream;base64," + btoa(unescape(encodeURIComponent(info + s)));
-            var link = "# Download <a href=" + data + ' download="cookies.txt">cookies.txt</a>';
     if (s) {
-                info = "\n" + link + info + s;
+                info = "\n" + info + s;
     } else {
                 info = "\n# No cookies for " + text;
     }

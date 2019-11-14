@@ -39,7 +39,7 @@ function ubiq_set_preview(v, prepend) {
     var el = ubiq_preview_el();
     if (!el) return;
     el.innerHTML = v + (prepend ? "<hr/>" + el.innerHTML : "");
-    if (v!="") ubiq_set_result("");
+    // if (v!="") ubiq_set_result("");
 }
 
 function ubiq_result_el() {
