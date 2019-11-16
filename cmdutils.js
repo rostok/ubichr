@@ -500,15 +500,15 @@ function url_domain(data) {
         return this.load(url, function() {
             url = "http://"+url_domain( url );
             result.find("a")
-                    .not('[href^="http"],[href^="//:"],[href^="mailto:"],[href^="#"]')
                     .attr("target", "_blank")
+                    .not('[href^="http"],[href^="//:"],[href^="mailto:"],[href^="#"],[href^="//"]')
                     .attr('href', function(index, value) {
                 if (typeof value === "undefined") return url;
                 if (value.substr(0,1) !== "/") value = "/" + value;
                 return url + value;
             });
             result.find("img")
-                    .not('[src^="http"],[src^="//:"],[src^="mailto:"],[src^="#"]')
+                    .not('[src^="http"],[src^="//:"],[src^="mailto:"],[src^="#"],[src^="//"]')
                     .attr('src', function(index, value) {
                 if (typeof value === "undefined") return url;
                 if (value.substr(0,1) !== "/") value = "/" + value;
@@ -523,15 +523,15 @@ function url_domain(data) {
 (function ( $ ) {
     $.fn.absolutize = function( url ) {
         if (typeof url === "undefined" || url == "") url = window.location;
-        var others = this.find('[href^="http"],[href^="//:"],[href^="mailto:"],[href^="#"],[href!=""][href]') 
-                         .add('[src^="http"],[src^="//:"],[src^="mailto:"],[src^="#"],[src!=""][src]');
-        var anchors = this.not('[href^="http"],[href^="//:"],[href^="mailto:"],[href^="#"]')
+        var others = this.find('[href^="http"],[href^="//:"],[href^="mailto:"],[href^="#"],[href!=""][href],[href^="//"]') 
+                         .add('[src^="http"],[src^="//:"],[src^="mailto:"],[src^="#"],[src!=""][src],[src^="//"]');
+        var anchors = this.not('[href^="http"],[href^="//:"],[href^="mailto:"],[href^="#"],[href^="//"]')
                     .attr('href', function(index, value) {
                         if (typeof value === "undefined") return url;
                         if (value.substr(0,1) !== "/" && url.substr(-1) !== "/") value = "/" + value;
                         return url + value;
                     });
-        var images = this.not('[src^="http"],[src^="//:"],[src^="mailto:"],[src^="#"]')
+        var images = this.not('[src^="http"],[src^="//:"],[src^="mailto:"],[src^="#"],[src^="//"]')
                     .attr('src', function(index, value) {
                         if (typeof value === "undefined") return url;
                         if (value.substr(0,1) !== "/" && url.substr(-1) !== "/") value = "/" + value;
