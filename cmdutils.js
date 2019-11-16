@@ -472,8 +472,7 @@ CmdUtils.notify = function (message, title) {
 
 // changes anchors target to _blank
 (function ( $ ) {
-    $.fn.blankify = function( url ) {
-        console.log("trying to blnk",this.find("a"));
+    $.fn.blankify_old = function( url ) {
         return this.find("a").not('[href^="http"],[href^="//:"],[href^="mailto:"],[href^="#"]').each(function() {
             $(this).attr("target", "_blank").attr('href', function(index, value) {
                 if (value.substr(0,1) !== "/") value = "/"+value;
@@ -481,6 +480,10 @@ CmdUtils.notify = function (message, title) {
             });
         });
     };
+}( jQuery ));
+
+(function ( $ ) {
+    $.fn.blankify = function( url ) { return this.find("a").attr("target", "_blank"); };
 }( jQuery ));
 
 // https://stackoverflow.com/questions/8498592/extract-hostname-name-from-string
@@ -520,8 +523,8 @@ function url_domain(data) {
 (function ( $ ) {
     $.fn.absolutize = function( url ) {
         if (typeof url === "undefined" || url == "") url = window.location;
-        var others = this.find('[href^="http"],[href^="//:"],[href^="mailto:"],[href^="#"]') 
-                         .add('[src^="http"],[src^="//:"],[src^="mailto:"],[src^="#"]');
+        var others = this.find('[href^="http"],[href^="//:"],[href^="mailto:"],[href^="#"],[href!=""][href]') 
+                         .add('[src^="http"],[src^="//:"],[src^="mailto:"],[src^="#"],[src!=""][src]');
         var anchors = this.not('[href^="http"],[href^="//:"],[href^="mailto:"],[href^="#"]')
                     .attr('href', function(index, value) {
                         if (typeof value === "undefined") return url;
