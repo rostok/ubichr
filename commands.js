@@ -828,9 +828,23 @@ CmdUtils.CreateCommand({
             for (var i = 0; i < resp.query.search.length; i++) {
                 previewBlock.innerHTML += "<p>"+wikiAnchor(resp.query.search[i].title) + "<br>"+resp.query.search[i].snippet+"</p>";
             }
+            jQuery(previewBlock).find("p").each((i,e)=>{
+                jQuery(e).attr("data-option","");
+                jQuery(e).attr("data-option-value", jQuery(e).find("a").first().attr("href"));
+            });
+
         });
     },
-    execute: CmdUtils.SimpleUrlBasedCommand("http://en.wikipedia.org/wiki/Special:Search?search={text}")
+    execute: function execute(args) {
+        var opt = args._opt_val || "";
+        if(opt.includes("://")) 
+            CmdUtils.addTab(opt);
+        else {
+            var old = CmdUtils.SimpleUrlBasedCommand("http://en.wikipedia.org/wiki/Special:Search?search={text}");
+            old(args);
+        }
+    },
+    old_execute: CmdUtils.SimpleUrlBasedCommand("http://en.wikipedia.org/wiki/Special:Search?search={text}")
 });
 
 CmdUtils.CreateCommand({
