@@ -896,7 +896,11 @@ CmdUtils.CreateCommand({
     		var m = new math.parser();
     		text = text.replace(/,/g,".");
     		text = text.replace(/ /g,"");
-	        previewBlock.innerHTML = m.eval(text);
+            try {
+            	previewBlock.innerHTML = m.eval(text);
+            } catch (e) {
+				previewBlock.innerHTML = "eval error:"+e; // catching all errors as mathjs likes to throw them around
+            }
 	        //CmdUtils.ajaxGet("http://api.mathjs.org/v1/?expr="+encodeURIComponent(args.text), (r)=>{ previewBlock.innerHTML = r; });
 	    }
 		else
@@ -907,8 +911,12 @@ CmdUtils.CreateCommand({
     		var m = new math.parser();
     		text = text.replace(",",".");
     		text = text.replace(" ","");
-            text = m.eval(text);
-            CmdUtils.setSelection(text); 
+            try {
+            	text = m.eval(text);
+            	CmdUtils.setSelection(text); 
+            } catch (e) {
+				previewBlock.innerHTML = "eval error:"+e;
+            }
         }
     }
 });
@@ -1279,7 +1287,9 @@ CmdUtils.CreateCommand({
         CmdUtils.ajaxGet(url, function(data) {
             pblock.innerHTML = jQuery(".MainContentContainer", data).html();
             jQuery("a", pblock).each(function() {
-               $(this).attr("target", "_blank").attr("href", 'http://www.thesaurus.com'+$(this).attr("href"));
+                var href = $(this).attr("href");
+                if (href==undefined) return;
+                $(this).attr("target", "_blank").attr("href", 'http://www.thesaurus.com'+href);
             });
             if (pblock.innerHTML=="undefined") pblock.innerHTML = "no words";
         });
