@@ -220,9 +220,14 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     names: ["help", "command-list"],
-    description: "Provides basic help on using Ubiquity",
+    description: "execute to list all commands<br>or type <pre>help command-name</pre> for specific command help",
+	help: "Congratulations! Now you know how to help yourself!",
     icon: "res/icon-128.png",
-    preview: "lists all avaiable commands",
+    preview: function preview(pblock, {text:text, _cmd:_cmd}) {
+        pblock.innerHTML = _cmd.description;
+	  	var c = CmdUtils.getcmdpart(text.trim());
+		if (c!=null) pblock.innerHTML = c.names.join(", ")+"<hr>"+(c.help || c.description);
+	},
     execute: CmdUtils.SimpleUrlBasedCommand("help.html")
 });
 
@@ -1278,7 +1283,7 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     names: ["thesaurus", "english-thesaurus"],
-    description: "Searches different words with the same meaning",
+    description: "Searches for different words with the same meaning",
     icon: "http://cdn.sfdict.com/hp/502812f9.ico",
 	preview: function preview(pblock, {text:text}) {
         pblock.innerHTML = "Searches different words with the same meaning "+text;
@@ -1415,6 +1420,51 @@ CmdUtils.CreateCommand({
   }
   chrome.cookies.getAll({}, request);
     },
+});
+
+var thes = CmdUtils.getcmd("thesaurus");
+thes.name = ["thesaurus", "english-thesaurus"];
+CmdUtils.CreateCommand(thes);
+thes.preview = function preview(pblock, {text:text}) {
+    pblock.innerHTML = "Searches different words with the same meaning "+text;
+    if (text=="") return;
+    var url = "http://www.thesaurus.com/browse/" + encodeURIComponent(text);
+    CmdUtils.ajaxGet(url, function(data) {
+        pblock.innerHTML = jQuery(".MainContentContainer", data).html();
+        jQuery("a", pblock).each(function() {
+            var href = $(this).attr("href");
+            if (href==undefined) return;
+            $(this).attr("target", "_blank").attr("href", 'http://www.thesaurus.com'+href);
+        });
+        if (pblock.innerHTML=="undefined") pblock.innerHTML = "no words";
+    });
+};
+
+CmdUtils.getcmd("translate").icon = "http://www.microsoft.com/en-us/translator/wp-content/themes/ro-translator/img/banner-app-icon.png";
+CmdUtils.CreateCommand({
+    icon: "http://www.microsoft.com/en-us/translator/wp-content/themes/ro-translator/img/banner-app-icon.png",
+	name: "translate-en",
+    execute: function translate_execute({text: text, _selection: _selection}) {
+		text = text.trim() + " to en";
+        CmdUtils.getcmd("translate").execute({text:text, _selection:_selection}).then();
+    },
+    preview: function translate_preview(pblock, {text: text}) {
+		text = text.trim() + " to en";
+        CmdUtils.getcmd("translate").preview(pblock, {text:text}).then();
+    }
+});
+
+CmdUtils.CreateCommand({
+    icon: "http://www.microsoft.com/en-us/translator/wp-content/themes/ro-translator/img/banner-app-icon.png",
+    name: "translate-pl",
+    execute: function translate_execute({text: text, _selection: _selection}) {
+		text = text.trim() + " to pl";
+        CmdUtils.getcmd("translate").execute({text:text, _selection:_selection}).then();
+    },
+    preview: function translate_preview(pblock, {text: text}) {
+		text = text.trim() + " to pl";
+        CmdUtils.getcmd("translate").preview(pblock, {text:text}).then();
+    }
 });
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 

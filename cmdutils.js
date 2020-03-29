@@ -137,7 +137,7 @@ CmdUtils._searchCommandPreview = function _searchCommandPreview( pblock, {text: 
       return;
     }
     if (!this.prevAttrs) this.prevAttrs = {};
-    var url = (this.prevAttrs.url || this.url).replace(/\{QUERY\}/g, q);
+    var url = (this.prevAttrs.url || this.url).replace(/\{QUERY\}/g, encodeURIComponent(q));
     // hash-anchor:
     var hashanch = null;
     if (this.prevAttrs.anchor != null) {
@@ -409,6 +409,15 @@ CmdUtils.timeSinceInputUpdate = function timeSinceInputUpdate() {
 CmdUtils.getcmd = function getcmd(cmdname) {
     for (var c in CmdUtils.CommandList) 
         if (CmdUtils.CommandList[c].name == cmdname || CmdUtils.CommandList[c].names.indexOf(cmdname)>-1) return CmdUtils.CommandList[c];
+    return null;
+};
+
+// returns command that name starts with arg
+CmdUtils.getcmdpart = function getcmdpart(cmdname) {
+    if (cmdname !== null && cmdname !== '')
+	    for (let [ci,c] of Object.entries(CmdUtils.CommandList)) 
+		    for (let n of c.names) 
+        	    if (n.startsWith(cmdname.toLowerCase())) return c;
     return null;
 };
 
