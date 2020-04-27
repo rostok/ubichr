@@ -64,9 +64,11 @@ CmdUtils.makeSearchCommand({
 function saveScripts() {
     var customscripts = editor.getValue();
     // save
-    if (typeof chrome !== 'undefined' && chrome.storage) 
+    if (typeof chrome !== 'undefined' && chrome.storage) {
         chrome.storage.local.set({'customscripts': customscripts});
-    
+        chrome.storage.local.set({'cursor': editor.getCursor()});
+	}
+	    
     // eval
     try {
         $("#info").html("evaluated!");
@@ -104,10 +106,13 @@ $("#insertnotifystub").click( insertExampleStub );
 $("#insertsearchstub").click( insertExampleStub );
 $("#insertenhsearchstub").click( insertExampleStub );
 
-// load scrtips
+// load scripts
 if (typeof chrome !== 'undefined' && chrome.storage) {
     chrome.storage.local.get('customscripts', function(result) {
         editor.setValue(result.customscripts || "");
         saveScripts();
+    });
+    chrome.storage.local.get('cursor', function(result) {
+        editor.setCursor(result.cursor || {line:0,ch:0});
     });
 }

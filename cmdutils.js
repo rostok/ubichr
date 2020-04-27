@@ -223,8 +223,7 @@ CmdUtils.addTab = function addTab(url) {
 };
 
 // opens new tab with post request and provided data
-CmdUtils.postNewTab
- = function postNewTab(url, data) {
+CmdUtils.postNewTab = function postNewTab(url, data) {
 	var form = document.createElement("form");
 	form.setAttribute("method", "post");
 	form.setAttribute("action", url);
@@ -246,17 +245,25 @@ CmdUtils.postNewTab
 	document.body.removeChild(form);
 }
 
-// returns a function that opens new tab with substituted {text} and {location} 
+// returns a function that opens new tab with substituted {text} and {location}
+// in case data-option-value attribute is link and _opt_val is passed function will open that url istead
 CmdUtils.SimpleUrlBasedCommand = function SimpleUrlBasedCommand(url) {
     if (!url) return;
     var search_func = function(directObj) {
         if (!directObj) return;
-        var text = directObj.text;
-        text = encodeURIComponent(text);
-        var finalurl = url;
-        finalurl = finalurl.replace('{text}', text);
-        finalurl = finalurl.replace('{location}', CmdUtils.getLocation());
-        CmdUtils.addTab(finalurl);
+
+        var opt = directObj._opt_val || "";
+        if(opt.includes("://")) {
+            CmdUtils.addTab(opt);
+		}
+		else {
+            var text = directObj.text;
+            text = encodeURIComponent(text);
+            var finalurl = url;
+            finalurl = finalurl.replace('{text}', text);
+            finalurl = finalurl.replace('{location}', CmdUtils.getLocation());
+            CmdUtils.addTab(finalurl);
+        }
     };
     return search_func;
 };
