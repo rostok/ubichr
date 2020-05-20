@@ -135,5 +135,30 @@ Inside ```preview``` after the results are loaded jQuery is used to iterate over
 
 The ```execute``` function check if option was set and if it is an URL (includes ```://```). If so another browser tab is added. In case it was not defined standard tab with search results is opened.
 
+## open tab, post a form and dodge anti CSRF token
+The example below opens an URL and also fills a form than is finally submitted. This particular approach is suitable for to create a shortcut to all non-standard pages operating on forms with parameters passed with POST and some kind of CSRF protection (token, cookie, etc). 
+
+```
+CmdUtils.CreateCommand({
+    name: "post-form-shortcut",
+    execute: function execute(args) {   
+      var q = args.text; 
+      CmdUtils.backgroundWindow.eval( `
+	   var callback = (tab) => {
+            chrome.tabs.executeScript( tab.id, { code: \`
+              document.querySelector("input[name='inputfield']").value = "`+q+`";
+			  document.querySelector("button[name='submitbutton']").click();
+			\`} );
+          	chrome.tabs.onCreated.removeListener( callback );
+       };
+       chrome.tabs.onCreated.addListener( callback );
+       `);
+       CmdUtils.addTab("https://site/formurl");
+    },
+});
+```
+
+UbiChr command creates internal chrome listener that is fired upon new tab being opened. The listerer callback executes JS into a page that fills the form and submits it and finally removes the callback. Please note, that the example above has no tab url check in place. 
+
 # alternatives
 Svalorzen has forked UbiChr and created UbiShell which has more shell like UI with piping and command options. Check it out here: https://github.com/Svalorzen/UbiShell
