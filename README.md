@@ -138,7 +138,7 @@ The ```execute``` function check if option was set and if it is an URL (includes
 ## open tab, post a form and dodge anti CSRF token
 The example below opens an URL and also fills a form than is finally submitted. This particular approach is suitable for to create a shortcut to all non-standard pages operating on forms with parameters passed with POST and some kind of CSRF protection (token, cookie, etc). 
 
-```
+```javascript
 CmdUtils.CreateCommand({
     name: "post-form-shortcut",
     execute: function execute(args) {   
