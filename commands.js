@@ -1467,6 +1467,227 @@ CmdUtils.CreateCommand({
     }
 });
 
+CmdUtils.CreateCommand({
+    name: "pwd-chrome",
+    description: "opens chrome passwords tab",
+    execute: function execute(args) {
+      chrome.tabs.query({}, (t)=>{
+        var found = false;
+		t.map((b)=>{
+          if (b.url=="chrome://settings/passwords") {
+            chrome.tabs.update(b.id, {highlighted: true});
+            found = true;
+          	return;
+          }
+        });
+        if (!found) CmdUtils.addTab("chrome://settings/passwords");
+      });
+    },
+});
+
+CmdUtils.makeSearchCommand({
+    name: "site-search",
+    url: "https://google.com/search?q={QUERY}",
+    description: "searches current site with google and 'site:'",
+    author: { name: "rostok" },
+    newexecute: function execute(args) {
+      if (args.text.trim()!="" && CmdUtils.getLocation()!="") {
+        var url = new URL(CmdUtils.getLocation());
+        args.text = args.text + " site:"+url.hostname;
+        CmdUtils.getcmd("site-search").oldexecute(args);
+      }
+    },
+    newpreview: function preview(pblock, args) {
+      if (args.text.trim()!="" && CmdUtils.getLocation()!="") {
+        var url = new URL(CmdUtils.getLocation());
+        args.text = args.text + " site:"+url.hostname;
+        CmdUtils.popupWindow.ubiq_set_result("");
+        CmdUtils.getcmd("site-search").oldpreview(pblock, args);
+        CmdUtils.popupWindow.ubiq_set_result("");
+      }
+    },
+});
+CmdUtils.getcmd("site-search").oldexecute = CmdUtils.getcmd("site-search").execute;
+CmdUtils.getcmd("site-search").execute = CmdUtils.getcmd("site-search").newexecute;
+CmdUtils.getcmd("site-search").oldpreview = CmdUtils.getcmd("site-search").preview;
+CmdUtils.getcmd("site-search").preview = CmdUtils.getcmd("site-search").newpreview;
+
+CmdUtils.makeSearchCommand({
+    name: ["giphy","gif"],
+    description: "Giphy search.",
+    icon: "https://giphy.com/static/img/favicon.png",
+    url: "https://giphy.com/search/{QUERY}",
+    prevAttrs: {zoom: 0.5, scroll: [0, 128], xanchor: ["c_13", "c_22"]},
+});
+
+CmdUtils.CreateCommand({
+    name: "save",
+    description: "saves multiple links from clipboard or argument list to single zip",
+    author: "rostok",
+    icon: "res/icon-128.png",
+    require: ["https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js", "https://fastcdn.org/FileSaver.js/1.1.20151003/FileSaver.js"],
+	execute: function execute({text:text}) {
+        if (text.trim()=="") text = CmdUtils.getClipboard();
+        
+		var time = 0;
+		var delay= 10;
+      	var links = text.trim().split(/\s+/);
+        var zip = new JSZip();
+        var i=0;
+        links.forEach((l, idx, array)=>{
+		    setTimeout( ()=>{
+            var oReq = new XMLHttpRequest();
+            oReq.open("GET", l, true);
+            oReq.responseType = "blob";//"arraybuffer";
+            oReq.onload = function(oEvent) {
+                var arrayBuffer = oReq.response;
+                var byteArray = new Uint8Array(arrayBuffer);
+                var f = l.replace(/[:\/\\&?]/g,"-");
+                var ext = "";
+
+                switch (oReq.response.type) {
+                case "audio/aac": ext = ".aac"; break;
+                case "application/x-abiword": ext = ".abw"; break;
+                case "application/octet-stream": ext = ".arc"; break;
+                case "video/x-msvideo": ext = ".avi"; break;
+                case "application/vnd.amazon.ebook": ext = ".azw"; break;
+                case "application/octet-stream": ext = ".bin"; break;
+                case "image/bmp": ext = ".bmp"; break;
+                case "application/x-bzip": ext = ".bz"; break;
+                case "application/x-bzip2": ext = ".bz2"; break;
+                case "application/x-csh": ext = ".csh"; break;
+                case "text/css": ext = ".css"; break;
+                case "text/csv": ext = ".csv"; break;
+                case "application/msword": ext = ".doc"; break;
+                case "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ext = ".docx"; break;
+                case "application/vnd.ms-fontobject": ext = ".eot"; break;
+                case "application/epub+zip": ext = ".epub"; break;
+                case "image/gif": ext = ".gif"; break;
+                case "text/html": ext = ".html"; break;
+                case "image/x-icon": ext = ".ico"; break;
+                case "text/calendar": ext = ".ics"; break;
+                case "application/java-archive": ext = ".jar"; break;
+                case "image/jpeg": ext = ".jpg"; break;
+                case "text/javascript": ext = ".js"; break;
+                case "application/json": ext = ".json"; break;
+                case "audio/midi audio/x-midi": ext = ".midi"; break;
+                case "text/javascript": ext = ".mjs"; break;
+                case "audio/mpeg": ext = ".mp3"; break;
+                case "video/mpeg": ext = ".mpeg"; break;
+                case "application/vnd.apple.installer+xml": ext = ".mpkg"; break;
+                case "application/vnd.oasis.opendocument.presentation": ext = ".odp"; break;
+                case "application/vnd.oasis.opendocument.spreadsheet": ext = ".ods"; break;
+                case "application/vnd.oasis.opendocument.text": ext = ".odt"; break;
+                case "audio/ogg": ext = ".oga"; break;
+                case "video/ogg": ext = ".ogv"; break;
+                case "application/ogg": ext = ".ogx"; break;
+                case "font/otf": ext = ".otf"; break;
+                case "image/png": ext = ".png"; break;
+                case "application/pdf": ext = ".pdf"; break;
+                case "application/vnd.ms-powerpoint": ext = ".ppt"; break;
+                case "application/vnd.openxmlformats-officedocument.presentationml.presentation": ext = ".pptx"; break;
+                case "application/x-rar-compressed": ext = ".rar"; break;
+                case "application/rtf": ext = ".rtf"; break;
+                case "application/x-sh": ext = ".sh"; break;
+                case "image/svg+xml": ext = ".svg"; break;
+                case "application/x-shockwave-flash": ext = ".swf"; break;
+                case "application/x-tar": ext = ".tar"; break;
+                case "image/tiff": ext = ".tiff"; break;
+                case "application/typescript": ext = ".ts"; break;
+                case "font/ttf": ext = ".ttf"; break;
+                case "text/plain": ext = ".txt"; break;
+                case "application/vnd.visio": ext = ".vsd"; break;
+                case "audio/wav": ext = ".wav"; break;
+                case "audio/webm": ext = ".weba"; break;
+                case "video/webm": ext = ".webm"; break;
+                case "image/webp": ext = ".webp"; break;
+                case "font/woff": ext = ".woff"; break;
+                case "font/woff2": ext = ".woff2"; break;
+                case "application/xhtml+xml": ext = ".xhtml"; break;
+                case "application/vnd.ms-excel": ext = ".xls"; break;
+                case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ext = ".xlsx"; break;
+                case "application/xml": ext = ".xml"; break;
+                case "application/vnd.mozilla.xul+xml": ext = ".xul"; break;
+                case "application/zip": ext = ".zip"; break;
+                case "video/3gpp": ext = ".3gp"; break;
+                case "video/3gpp2": ext = ".3g2"; break;
+                case "application/x-7z-compressed": ext = ".7z"; break;
+                }
+              
+                var filename = "";
+                var disposition = oReq.getResponseHeader('Content-Disposition');
+                if (disposition && disposition.indexOf('attachment') !== -1) {
+                    var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                    var matches = filenameRegex.exec(disposition);
+                    if (matches != null && matches[1]) { 
+                      filename = matches[1].replace(/['"]/g, '');
+                    }
+                }
+                if (filename!="") f=filename;
+   				if (!f.endsWith(ext)) f += ext;
+
+                zip.file(f, arrayBuffer);
+                i++;
+                //l+="<pre>"+JSON.stringify(filename)+"</pre>";
+                CmdUtils.setPreview(l+"<br>"+f+"<br>file:"+i+"/"+(array.length-1)+" <br>type:"+oReq.response.type);//+" <br>resp type:"+oReq.responseType);
+                if (i==array.length) {
+                    CmdUtils.setPreview("done");
+                  
+                    zip.generateAsync({type:"blob"})
+                    .then(function (blob) {
+                        var url = window.webkitURL || window.URL || window.mozURL || window.msURL;
+                        var a = document.createElement('a');
+                        a.download = 'bulk.zip';
+                        a.href = url.createObjectURL(blob);
+		                CmdUtils.setPreview("");
+                        a.textContent = 'done!';
+                        a.dataset.downloadurl = ['zip', a.download, a.href].join(':');
+                        CmdUtils.popupWindow.jQuery("#ubiq-command-preview").append(a);
+                    });
+                }
+            };
+            oReq.send();
+            }, time+=delay);
+        });
+    },
+    preview: function preview(pblock, {text:text}) {
+        if (text.trim()=="") text = CmdUtils.getClipboard();
+        text = text.trim().split(/\s+/).map( (s,a) => { return "<br><a target=_blank href='"+s+"'>"+s+"</a>"; } ).join("");
+        pblock.innerHTML = "save as zip:" + text;
+    },
+});
+
+CmdUtils.CreateCommand({
+    name: "killcookies",
+    description: "kills cookies on current page",
+    author: { name: "rostok" },
+    execute: function execute(args) {
+      	chrome.tabs.executeScript({code:`
+          var cookies = document.cookie.split(';');
+          for (var i = 0; i < cookies.length; i++) {
+              var cookie = cookies[i];
+              var eqPos = cookie.indexOf('=');
+              var name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+              document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT';
+          }
+          `
+		}, (r)=>{
+      		CmdUtils.setPreview("cookies killed");
+      	});    
+    },
+    preview: function preview(pblock, args) {
+		// preview will only show cookies
+      	pblock = "";
+      	chrome.tabs.executeScript({code:"document.cookie.toString();"}, (r)=>{
+      		r=r+"";
+          	r=r.replace(/;\s*/g,";\n");
+          	r="<pre>"+r+"</pre>";
+          	CmdUtils.setPreview("cookies:"+r);
+      	});    
+    },
+});
+
+
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -1484,4 +1705,3 @@ chrome.storage.local.get('customscripts', function(result) {
 		console.error("custom scripts eval failed", e);
 	}
 });
-
