@@ -269,6 +269,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: async function define_preview(pblock, {text: text}) {
         pblock.innerHTML = "Searches for movies on IMDb";
+        text = text.replace(/[\.\\\/\s]+/g," ").trim();
         if (text.trim()!="") 
         jQuery(pblock).loadAbs("http://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr table.findList", ()=>{
             jQuery(pblock).find(".findResult").each((i,e)=>{
@@ -278,12 +279,13 @@ CmdUtils.CreateCommand({
         });
     },
     execute: function execute(args) {
+        args.text = args.text.replace(/[\.\\\/\s]+/g," ").trim();
         var opt = args._opt_val || "";
         if(opt.includes("://")) 
             CmdUtils.addTab(opt);
         else {
             var old = CmdUtils.SimpleUrlBasedCommand("http://www.imdb.com/find?s=tt&ref_=fn_al_tt_mr&q={text}");
-            old(args)
+            old(args);
         }
     },
     old_execute: CmdUtils.SimpleUrlBasedCommand(
@@ -970,10 +972,21 @@ CmdUtils.CreateCommand({
     },
     license: "GPL",
     execute: function execute({text:text}) {
-        CmdUtils.setSelection(atob(text));
+        if (text.trim()=="") text = CmdUtils.getClipboard();
+        try{
+	        CmdUtils.setSelection(window.atob(text));
+        } catch (e) {
+        }
     },
     preview: function preview(pblock, {text:text}) {
-        pblock.innerHTML = atob(text);
+        if (text.trim()=="") text = CmdUtils.getClipboard();
+        var out = "";
+        try{
+        	out = window.atob(text);
+        } catch (e) {
+        	out = "error";
+        }
+        pblock.innerHTML = out;
     },
 });
 
@@ -985,10 +998,21 @@ CmdUtils.CreateCommand({
     },
     license: "GPL",
     execute: function execute({text:text}) {
-        CmdUtils.setSelection(btoa(text));
+        if (text.trim()=="") text = CmdUtils.getClipboard();
+        try{
+	        CmdUtils.setSelection(window.btoa(text));
+        } catch (e) {
+        }
     },
     preview: function preview(pblock, {text:text}) {
-        pblock.innerHTML = btoa(text);
+        if (text.trim()=="") text = CmdUtils.getClipboard();
+        var out = "";
+        try{
+        	out = window.btoa(text);
+        } catch (e) {
+        	out = "error";
+        }
+        pblock.innerHTML = out;
     },
 });
 
