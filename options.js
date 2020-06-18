@@ -83,7 +83,7 @@ function saveScripts() {
     var a = document.getElementById("download");
     var file = new Blob([customscripts], {type: "text/plain"});
     a.href = URL.createObjectURL(file);
-    a.download = "custom.js";
+    a.download = "ubichr-custom-scripts-"+(new Date()).toISOString().substr(0,10)+".js";
 }
 
 // initializes editor
