@@ -14,6 +14,9 @@ for /f %%x in ('dir /b /o-d ubichr-*.zip') do (
 if not exist !a! goto error
 if not exist !b! goto error
 
+rmdir /s /q a
+rmdir /s /q b
+
 7z.exe x -oa !a! 
 7z.exe x -ob !b! 
 
