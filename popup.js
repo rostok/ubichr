@@ -16,7 +16,6 @@ function ubiq_set_tip(v) {
     var el = document.getElementById('ubiq-command-tip');
     if (!el) return;
     el.innerHTML = v;
-    // ubiq_set_preview(v);
 }
 
 function ubiq_preview_el() {
@@ -31,7 +30,6 @@ function ubiq_preview_set_visible(v) {
         ubiq_result_el().classList.remove("result");
 }
 
-
 // sets preview panel, prepend allows to add new contnet to the top separated by HR
 function ubiq_set_preview(v, prepend) {
     v = v || "";
@@ -39,7 +37,6 @@ function ubiq_set_preview(v, prepend) {
     var el = ubiq_preview_el();
     if (!el) return;
     el.innerHTML = v + (prepend ? "<hr/>" + el.innerHTML : "");
-    // if (v!="") ubiq_set_result("");
 }
 
 function ubiq_result_el() {
@@ -53,7 +50,6 @@ function ubiq_set_result(v, prepend) {
     var el = ubiq_result_el();
     if (!el) return;
     el.innerHTML = v + (prepend ? "<hr/>" + el.innerHTML : "");
-    if (v!="") ubiq_set_preview("");
 }
 
 // clears tip, result and preview panels
@@ -72,11 +68,11 @@ function ubiq_show_preview(cmd, args) {
     switch(typeof preview_func)
     {
     case 'undefined':
-        	ubiq_set_preview( cmd_struct.description );
-        	break;
+            ubiq_set_preview( cmd_struct.description );
+            break;
     case 'string': 
             ubiq_set_preview( preview_func );
-        	break;
+            break;
     default:
         var words = ubiq_command().split(' ');
         var command = words.shift();
@@ -101,15 +97,15 @@ function ubiq_show_preview(cmd, args) {
             } catch (e) {
                 CmdUtils.notify(e.toString(), "preview function error")
                 console.error(e.stack);
-                if (CmdUtils.backgroundWindow && CmdUtils.backgroundWindow.error) {
+                if (CmdUtils.backgroundWindow && typeof CmdUtils.backgroundWindow.error === 'function') {
                     CmdUtils.backgroundWindow.error(e.stack);
                 }
             }
         }
 
-		if (typeof cmd_struct.require !== 'undefined')
-	        CmdUtils.loadScripts( cmd_struct.require, ()=>{ pfunc(); } );
-	    else
+        if (typeof cmd_struct.require !== 'undefined')
+            CmdUtils.loadScripts( cmd_struct.require, ()=>{ pfunc(); } );
+        else
             if (typeof cmd_struct.requirePopup !== 'undefined')
                 CmdUtils.loadScripts( cmd_struct.requirePopup, ()=>{ pfunc(); }, window );
             else
@@ -163,7 +159,9 @@ function ubiq_dispatch_command(line, args) {
     } catch (e) {
         CmdUtils.notify(e.toString(), "execute function error")
         console.error(e.stack);
-        CmdUtils.backgroundWindow.error(e.stack);
+        if (CmdUtils.backgroundWindow && typeof CmdUtils.backgroundWindow.error === 'function') {
+            CmdUtils.backgroundWindow.error(e.stack);
+        }
     }
 
     return;
@@ -437,8 +435,8 @@ var lcmd = "";
 function ubiq_keydown_handler(evt) {
     // measure the input 
     CmdUtils.lastKeyEvent = evt;
-	CmdUtils.inputUpdateTime = performance.now();
-	ubiq_save_input();
+    CmdUtils.inputUpdateTime = performance.now();
+    ubiq_save_input();
 
     if (!evt) return;
     var kc = evt.keyCode;
@@ -505,12 +503,12 @@ function ubiq_keyup_handler(evt) {
 }
 
 function ubiq_save_input() {
-	cmd = document.getElementById('ubiq_input');
+    cmd = document.getElementById('ubiq_input');
     if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.set({ 'lastCmd': cmd.value });
 }
 
 function ubiq_load_input(callback) {
-	cmd = document.getElementById('ubiq_input');
+    cmd = document.getElementById('ubiq_input');
     if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.get('lastCmd', function(result) {
         lastCmd = result.lastCmd || "";
         cmd.value = lastCmd;
