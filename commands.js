@@ -261,7 +261,60 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
-    name: "imdb",
+    name: ["imdb", "imdb-movies"],
+    description: "Searches for movies on IMDB. Dots are replaced with spaces, if last word is a year it narrows down results",
+    author: {},
+    icon: "http://www.imdb.com/favicon.ico",
+    homepage: "",
+    license: "",
+    timeout: 250,
+    preview: async function define_preview(pblock, args) {
+        pblock.innerHTML = "Searches for movies on IMDb";
+        args.text = args.text.replace(/[\.\\\/\s]+/g," ").trim();
+        year = parseInt(args.text.replace(/[(\s)]/g," ").trim().split(/\s+/).slice(-1));
+        if(year>1900 && year<2050) args.text = args.text.split(/\s+/).slice(0,-1).join(" ");
+        if (args.text.trim()!="") {
+          jQuery(pblock).loadAbs("https://www.imdb.com/search/title?title="+encodeURIComponent(args.text)+" div.lister-list", ()=>{
+			jQuery(pblock).find("div.ratings-user-rating").remove();
+            jQuery(pblock).find("p.sort-num_votes-visible").hide();
+            jQuery(pblock).find("span.lister-item-index.unbold.text-primary").remove();
+            jQuery(pblock).find("div.ratings-metascore").remove();
+            jQuery(pblock).find(".lister-top-right").remove();
+            jQuery(pblock).find("div.lister-item").each((i,e)=>{
+                jQuery(e).attr("data-option","");
+                jQuery(e).attr("data-option-value", jQuery(e).find("a").first().attr("href"));
+              
+                var img = "<img style='float:left' aling=bottom src='"+jQuery(e).find("img.loadlate").first().attr("loadlate")+"'>";
+                var title = "<a href='"+jQuery(e).find("a").first().attr("href")+"'>"+jQuery(e).find("h3").text().trim()+"</a> ";
+                var info = "<span>"	+jQuery(e).find(".runtime").text()+" | "
+                					+jQuery(e).find(".genre").text()+" | "
+                					+"<span style='color:yellow'>"+jQuery(e).find(".ratings-imdb-rating").text()+"</span>"
+                					+"</span>";
+                var syno = "<br><span>"+jQuery(e).find(".ratings-bar").next("p").text()+"</span>";
+                jQuery(e).html("<div style='clear:both;overflow-y:auto;'>"+img+"<div style=''>"+ title + info + syno + "</div></div><p>");
+            });
+          });
+        }
+	},
+    execute: function execute(args) {
+        args.text = args.text.replace(/[\.\\\/\s]+/g," ").trim();
+        var release_date = "";  
+        year = parseInt(args.text.replace(/[(\s)]/g," ").trim().split(/\s+/).slice(-1));
+        if(year>1900 && year<2050) {
+          args.text = args.text.split(/\s+/).slice(0,-1).join(" ");
+          release_date = "&release_date="+year;
+        }
+
+        var opt = args._opt_val || "";
+        if(opt.includes("://")) 
+            CmdUtils.addTab(opt);
+        else 
+            CmdUtils.addTab("https://www.imdb.com/search/title?title="+encodeURIComponent(args.text)+release_date);
+    }
+});
+
+CmdUtils.CreateCommand({
+    name: "imdb-old",
     description: "Searches for movies on IMDb",
     author: {},
     icon: "http://www.imdb.com/favicon.ico",
