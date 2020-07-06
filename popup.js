@@ -427,6 +427,8 @@ function ubiq_update_options()
     if (ubiq_selected_option>=0) {
         $(ubiq_preview_el()).find("[data-option]:eq("+ubiq_selected_option+")").attr("data-option","selected");
         CmdUtils.jQuery(ubiq_preview_el()).scrollTo($(ubiq_preview_el()).find("[data-option=selected]").first());
+        CmdUtils.jQuery(ubiq_preview_el()).find("[data-option=selected]").first().trigger("data-option-selected");
+        //CmdUtils.notify($(ubiq_preview_el()).find("[data-option=selected]").first().html(), "op sel");
     }
 }
 

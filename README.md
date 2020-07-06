@@ -135,6 +135,36 @@ Inside ```preview``` after the results are loaded jQuery is used to iterate over
 
 The ```execute``` function check if option was set and if it is an URL (includes ```://```). If so another browser tab is added. In case it was not defined standard tab with search results is opened.
 
+## custom option selection event
+Selecting options triggers custom 'data-option-selected' event passed to selected element. In example below command searches Emojipedia for glyphs based on decription. Results are filtered and shown as a preview. Finally each of them is attributed with 'data-option'. Also, a custom event handler (final line) is attached that copies single glyph/emoji to clipboard.
+
+```javascript
+CmdUtils.makeSearchCommand({
+    name: ["emoji"],
+    description: "Search Emojipedia",
+    icon: "https://emojipedia.org/static/img/favicons/favicon-32x32.png",
+    execute: CmdUtils.SimpleUrlBasedCommand("https://emojipedia.org/search/?q={text}"),
+    url: "https://emojipedia.org/search/?q={QUERY}",
+    timeout: 250,
+    preview: function preview(pblock, args) {
+        if (args.text === "")
+            pblock.innerHTML = "enter EMOJI description";
+        else {
+            pblock.innerHTML = "";
+          	jQuery(pblock).loadAbs("https://emojipedia.org/search/?q=" + encodeURIComponent(args.text)+ " div.content", ()=>{
+              pblock.innerHTML = "<font size=12>"+jQuery("span.emoji", pblock).map((i,e)=>e.outerHTML).toArray().join("")+"</font>";
+              jQuery("span", pblock).each((i,e)=>{
+                jQuery(e).attr("data-option","");
+                jQuery(e).attr("data-option-value", jQuery(e).find("a").first().attr("href"));
+                jQuery(e).on("data-option-selected", e=>CmdUtils.setClipboard($(e.target).html()) ); // custom event handler
+              });
+            });
+        }
+    }
+});
+
+```
+
 ## open tab, post a form and dodge anti CSRF token
 The example below opens an URL and also fills a form than is finally submitted. This particular approach is suitable for to create a shortcut to all non-standard pages operating on forms with parameters passed with POST and some kind of CSRF protection (token, cookie, etc). 
 
