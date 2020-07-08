@@ -99,6 +99,11 @@ body {
     overflow: hidden; 
     position: relative; border:0px;
 }
+#ubiq-command-preview table {
+	border-collapse: collapse;
+	border-spacing: 1px;
+	border:1px solid #666;
+}
 #ubiq-preview-div #ubiq-preview-frm {
     --scrollX: 0px;
     --scrollY: 0px;
