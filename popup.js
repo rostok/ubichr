@@ -176,6 +176,8 @@ function ubiq_help() {
     }).sort().join(", ");
     html += "<p>";
     html += "<u>Keys:</u><br>";
+    html += "Enter - execute<br>";
+    html += "Shift+Enter - on execution new tab will be inactive<br>";
     html += "Ctrl-C - copy preview to clipboard<br>";
     html += "up/down - cycle through commands suggestions<br>";
     html += "F5 - reload the extension";

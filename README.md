@@ -1,8 +1,17 @@
 # ubichr
 My humble attempt to create [Ubiquity](https://wiki.mozilla.org/Labs/Ubiquity) alternative for Chrome and Firefox Quantum browsers.
 
+# what is UbiChr?
+UbiChr is "Ubiquity for Chrome" - a revived *command line interface* that brings lots of useful command shortcuts. 
+
+In particular you can:
+* **open command like window (Ctrl+Space) execute commands with arguments and preview the results**
+* open new tabs and pass GET or POST parameters (Wikipedia search, dictionary lookup, translate text)
+* fetch data via ajax, process it and display on extension popup preview (for example: IMDB movie lookup)
+* add your custom JavaScript commands via built-in editor in a syntax similar to original Ubiquity project (access cookies, bulk save and zip urls, filter opened tabs for text or links, ...)
+
 # installation
-To install use chrome web store https://chrome.google.com/webstore/search/ubichr
+To install use Chrome Web Store https://chrome.google.com/webstore/search/ubichr
 
 # how to install dev version
 To install latest commited version please follow 'Load the extension' section here https://developer.chrome.com/extensions/getstarted
@@ -15,7 +24,7 @@ MIT license
 Most of the code is based on http://github.com/cosimo/ubiquity-opera/
 
 # adding commands
-You can add your custom commands using built-in editor (CodeMirror) or modify commands.js. The syntax is quite simple and self explanatory
+You can add your custom commands using built-in editor (CodeMirror) or modify commands.js. The syntax is quite simple and self explanatory.
 
 ## basic command:
 ```javascript

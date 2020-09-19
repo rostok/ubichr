@@ -212,11 +212,14 @@ CmdUtils.getLocation = function getLocation() {
 
 // opens new tab with provided url
 CmdUtils.addTab = function addTab(url) {
+    var active = true;
+    if (CmdUtils.lastKeyEvent && CmdUtils.lastKeyEvent.shiftKey) active = false;
+
 	if (typeof browser !== 'undefined') {
-		browser.tabs.create({ "url": url });
+		browser.tabs.create({ "url": url, "active": active });
 	} else 
 	if (typeof chrome !== 'undefined' && typeof chrome.tabs !== 'undefined') {
-		chrome.tabs.create({ "url": url });
+		chrome.tabs.create({ "url": url, "active": active });
 	} else {
 		window.open(url);
 	}
