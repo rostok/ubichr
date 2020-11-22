@@ -9,9 +9,7 @@ CmdUtils.CreateCommand({
     homepage: "",
     license: "",
     preview: "Search Amazon for books matching:",
-    execute: CmdUtils.SimpleUrlBasedCommand(
-        'http://www.amazon.com/s/ref=nb_ss_gw?url=search-alias%3Dstripbooks&field-keywords={text}'
-    )
+    execute: CmdUtils.SimpleUrlBasedCommand('http://www.amazon.com/s/ref=nb_ss_gw?url=search-alias%3Dstripbooks&field-keywords={text}')
 });
 
 CmdUtils.CreateCommand({
@@ -44,9 +42,7 @@ CmdUtils.CreateCommand({
     homepage: "",
     license: "",
     preview: "Perform a bugzilla search for",
-    execute: CmdUtils.SimpleUrlBasedCommand(
-        "https://bugzilla.mozilla.org/buglist.cgi?query_format=specific&order=relevance+desc&bug_status=__open__&content={text}"
-    )
+    execute: CmdUtils.SimpleUrlBasedCommand("https://bugzilla.mozilla.org/buglist.cgi?query_format=specific&order=relevance+desc&bug_status=__open__&content={text}")
 });
 
 CmdUtils.CreateCommand({
@@ -108,34 +104,63 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "currency-converter",
-    description: "Convert currency using xe.com converter service.<br/><i>Ex.: 5000 NOK to EUR</i>",
-    author: {
-        name: "Cosimo Streppone",
-        email: "cosimo@cpan.org"
-    },
+    description: "Convert currency using xe.com/exchangeratesapi.io converter service",
+    help: "Convert currency using xe.com/exchangeratesapi.io converter service.<br>Example arguments:<br><br>5000 NOK to EUR<br>5000 NOKEUR<br>NOKEUR 5000",
+    author: "Cosimo Streppone/rostok",
     icon: "http://www.xe.com/favicon.ico",
     homepage: "http://xe.com/ucc/",
     license: "",
     preview: async function (pblock, directObj) {
-        pblock.innerHTML = "Convert currency values using xe.com converter service.";
-        var currency_spec = directObj.text;
-        var matches = currency_spec.match(/^([\d\.]+)\s+(\w+)\s+to\s+(\w+)$/);
-        if (!matches || matches.length<3) return;
-        var amount = matches[1];
-        var curr_from = matches[2].toUpperCase();
-        var curr_to = matches[3].toUpperCase();
-        var xe_url = "http://www.xe.com/ucc/convert.cgi?Amount=" + escape(amount) +
-            "&From=" + escape(curr_from) + "&To=" + escape(curr_to);
-        jQuery(pblock).load( xe_url+" .uccAmountWrap");
+        var currency_spec = directObj.text.trim().toUpperCase();
+        var matches = currency_spec.match(/^([\d\.]+)\s+(\w+)\s+TO\s+(\w+)$/);
+        var amount;
+        if (matches && matches.length>=4) {
+            amount = matches[1];
+            var curr_from = matches[2];
+            var curr_to = matches[3];
+        } else {
+            matches = currency_spec.match(/^([\d\.]+)\s+(\w{6})$/);
+            if (matches && matches.length>=3) {
+                amount = matches[1];
+                var curr_from = matches[2].substring(0,3);
+                var curr_to = matches[2].substring(3);
+            } else {
+                matches = currency_spec.match(/^(\w{6})\s+([\d\.]+)$/);
+                if (!matches || matches.length<3) return;
+                amount = matches[2];
+                var curr_from = matches[1].substring(0,3);
+                var curr_to = matches[1].substring(3);
+            }
+        }
+        CmdUtils.ajaxGetJSON("https://api.exchangeratesapi.io/latest?base=" + escape(curr_from) + "&symbols=" + escape(curr_to), (json)=>{
+            console.log("got result"+json);
+            CmdUtils.setTip("exchangeratesapi.io says<br>"+amount+" "+curr_from+" = <hr>");
+            pblock.innerHTML = (amount * parseFloat(json.rates[curr_to])).toFixed(2) + " " + curr_to;
+        });
     },
     execute: function (directObj) {
-        var currency_spec = directObj.text;
-        var matches = currency_spec.match(/^([\d\.]+)\s+(\w+)\s+to\s+(\w+)$/);
-        var amount = matches[1];
-        var curr_from = matches[2].toUpperCase();
-        var curr_to = matches[3].toUpperCase();
-        var xe_url = "http://www.xe.com/ucc/convert.cgi?Amount=" + escape(amount) +
-            "&From=" + escape(curr_from) + "&To=" + escape(curr_to);
+        var currency_spec = directObj.text.trim().toUpperCase();
+        var matches = currency_spec.match(/^([\d\.]+)\s+(\w+)\s+TO\s+(\w+)$/);
+        var amount;
+        if (matches && matches.length>=4) {
+            amount = matches[1];
+            var curr_from = matches[2];
+            var curr_to = matches[3];
+        } else {
+            matches = currency_spec.match(/^([\d\.]+)\s+(\w{6})$/);
+            if (matches && matches.length>=3) {
+                amount = matches[1];
+                var curr_from = matches[2].substring(0,3);
+                var curr_to = matches[2].substring(3);
+            } else {
+                matches = currency_spec.match(/^(\w{6})\s+([\d\.]+)$/);
+                if (!matches || matches.length<3) return;
+                amount = matches[2];
+                var curr_from = matches[1].substring(0,3);
+                var curr_to = matches[1].substring(3);
+            }
+        }
+        var xe_url = "http://www.xe.com/ucc/convert.cgi?Amount=" + escape(amount) + "&From=" + escape(curr_from) + "&To=" + escape(curr_to);
         CmdUtils.addTab(xe_url);
     }
 });
@@ -262,7 +287,7 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: ["imdb", "imdb-movies"],
-    description: "Searches for movies on IMDB. Dots are replaced with spaces, if last word is a year it narrows down results",
+    description: "Searches for movies on IMDB. Dots are replaced with spaces, if last word is a year (may be in brackets) it narrows down results",
     author: {},
     icon: "http://www.imdb.com/favicon.ico",
     homepage: "",
@@ -272,9 +297,13 @@ CmdUtils.CreateCommand({
         pblock.innerHTML = "Searches for movies on IMDb";
         args.text = args.text.replace(/[\.\\\/\s]+/g," ").trim();
         year = parseInt(args.text.replace(/[(\s)]/g," ").trim().split(/\s+/).slice(-1));
-        if(year>1900 && year<2050) args.text = args.text.split(/\s+/).slice(0,-1).join(" ");
+        var release_date = "";
+        if(year>1900 && year<2050) {
+          args.text = args.text.split(/\s+/).slice(0,-1).join(" ");
+          release_date = "&release_date="+year;
+        }
         if (args.text.trim()!="") {
-          jQuery(pblock).loadAbs("https://www.imdb.com/search/title?title="+encodeURIComponent(args.text)+" div.lister-list", ()=>{
+          jQuery(pblock).loadAbs("https://www.imdb.com/search/title?title="+encodeURIComponent(args.text)+release_date+" div.lister-list", ()=>{
 			jQuery(pblock).find("div.ratings-user-rating").remove();
             jQuery(pblock).find("p.sort-num_votes-visible").hide();
             jQuery(pblock).find("span.lister-item-index.unbold.text-primary").remove();
@@ -304,7 +333,6 @@ CmdUtils.CreateCommand({
           args.text = args.text.split(/\s+/).slice(0,-1).join(" ");
           release_date = "&release_date="+year;
         }
-
         var opt = args._opt_val || "";
         if(opt.includes("://")) 
             CmdUtils.addTab(opt);
@@ -1302,8 +1330,8 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     names: ["get-urls"],
-    icon: "",
-    description: "gets all open tab urls, add argument for filter",
+    icon: "https://www.iconsdb.com/icons/download/black/search-13-32.png",
+    description: "gets all open tab urls, add argument to filter",
     author: {
         name: "rostok"
     },
@@ -1594,12 +1622,12 @@ CmdUtils.makeSearchCommand({
     description: "Giphy search.",
     icon: "https://giphy.com/static/img/favicon.png",
     url: "https://giphy.com/search/{QUERY}",
-    prevAttrs: {zoom: 0.5, scroll: [0, 128], xanchor: ["c_13", "c_22"]},
+    prevAttrs: {zoom: 0.5, scroll: [0, 128]},
 });
 
 CmdUtils.CreateCommand({
     name: "save",
-    description: "saves multiple links from clipboard or argument list to single zip",
+    description: "saves multiple links from clipboard or argument list to a single zip",
     author: "rostok",
     icon: "res/icon-128.png",
     require: ["https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js", "https://fastcdn.org/FileSaver.js/1.1.20151003/FileSaver.js"],
@@ -1774,11 +1802,11 @@ CmdUtils.CommandList.forEach((c)=>{c['builtIn']=true;});
 
 // load custom scripts
 if (typeof chrome!=='undefined')
-if (chrome.storage)
-chrome.storage.local.get('customscripts', function(result) {
-	try {
-		eval(result.customscripts || "");
-	} catch (e) {
-		console.error("custom scripts eval failed", e);
-	}
-});
+    if (chrome.storage)
+        chrome.storage.local.get('customscripts', function(result) {
+            try {
+                eval(result.customscripts || "");
+            } catch (e) {
+                console.error("custom scripts eval failed", e);
+            }
+        });
