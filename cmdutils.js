@@ -71,18 +71,28 @@ CmdUtils.CreateCommand = function CreateCommand(args) {
     CmdUtils.CommandList.push(args);
 };
 
-// create search command using url
+// creates a simple search command using url
+// returns Command object with predefined execute and preview functions
+// predefined functions are always avaiable as execute_org and preview_org
+// in case args is provided with user defined execute/preview the predefined
+// functions will not overwrite them, and can be accessed via execute_org
+// the provided argument should include url property that defines target url
+// in the url {QUERY} and {text} will be replaced with command arguments (encoded)
+// also {location} will be replaced with current tab address
 CmdUtils.makeSearchCommand = function makeSearchCommand(args) {
-    args.execute = function(a) {
-        var url = args.url.replace(/\{QUERY\}/g, encodeURIComponent(a.text));
+    args.execute_org = function(a) {
+        var url = args.url
+        url = url.replace(/\{QUERY\}/g, encodeURIComponent(a.text));
+        url = url.replace(/\{text\}/g, encodeURIComponent(a.text));
+        url = url.replace(/\{location\}/g, encodeURIComponent(CmdUtils.getLocation()));
         CmdUtils.addTab(url);
     }
-    if ((typeof args.preview != 'function') && args.preview != 'none') {
-        args.preview = CmdUtils._searchCommandPreview;
-        if (args.prevAttrs == null) {
-            args.prevAttrs = {zoom: 0.85};
-        }
+    args.preview_org = CmdUtils._searchCommandPreview;
+    if (args.prevAttrs == null) {
+        args.prevAttrs = {zoom: 0.85};
     }
+    if ((typeof args.preview != 'function') && args.preview != 'none') args.preview = args.preview_org;
+    if ((typeof args.execute != 'function')) args.execute = args.execute_org;
     CmdUtils.CreateCommand(args);
 };
 
@@ -363,9 +373,11 @@ CmdUtils.updateSelection = function (tab_id) {
 CmdUtils.updateActiveTab = function () {
     CmdUtils.active_tab = null;
     CmdUtils.selectedText = '';
-    if (chrome.tabs && chrome.tabs.getSelected)
-    chrome.tabs.getSelected(null, function(tab) {
-        if (tab.url.match('^https?://')){
+    // chrome.tabs.getSelected is deprecated since Chrome 38. Please use tabs.query {active: true}.
+    if (chrome.tabs && chrome.tabs.query)
+    chrome.tabs.query({active:true, currentWindow:true}, function(tab) {
+        tab = tab[0];
+        if (tab.url.match('^https?://')) {
             CmdUtils.active_tab = tab;
             CmdUtils.updateSelection(tab.id);
         }
@@ -584,3 +596,4 @@ function url_domain(data) {
         return this;
     };
 }( jQuery ));
+

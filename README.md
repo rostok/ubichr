@@ -16,8 +16,6 @@ To install use Chrome Web Store https://chrome.google.com/webstore/search/ubichr
 # how to install dev version
 To install latest commited version please follow 'Load the extension' section here https://developer.chrome.com/extensions/getstarted
 
-People wanting to remove irritating 'disable developer mode popup' please follow [the neat binary hack of chrome.dll](https://stackoverflow.com/questions/30287907/how-to-get-rid-of-disable-developer-mode-extensions-pop-up/30361260)
-
 # license & origins
 MIT license
 
@@ -25,6 +23,12 @@ Most of the code is based on http://github.com/cosimo/ubiquity-opera/
 
 # adding commands
 You can add your custom commands using built-in editor (CodeMirror) or modify commands.js. The syntax is quite simple and self explanatory.
+Press Ctrl+Space, type ```edit``` and press Enter.
+
+## key objects and functions
+The most important object of the extension is ```CmdUtils```. It's a global object providing many helper functions and storing all commands. 
+
+The most commonly used function is ```CmdUtils.CreateCommand(cmd)``` which parses ```cmd``` argument and adds new command to UbiChr. Since this is a programming extension it is advised to both read examples below and browse [cmdutils.js](https://github.com/rostok/ubichr/blob/master/cmdutils.js).
 
 ## basic command:
 ```javascript
