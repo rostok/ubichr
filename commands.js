@@ -856,7 +856,7 @@ CmdUtils.CreateCommand({
     },
     description: "Search old versions of a site using the Wayback Machine (archive.org)",
     help: "wayback <i>sitio a buscar</i>",
-    icon: "http://web.archive.org/static/images/archive.ico",
+    icon: "http://archive.org/favicon.ico",
     preview: function (pblock, theShout) {
         pblock.innerHTML = "Buscar versiones antiguas del sitio <b>" + theShout.text + "</b>";
     },

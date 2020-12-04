@@ -180,6 +180,7 @@ function ubiq_help() {
     html += "Shift+Enter - on execution new tab will be inactive<br>";
     html += "Ctrl-C - copy preview to clipboard<br>";
     html += "up/down - cycle through commands suggestions<br>";
+    html += "Ctrl+up/down - cycle through preview options<br>";
     html += "F5 - reload the extension";
     return html;
 }
@@ -421,7 +422,7 @@ function ubiq_show_matching_commands(text) {
 
 function ubiq_update_options()
 {
-    var size = $(ubiq_preview_el()).find("[data-option]").size();
+    var size = $(ubiq_preview_el()).find("[data-option]").length;
     if (ubiq_selected_option<0) ubiq_selected_option=-1;
     if (ubiq_selected_option>=size) ubiq_selected_option=size-1;
     // ubiq_set_tip("sel opt"+ubiq_selected_option);

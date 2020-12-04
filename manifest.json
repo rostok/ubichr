@@ -3,12 +3,12 @@
     "short_name": "UbiChr",
     "homepage_url": "https://github.com/rostok/ubichr",
     "author": "rostok",
-    "version": "0.1.0.24",
+    "version": "0.1.0.25",
     "description": "Revived Ubiquity for Chrome",
     "content_security_policy": "script-src 'self' 'unsafe-eval' https://maps.googleapis.com https://cdnjs.cloudflare.com; object-src 'self'",
     "manifest_version": 2,
     "background": {
-        "scripts": ["lib/jquery-2.2.4.min.js", "utils.js", "cmdutils.js", "commands.js", "background.js"],
+        "scripts": ["lib/jquery-3.5.1.min.js", "utils.js", "cmdutils.js", "commands.js", "background.js"],
         "persistent":true
     },
     "browser_action": {
