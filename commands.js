@@ -1631,9 +1631,11 @@ CmdUtils.CreateCommand({
     author: "rostok",
     icon: "res/icon-128.png",
     require: ["https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js", "https://fastcdn.org/FileSaver.js/1.1.20151003/FileSaver.js"],
-	execute: function execute({text:text}) {
+	execute: function execute({text:text, _cmd:_cmd}) {
         if (text.trim()=="") text = CmdUtils.getClipboard();
-        
+        _cmd.lastDownload = undefined;
+        _cmd.lastFile = "";
+        _cmd.progress = [];
 		var time = 0;
 		var delay= 10;
       	var links = text.trim().split(/\s+/);
@@ -1644,6 +1646,20 @@ CmdUtils.CreateCommand({
             var oReq = new XMLHttpRequest();
             oReq.open("GET", l, true);
             oReq.responseType = "blob";//"arraybuffer";
+            oReq.onprogress = (e)=>{
+                CmdUtils.popupWindow.console.log(e);
+                _cmd.progress[e.currentTarget.responseURL] = {loaded:e.loaded, total:e.total};
+                var lt = Object.values(_cmd.progress).reduce( (acc, cur)=>{console.log("a",acc,"c",cur); return {loaded:acc.loaded+cur.loaded,total:acc.total+cur.total}});
+                if (CmdUtils.popupWindow.ubiq_match_first_command()==_cmd.name) {
+                    var prc = Math.round(lt.loaded*100/lt.total,1);
+                    var s = "";
+                    s += "<progress style='width:530px' value='"+prc+"' max='100'></progress><br><br>";
+                    s += "loaded:"+lt.loaded+" / total:"+lt.total+" ("+prc+"%)<br><br>"
+                    s += _cmd.lastFile;
+                    CmdUtils.setPreview(s);
+                }                    
+                //CmdUtils.popupWindow.console.log("loaded:"+lt.loaded+" / total:"+lt.total+" ("+Math.round(lt.loaded*100/lt.total,1)+"%)");
+            };
             oReq.onload = function(oEvent) {
                 var arrayBuffer = oReq.response;
                 var byteArray = new Uint8Array(arrayBuffer);
@@ -1734,9 +1750,10 @@ CmdUtils.CreateCommand({
                 zip.file(f, arrayBuffer);
                 i++;
                 //l+="<pre>"+JSON.stringify(filename)+"</pre>";
-                CmdUtils.setPreview(l+"<br>"+f+"<br>file:"+i+"/"+(array.length-1)+" <br>type:"+oReq.response.type);//+" <br>resp type:"+oReq.responseType);
+                //CmdUtils.setPreview(l+"<br>"+f+"<br>file:"+i+"/"+(array.length-1)+" <br>type:"+oReq.response.type);//+" <br>resp type:"+oReq.responseType);
+                _cmd.lastFile = l+"("+oReq.response.type+")";
                 if (i==array.length) {
-                    CmdUtils.setPreview("done");
+                    CmdUtils.setPreview("done!");
                   
                     zip.generateAsync({type:"blob"})
                     .then(function (blob) {
@@ -1745,8 +1762,9 @@ CmdUtils.CreateCommand({
                         a.download = 'bulk.zip';
                         a.href = url.createObjectURL(blob);
 		                CmdUtils.setPreview("");
-                        a.textContent = 'done!';
+                        a.textContent = 'save zip';
                         a.dataset.downloadurl = ['zip', a.download, a.href].join(':');
+                        _cmd.lastDownload = a;
                         CmdUtils.popupWindow.jQuery("#ubiq-command-preview").append(a);
                     });
                 }
@@ -1755,10 +1773,13 @@ CmdUtils.CreateCommand({
             }, time+=delay);
         });
     },
-    preview: function preview(pblock, {text:text}) {
+    preview: function preview(pblock, {text:text,_cmd:_cmd}) {
         if (text.trim()=="") text = CmdUtils.getClipboard();
         text = text.trim().split(/\s+/).map( (s,a) => { return "<br><a target=_blank href='"+s+"'>"+s+"</a>"; } ).join("");
-        pblock.innerHTML = "save as zip:" + text;
+        pblock.innerHTML = "download & zip:" + text;
+        if(_cmd.lastDownload !== undefined) {
+            jQuery(pblock).append("<hr>last download: ").append(_cmd.lastDownload);
+        }
     },
 });
 
