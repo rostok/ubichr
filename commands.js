@@ -46,11 +46,11 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
+    icon: "⮽",
     name: "close",
     takes: {},
     description: "Close the current tab",
     author: {},
-    icon: "",
     homepage: "",
     license: "",
     preview: "Close the current tab",
@@ -567,10 +567,10 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
+    icon: "🗔",
     name: "new-tab",
     description: "Open a new tab (or window) with the specified URL",
     author: {},
-    icon: "",
     homepage: "",
     license: "",
     preview: "Open a new tab (or window) with the specified URL",
@@ -581,6 +581,7 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
+    icon: "🖨️",
     name: "print",
     description: "Print the current page",
     preview: "Print the current page",
@@ -977,7 +978,7 @@ CmdUtils.CreateCommand({
 CmdUtils.CreateCommand({
     name: "calc",
     description: desc = "evals math expressions",
-    icon: "https://png.icons8.com/metro/50/000000/calculator.png",
+    icon: "➕",
     require: "https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.20.1/math.min.js",
     preview: pr = function preview(previewBlock, {text:text}) {
     	if (text.trim()!='') {
@@ -1098,6 +1099,7 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
+    icon: "🔣",
     names: ["urldecode"],
     description: "urldecode",
     author: {
@@ -1113,6 +1115,7 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
+    icon: "🔣",
     names: ["urlencode"],
     description: "urlencode",
     author: {
@@ -1128,8 +1131,9 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
+    icon: "🙾",
     name: "invert",
-    description: "Inverts all colors on current page<br><br>Based on <a target=_blank href=https://stackoverflow.com/questions/4766201/javascript-invert-color-on-all-elements-of-a-page>this</a>.",
+    description: "Inverts all colors on current page. Based on <a target=_blank href=https://stackoverflow.com/questions/4766201/javascript-invert-color-on-all-elements-of-a-page>this</a>.",
     execute: function execute(){
         chrome.tabs.executeScript({code:`
         javascript: (
@@ -1408,6 +1412,7 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
+    icon: "🔌",
     name: "extensions-chrome",
     description: "opens chrome extensions tab",
     execute: function execute(args) {
@@ -1470,6 +1475,7 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
+    icon: "🍪",
     name: "cookies",
     description: "gets cookies, press Enter to save file, filter by domain or * for all",
     author: "Genuinous/rostok",
@@ -1573,6 +1579,7 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
+    icon: "🔑",
     name: "pwd-chrome",
     description: "opens chrome passwords tab",
     execute: function execute(args) {
@@ -1591,6 +1598,7 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.makeSearchCommand({
+    icon: "http://www.google.com/favicon.ico",
     name: "site-search",
     url: "https://google.com/search?q={QUERY}",
     description: "searches current site with google and 'site:'",
@@ -1784,6 +1792,7 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
+    icon: "💀",
     name: "killcookies",
     description: "kills cookies on current page",
     author: { name: "rostok" },

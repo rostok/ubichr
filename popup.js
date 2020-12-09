@@ -230,12 +230,12 @@ function ubiq_match_first_command(text) {
 
 function _ubiq_image_error(elm) { 
     elm.src = 'res/spacer.png';
-};
+}
+
 function ubiq_command_icon(c) {
-    var icon = CmdUtils.CommandList[c].icon;
-    if (!icon) {
-        icon = 'res/spacer.png';
-    }
+    var icon = CmdUtils.CommandList[c].icon || "";
+    if (icon.length>0 && icon.length < 3) return icon; // emojis/unicode
+    if (icon=="") icon = 'res/spacer.png';
     icon = '<img src="' + icon + '" border="0" alt="" onerror="_ubiq_image_error(this);" align="absmiddle"> ';
     return icon;
 }
