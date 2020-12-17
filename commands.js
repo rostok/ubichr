@@ -9,7 +9,7 @@ CmdUtils.CreateCommand({
     homepage: "",
     license: "",
     preview: "Search Amazon for books matching:",
-    execute: CmdUtils.SimpleUrlBasedCommand('http://www.amazon.com/s/ref=nb_ss_gw?url=search-alias%3Dstripbooks&field-keywords={text}')
+    execute: CmdUtils.SimpleUrlBasedCommand('https://www.amazon.com/s/ref=nb_ss_gw?url=search-alias%3Dstripbooks&field-keywords={text}')
 });
 
 CmdUtils.CreateCommand({
@@ -20,7 +20,7 @@ CmdUtils.CreateCommand({
     homepage: "",
     license: "",
     preview: "Search Answers.com for:",
-    execute: CmdUtils.SimpleUrlBasedCommand('http://www.answers.com/search?q={text}')
+    execute: CmdUtils.SimpleUrlBasedCommand('https://www.answers.com/search?q={text}')
 });
 
 CmdUtils.CreateCommand({
@@ -31,7 +31,7 @@ CmdUtils.CreateCommand({
     homepage: "",
     license: "",
     preview: "Search Ask.com for the given words:",
-    execute: CmdUtils.SimpleUrlBasedCommand('http://www.ask.com/web?q={text}')
+    execute: CmdUtils.SimpleUrlBasedCommand('https://www.ask.com/web?q={text}')
 });
 
 CmdUtils.CreateCommand({
@@ -70,7 +70,7 @@ CmdUtils.CreateCommand({
     execute: async function execute({text:text}) {
             var xtoken = CmdUtils.get("http://yippy.com/");
             xtoken = jQuery("#xtoken", xtoken).val();
-            CmdUtils.postNewTab("http://yippy.com/search/?v%3Aproject=clusty-new&query=kakao&xtoken="+xtoken);//, {"v:project":"clusty-new", xtoken:xtoken});
+            CmdUtils.postNewTab("https://yippy.com/search/?v%3Aproject=clusty-new&query=kakao&xtoken="+xtoken);//, {"v:project":"clusty-new", xtoken:xtoken});
         }
 });
 
@@ -98,7 +98,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Search for a CPAN package information",
     execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://search.cpan.org/dist/{text}"
+        "https://search.cpan.org/dist/{text}"
     )
 });
 
@@ -160,7 +160,7 @@ CmdUtils.CreateCommand({
                 var curr_to = matches[1].substring(3);
             }
         }
-        var xe_url = "http://www.xe.com/ucc/convert.cgi?Amount=" + escape(amount) + "&From=" + escape(curr_from) + "&To=" + escape(curr_to);
+        var xe_url = "https://www.xe.com/ucc/convert.cgi?Amount=" + escape(amount) + "&From=" + escape(curr_from) + "&To=" + escape(curr_to);
         CmdUtils.addTab(xe_url);
     }
 });
@@ -176,11 +176,11 @@ CmdUtils.CreateCommand({
     license: "MPL",
     icon: "http://dictionary.reference.com/favicon.ico",
     execute: function ({text: text}) {
-        CmdUtils.addTab("http://dictionary.reference.com/search?q=" + escape(text));
+        CmdUtils.addTab("https://dictionary.reference.com/search?q=" + escape(text));
     },
     preview: async function define_preview(pblock, {text: text}) {
         pblock.innerHTML = "Gives the meaning of a word.";
-        var doc = await CmdUtils.get("http://dictionary.reference.com/search?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr" );
+        var doc = await CmdUtils.get("https://dictionary.reference.com/search?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr" );
         doc = jQuery("div.source-box", doc)
                 .find("button", doc).remove().end()
                 .find("ul.headword-bar-list").remove().end()
@@ -200,7 +200,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Prepare for a dramatic moment of your life",
     execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://www.youtube.com/watch?v=a1Y73sPHKxw"
+        "https://www.youtube.com/watch?v=a1Y73sPHKxw"
     )
 });
 
@@ -226,7 +226,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Search photos on Flickr",
     execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://www.flickr.com/search/?q={text}&w=all"
+        "https://www.flickr.com/search/?q={text}&w=all"
     )
 });
 
@@ -239,7 +239,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Examples: 3^4/sqrt(2)-pi,  3 inch in cm,  speed of light,  0xAF in decimal (<a href=\"http://www.googleguide.com/calculator.html\">Command list</a>)",
     execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://www.google.com/search?q={text}&ie=utf-8&oe=utf-8"
+        "https://www.google.com/search?q={text}&ie=utf-8&oe=utf-8"
     )
 });
 
@@ -282,7 +282,7 @@ CmdUtils.CreateCommand({
     homepage: "",
     license: "",
     preview: "Search on Google for images",
-    execute: CmdUtils.SimpleUrlBasedCommand("http://images.google.com/images?hl=en&q={text}")
+    execute: CmdUtils.SimpleUrlBasedCommand("https://images.google.com/images?hl=en&q={text}")
 });
 
 CmdUtils.CreateCommand({
@@ -352,7 +352,7 @@ CmdUtils.CreateCommand({
         pblock.innerHTML = "Searches for movies on IMDb";
         text = text.replace(/[\.\\\/\s]+/g," ").trim();
         if (text.trim()!="") 
-        jQuery(pblock).loadAbs("http://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr table.findList", ()=>{
+        jQuery(pblock).loadAbs("https://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr table.findList", ()=>{
             jQuery(pblock).find(".findResult").each((i,e)=>{
                 jQuery(e).attr("data-option","");
                 jQuery(e).attr("data-option-value", jQuery(e).find("a").first().attr("href"));
@@ -365,12 +365,12 @@ CmdUtils.CreateCommand({
         if(opt.includes("://")) 
             CmdUtils.addTab(opt);
         else {
-            var old = CmdUtils.SimpleUrlBasedCommand("http://www.imdb.com/find?s=tt&ref_=fn_al_tt_mr&q={text}");
+            var old = CmdUtils.SimpleUrlBasedCommand("https://www.imdb.com/find?s=tt&ref_=fn_al_tt_mr&q={text}");
             old(args);
         }
     },
     old_execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://www.imdb.com/find?s=tt&ref_=fn_al_tt_mr&q={text}"
+        "https://www.imdb.com/find?s=tt&ref_=fn_al_tt_mr&q={text}"
     )
 });
 
@@ -402,7 +402,7 @@ CmdUtils.CreateCommand({
         pblock.innerHTML = previewTemplate;
     },
     execute: async function (directObject) {
-        var url = "http://downforeveryoneorjustme.com/{QUERY}";
+        var url = "https://downforeveryoneorjustme.com/{QUERY}";
         var query = directObject.text;
         CmdUtils.setPreview("checking "+query);
         // Get the hostname from url
@@ -443,7 +443,7 @@ CmdUtils.CreateCommand({
     icon: "http://www.google.com/favicon.ico",
     execute: function({text:text}) {
         if (text.substr(-2)=="-l") text = text.slice(0,-2);
-        CmdUtils.addTab("http://maps.google.com/maps?q="+encodeURIComponent(text));
+        CmdUtils.addTab("https://maps.google.com/maps?q="+encodeURIComponent(text));
     },
     preview: function preview(pblock, {text:text}) {
         if (text=="") {
@@ -484,7 +484,7 @@ CmdUtils.CreateCommand({
         }
         cc = "";
         if (text.substr(-2)=="-l") {
-	        var geoIP = await CmdUtils.get("http://freegeoip.net/json/"); // search locally
+	        var geoIP = await CmdUtils.get("https://freegeoip.net/json/"); // search locally
     	    var cc = geoIP.country_code || "";
         	cc = cc.toLowerCase();
         	text = text.slice(0,-2);
@@ -549,7 +549,7 @@ CmdUtils.CreateCommand({
     },
     execute: function({text:text}) {
         if (text.substr(-2)=="-l") text = text.slice(0,-2);
-        CmdUtils.addTab("http://maps.google.com/maps?q="+encodeURIComponent(text));
+        CmdUtils.addTab("https://maps.google.com/maps?q="+encodeURIComponent(text));
     }
 });
 
@@ -575,7 +575,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Open a new tab (or window) with the specified URL",
     execute: function ({text:text}) {
-        if (!text.match('^https?://')) text = "http://"+text;
+        if (!text.match('^https?://')) text = "https://"+text;
         CmdUtils.addTab(text);
     }
 });
@@ -611,7 +611,7 @@ CmdUtils.CreateCommand({
         }
     },
     execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://www.google.com/search?q={text}&ie=utf-8&oe=utf-8"
+        "https://www.google.com/search?q={text}&ie=utf-8&oe=utf-8"
     )
 });
 
@@ -634,14 +634,14 @@ CmdUtils.CreateCommand({
         pblock.innerHTML = "Shortens an URL (or the current tab) with bit.ly";
     },
     execute: async function (directObject) {
-        var url = "http://api.bit.ly/shorten?version=2.0.1&longUrl={QUERY}&login=" +
+        var url = "https://api.bit.ly/shorten?version=2.0.1&longUrl={QUERY}&login=" +
             bitly_api_user + "&apiKey=" + bitly_api_key;
         var query = directObject.text;
         // Get the url from current open tab if none specified
         if (!query || query == "") query = CmdUtils.getLocation();
         var urlString = url.replace("{QUERY}", query);
 
-        var url = "http://api.bit.ly/shorten?version=2.0.1&longUrl={QUERY}&login=" + bitly_api_user + "&apiKey=" + bitly_api_key;
+        var url = "https://api.bit.ly/shorten?version=2.0.1&longUrl={QUERY}&login=" + bitly_api_user + "&apiKey=" + bitly_api_key;
         // Get the url from current open tab if none specified
         var ajax = await CmdUtils.get(urlString);
         //ajax = JSON.parse(ajax);
@@ -674,7 +674,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Search for online presentations on SlideShare",
     execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://www.slideshare.net/search/slideshow?q={text}&submit=post&searchfrom=header&x=0&y=0"
+        "https://www.slideshare.net/search/slideshow?q={text}&submit=post&searchfrom=header&x=0&y=0"
     )
 });
 
@@ -690,7 +690,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Searches questions and answers on stackoverflow.com",
     execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://stackoverflow.com/search?q={text}"
+        "https://stackoverflow.com/search?q={text}"
     )
 });
 
@@ -707,9 +707,9 @@ CmdUtils.CreateCommand({
     preview: "Search for torrent on PirateBay, RARBG, 1337x, torrentz2",
     execute: function (directObj) {
         var search_string = encodeURIComponent(directObj.text);
-        CmdUtils.addTab("http://thepiratebay.org/search.php?q=" + search_string);
+        CmdUtils.addTab("https://thepiratebay.org/search.php?q=" + search_string);
         CmdUtils.addTab("https://rarbgmirror.org/torrents.php?search=" + search_string);
-        CmdUtils.addTab("http://1337x.to/search/harakiri/" + search_string+'/');
+        CmdUtils.addTab("https://1337x.to/search/harakiri/" + search_string+'/');
         CmdUtils.addTab("https://torrentz2.eu/search?f=" + search_string+'/');
     }
 });
@@ -765,7 +765,7 @@ function msTranslator(method, params, back) {
     params.to = params.to || "en";
     params.appId = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" + new Date % 10;
     return CmdUtils.jQuery.ajax({
-        url: "http://api.microsofttranslator.com/V2/Ajax.svc/" + method,
+        url: "https://api.microsofttranslator.com/V2/Ajax.svc/" + method,
         data: params,
     });
 }
@@ -784,7 +784,7 @@ CmdUtils.CreateCommand({
     to how much it can translate a selection at once.\
     If you want to translate a lot of text, leave out the input and\
     it will load\
-    <a href="http://www.microsofttranslator.com">Bing Translator</a> toolbar.\
+    <a href="https://www.microsofttranslator.com">Bing Translator</a> toolbar.\
   ',
     author: "based on original ubiquity translate command",
     execute: async function translate_execute({text: text, _selection: _selection}) {
@@ -843,9 +843,9 @@ CmdUtils.CreateCommand({
     icon: "https://validator.w3.org/images/favicon.ico",
     description: "Checks the markup validity of the current Web document",
     preview: async function(pblock, args) {
-        jQuery(pblock).load("http://validator.w3.org/check?uri="+encodeURI(CmdUtils.getLocation())+" div#results");
+        jQuery(pblock).load("https://validator.w3.org/check?uri="+encodeURI(CmdUtils.getLocation())+" div#results");
     },
-    execute: CmdUtils.SimpleUrlBasedCommand("http://validator.w3.org/check?uri={location}")
+    execute: CmdUtils.SimpleUrlBasedCommand("https://validator.w3.org/check?uri={location}")
 });
 
 CmdUtils.CreateCommand({
@@ -865,7 +865,7 @@ CmdUtils.CreateCommand({
         CmdUtils.closePopup();
         var url = directObj.text;
         if (!url) url = CmdUtils.getLocation();
-        var wayback_machine = "http://web.archive.org/web/*/" + url;
+        var wayback_machine = "https://web.archive.org/web/*/" + url;
         // Take me back!
         CmdUtils.addTab(wayback_machine);
     }
@@ -879,7 +879,7 @@ CmdUtils.CreateCommand({
     homepage: "",
     license: "",
     preview: "Show the weather forecast",
-    execute: CmdUtils.SimpleUrlBasedCommand("http://www.wunderground.com/cgi-bin/findweather/getForecast?query={text}")
+    execute: CmdUtils.SimpleUrlBasedCommand("https://www.wunderground.com/cgi-bin/findweather/getForecast?query={text}")
 });
 
 CmdUtils.CreateCommand({
@@ -904,11 +904,11 @@ CmdUtils.CreateCommand({
         }
 
         var langCode = "en";
-        var apiUrl = "http://" + langCode + ".wikipedia.org/w/api.php";
+        var apiUrl = "https://" + langCode + ".wikipedia.org/w/api.php";
 
         CmdUtils.ajaxGetJSON("https://" + langCode + ".wikipedia.org/w/api.php?action=query&list=search&srsearch="+searchText+"&srlimit=5&format=json", function (resp) {
             function generateWikipediaLink(title) {
-                return "http://" + langCode + ".wikipedia.org/wiki/" +title.replace(/ /g, "_");
+                return "https://" + langCode + ".wikipedia.org/wiki/" +title.replace(/ /g, "_");
             }
             function wikiAnchor(title) {
                 return "<a target=_blank href='"+generateWikipediaLink(title)+"'>"+title+"</a>";
@@ -929,11 +929,11 @@ CmdUtils.CreateCommand({
         if(opt.includes("://")) 
             CmdUtils.addTab(opt);
         else {
-            var old = CmdUtils.SimpleUrlBasedCommand("http://en.wikipedia.org/wiki/Special:Search?search={text}");
+            var old = CmdUtils.SimpleUrlBasedCommand("https://en.wikipedia.org/wiki/Special:Search?search={text}");
             old(args);
         }
     },
-    old_execute: CmdUtils.SimpleUrlBasedCommand("http://en.wikipedia.org/wiki/Special:Search?search={text}")
+    old_execute: CmdUtils.SimpleUrlBasedCommand("https://en.wikipedia.org/wiki/Special:Search?search={text}")
 });
 
 CmdUtils.CreateCommand({
@@ -945,7 +945,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Search Yahoo! Answers for",
     execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://answers.yahoo.com/search/search_result;_ylv=3?p={text}"
+        "https://answers.yahoo.com/search/search_result;_ylv=3?p={text}"
     )
 });
 
@@ -958,7 +958,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Search Yahoo! for",
     execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://search.yahoo.com/search?p={text}&ei=UTF-8"
+        "https://search.yahoo.com/search?p={text}&ei=UTF-8"
     )
 });
 
@@ -1026,7 +1026,7 @@ CmdUtils.CreateCommand({
     icon: "http://www.answers.com/favicon.ico",
 //    timeout: 500,
     execute: CmdUtils.SimpleUrlBasedCommand(
-        "http://answers.com/search?q={text}"
+        "https://answers.com/search?q={text}"
     ),
     preview: async function define_preview(pblock, {text: text}) {
         if (text.trim()=="") {
@@ -1034,7 +1034,7 @@ CmdUtils.CreateCommand({
             return;
         }
         pblock.innerHTML = "Gives the definition of the word "+text;
-        var xml = await CmdUtils.post("http://services.aonaware.com/DictService/DictService.asmx/DefineInDict", { text: text, dictId: "wn" } );
+        var xml = await CmdUtils.post("https://services.aonaware.com/DictService/DictService.asmx/DefineInDict", { text: text, dictId: "wn" } );
         pblock.innerHTML = (
             jQuery(xml)
             .find("WordDefinition > Definitions > Definition:first-child > WordDefinition")
@@ -1365,12 +1365,12 @@ CmdUtils.CreateCommand({
         name: "rostok"
     },
     execute: function execute(args) {   
-        CmdUtils.addTab("http://www.mobygames.com/search/quick?q=" + encodeURIComponent(args.text));
+        CmdUtils.addTab("https://www.mobygames.com/search/quick?q=" + encodeURIComponent(args.text));
     },
     preview: function preview(pblock, {text:text}) {
         pblock.innerHTML = "Search MobyGames";
         if (text.trim()!="") 
-        	jQuery(pblock).loadAbs("http://www.mobygames.com/search/quick?q=" + encodeURIComponent(text)+" #searchResults");
+        	jQuery(pblock).loadAbs("https://www.mobygames.com/search/quick?q=" + encodeURIComponent(text)+" #searchResults");
     },
 });
 
@@ -1383,7 +1383,7 @@ CmdUtils.CreateCommand({
         name: "rostok"
     },
     execute: function execute({text:text}) {   
-        CmdUtils.addTab("http://www.google.com/search?q=intitle%3A\"index of\" %2B\"Last Modified\" "+ encodeURIComponent(text) );
+        CmdUtils.addTab("https://www.google.com/search?q=intitle%3A\"index of\" %2B\"Last Modified\" "+ encodeURIComponent(text) );
     },
     preview: function preview(pblock, args) {
         pblock.innerHTML = "just press enter and don't delay";
@@ -1403,12 +1403,12 @@ CmdUtils.CreateCommand({
             jQuery("a", pblock).each(function() {
                 var href = $(this).attr("href");
                 if (href==undefined) return;
-                $(this).attr("target", "_blank").attr("href", 'http://www.thesaurus.com'+href);
+                $(this).attr("target", "_blank").attr("href", 'https://www.thesaurus.com'+href);
             });
             if (pblock.innerHTML=="undefined") pblock.innerHTML = "no words";
         });
     },
-    execute: CmdUtils.SimpleUrlBasedCommand("http://www.thesaurus.com/browse/{text}") 
+    execute: CmdUtils.SimpleUrlBasedCommand("https://www.thesaurus.com/browse/{text}") 
 });
 
 CmdUtils.CreateCommand({
@@ -1539,13 +1539,13 @@ CmdUtils.CreateCommand(thes);
 thes.preview = function preview(pblock, {text:text}) {
     pblock.innerHTML = "Searches different words with the same meaning "+text;
     if (text=="") return;
-    var url = "http://www.thesaurus.com/browse/" + encodeURIComponent(text);
+    var url = "https://www.thesaurus.com/browse/" + encodeURIComponent(text);
     CmdUtils.ajaxGet(url, function(data) {
         pblock.innerHTML = jQuery(".MainContentContainer", data).html();
         jQuery("a", pblock).each(function() {
             var href = $(this).attr("href");
             if (href==undefined) return;
-            $(this).attr("target", "_blank").attr("href", 'http://www.thesaurus.com'+href);
+            $(this).attr("target", "_blank").attr("href", 'https://www.thesaurus.com'+href);
         });
         if (pblock.innerHTML=="undefined") pblock.innerHTML = "no words";
     });

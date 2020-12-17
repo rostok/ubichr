@@ -205,3 +205,6 @@ UbiChr command creates internal chrome listener that is fired upon new tab being
 
 # alternatives
 Svalorzen has forked UbiChr and created UbiShell which has more shell like UI with piping and command options. Check it out here: https://github.com/Svalorzen/UbiShell
+
+# privacy policy
+As Google requests privacy policy [here's one](https://github.com/rostok/ubichr/wiki/Privacy-Policy). Do not worry though, UbiChr doesn't collect any of your data.

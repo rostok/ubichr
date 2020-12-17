@@ -529,7 +529,7 @@ function url_domain(data) {
     $.fn.loadAbs = function( url, complete ) {
         var result = this;
         return this.load(url, function() {
-            url = "http://"+url_domain( url );
+            url = "https://"+url_domain( url );
             result.find("a")
                     .attr("target", "_blank")
                     .not('[href^="http"],[href^="//:"],[href^="mailto:"],[href^="#"],[href^="//"]')
