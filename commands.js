@@ -1816,6 +1816,74 @@ CmdUtils.CreateCommand({
     },
 });
 
+CmdUtils.makeSearchCommand({
+    name: ["emoji"],
+    description: "Search Emojipedia",
+    icon: "https://emojipedia.org/static/img/favicons/favicon-32x32.png",
+    execute: CmdUtils.SimpleUrlBasedCommand("https://emojipedia.org/search/?q={text}"),
+    url: "https://emojipedia.org/search/?q={QUERY}",
+    timeout: 250,
+    preview: function preview(pblock, args) {
+        if (args.text === "")
+            pblock.innerHTML = "enter EMOJI description";
+        else {
+            pblock.innerHTML = "";
+          	jQuery(pblock).loadAbs("https://emojipedia.org/search/?q=" + encodeURIComponent(args.text)+ " div.content", ()=>{
+              pblock.innerHTML = "<font size=12>"+jQuery("span.emoji", pblock).map((i,e)=>e.outerHTML).toArray().join("")+"</font>";
+              jQuery("span", pblock).each((i,e)=>{
+                jQuery(e).attr("data-option","");
+                jQuery(e).on("data-option-selected", e=>CmdUtils.setClipboard($(e.target).html()) );
+                jQuery(e).attr("data-option-value", jQuery(e).find("a").first().attr("href"));
+              });
+            });
+        }
+    }
+});
+
+CmdUtils.CreateCommand({
+    name: "jquery",
+    description: "injects jQuery to current tab",
+    icon: "https://jquery.com/favicon.ico",
+    execute: function execute(args) {
+      chrome.tabs.executeScript({code:"((e,s)=>{e.src=s;e.onload=function(){jQuery.noConflict();console.log('jQuery injected')};document.head.appendChild(e);})(document.createElement('script'),'//code.jquery.com/jquery-latest.min.js')"}, (r)=>{
+      CmdUtils.notify(r+'', "jQuery injected");
+      });
+    },
+});
+
+CmdUtils.CreateCommand({
+    name: "inject-js",
+    description: "injects JavaScript from url",
+    icon: "https://jquery.com/favicon.ico",
+    execute: function execute({text:text}) {
+      text = text.replace("http:", "");
+      text = text.replace("https:", "");
+      chrome.tabs.executeScript({code:"((e,s)=>{e.src=s;e.onload=function(){jQuery.noConflict();console.log('jQuery injected')};document.head.appendChild(e);})(document.createElement('script'),'"+text+"')"}, (r)=>{
+      CmdUtils.notify(r+'', "Script injected.");
+      });
+    },
+});
+
+CmdUtils.CreateCommand({
+    name: "whois",
+    description: "Searches WHO.IS by IP or domain",
+    icon: "https://who.is/favicon.ico",
+    execute: function execute(args) { args._cmd.preview(null, args); },
+    preview: function preview(pblock, args) {
+  		this.url = "https://who.is/whois/{QUERY}";
+        if (args.text.trim()=="") args.text = url_domain(CmdUtils.getLocation());
+        if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(args.text)) 
+          this.url = "https://who.is/whois-ip/ip-address/{QUERY}";
+
+        if (!pblock) return CmdUtils.addTab(this.url.replace(/\{QUERY\}/g, encodeURIComponent(args.text)));
+        
+        this.tmp = CmdUtils._searchCommandPreview;  
+        this.tmp( pblock, args );
+    },
+    prevAttrs: {zoom: 0.75, scroll: [0, 0]},
+});
+
+
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
