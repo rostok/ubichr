@@ -184,3 +184,13 @@ body {
     /* border-collapse: collapse;  */
     /* border:1px solid red; */
 }
+
+span.texticon {
+    display: inline-block;
+    font-size: 1em;
+    height: 22pt;
+    width: 22pt;
+    vertical-align: middle;
+    text-align: center;
+    margin: 0px
+}

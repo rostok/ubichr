@@ -174,19 +174,14 @@ CmdUtils.CreateCommand({
     },
     help: "Try issuing &quot;dictionary ubiquity&quot;",
     license: "MPL",
-    icon: "http://dictionary.reference.com/favicon.ico",
+    icon: "https://www.dictionary.com/assets/favicon-d73532382d3943b0fef5b78554e2ee9a.png",
     execute: function ({text: text}) {
-        CmdUtils.addTab("https://dictionary.reference.com/search?q=" + escape(text));
+        CmdUtils.addTab("https://www.dictionary.com/browse/" + escape(text));
     },
     preview: async function define_preview(pblock, {text: text}) {
         pblock.innerHTML = "Gives the meaning of a word.";
-        var doc = await CmdUtils.get("https://dictionary.reference.com/search?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr" );
-        doc = jQuery("div.source-box", doc)
-                .find("button", doc).remove().end()
-                .find("ul.headword-bar-list").remove().end()
-                .find(".deep-link-synonyms").remove().end()
-                .html();
-        pblock.innerHTML = doc;
+        var doc = await CmdUtils.get("https://www.dictionary.com/browse/"+encodeURIComponent(text));
+        pblock.innerHTML = $("section#top-definitions-section", doc).parent("div").html();
     },
 });
 
@@ -258,9 +253,8 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     names: ["debug-popup"],
-    description: "Open popup in window",
+    description: "Opens UbiChr popup in a tab",
     icon: "res/icon-128.png",
-    preview: "lists all avaiable commands",
     execute: CmdUtils.SimpleUrlBasedCommand("popup.html")
 });
 
@@ -1655,7 +1649,7 @@ CmdUtils.CreateCommand({
             oReq.open("GET", l, true);
             oReq.responseType = "blob";//"arraybuffer";
             oReq.onprogress = (e)=>{
-                CmdUtils.popupWindow.console.log(e);
+                // CmdUtils.popupWindow.console.log(e);
                 _cmd.progress[e.currentTarget.responseURL] = {loaded:e.loaded, total:e.total};
                 var lt = Object.values(_cmd.progress).reduce( (acc, cur)=>{console.log("a",acc,"c",cur); return {loaded:acc.loaded+cur.loaded,total:acc.total+cur.total}});
                 if (CmdUtils.popupWindow.ubiq_match_first_command()==_cmd.name) {
@@ -1821,7 +1815,6 @@ CmdUtils.CreateCommand({
       	});    
     },
 });
-
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 

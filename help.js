@@ -8,9 +8,9 @@ function showHelp(type) {
         r += "<!-- "+c.name+" -->";
         var i = c.icon || ""; 
         if (i.length>3) 
-            i = "<img height='16px' src='"+c.icon+"'/>";
+            i = "<img class='icon' height='16px' src='"+c.icon+"' />";
         else
-            i = "<span style='font-size:1em; height:16px;vertical-align:middle;margin:0px'>"+i+"</span>"            
+            i = "<span class='texticon'>"+i+"</span>"            
         r += "<td>"+i+"</td>";
         r += "<td>"+(c.builtIn?"":"<b>")+c.names.join(", ")+(c.builtIn?"":"</b>")+"</td>";
         r += "<td>"+c.description+"</td>";
@@ -28,6 +28,7 @@ function showHelp(type) {
 function help() {
     $("#builtin").html( showHelp(true) );
     $("#custom").html( showHelp(false) );
+    $(".icon").on("error", function(){ $(this).attr('src', 'res/spacer.png'); });    
 }
 
 help();

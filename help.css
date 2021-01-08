@@ -1,13 +1,24 @@
 body {
-    background:#777;
-    color:black;
+    background: #777;
+    color: black;
     font-size: 12pt;
     font-family: Calibri, Helvetica, Arial;
 }
 
-#builtin, #custom {
+#builtin,
+#custom {
     width: 40%;
     display: inline-block;
     vertical-align: top;
     top: 0px;
-} 
+}
+
+span.texticon {
+    display: inline-block;
+    font-size: 1em;
+    height: 22pt;
+    width: 12pt;
+    vertical-align: middle;
+    text-align: center;
+    margin: 0px
+}

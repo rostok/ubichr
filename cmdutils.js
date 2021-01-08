@@ -82,8 +82,7 @@ CmdUtils.CreateCommand = function CreateCommand(args) {
 CmdUtils.makeSearchCommand = function makeSearchCommand(args) {
     args.execute_org = function(a) {
         var url = args.url
-        url = url.replace(/\{QUERY\}/g, encodeURIComponent(a.text));
-        url = url.replace(/\{text\}/g, encodeURIComponent(a.text));
+        url = url.replace(/\{text\}/g, "{QUERY}").replace(/\{QUERY\}/g, encodeURIComponent(a.text));
         url = url.replace(/\{location\}/g, encodeURIComponent(CmdUtils.getLocation()));
         CmdUtils.addTab(url);
     }
@@ -147,7 +146,7 @@ CmdUtils._searchCommandPreview = function _searchCommandPreview( pblock, {text: 
       return;
     }
     if (!this.prevAttrs) this.prevAttrs = {};
-    var url = (this.prevAttrs.url || this.url).replace(/\{QUERY\}/g, encodeURIComponent(q));
+    var url = (this.prevAttrs.url || this.url).replace(/\{text\}/g, "{QUERY}").replace(/\{QUERY\}/g, encodeURIComponent(q));
     // hash-anchor:
     var hashanch = null;
     if (this.prevAttrs.anchor != null) {
@@ -517,12 +516,15 @@ CmdUtils.notify = function (message, title) {
     $.fn.blankify = function( url ) { return this.find("a").attr("target", "_blank"); };
 }( jQuery ));
 
+// returns domain/hostname from url
 // https://stackoverflow.com/questions/8498592/extract-hostname-name-from-string
 function url_domain(data) {
     var    a      = document.createElement('a');
            a.href = data;
     return a.hostname;
 }
+
+CmdUtils.url_domain = url_domain;
 
 // loads absolute urls
 (function ( $ ) {

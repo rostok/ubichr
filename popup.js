@@ -228,15 +228,11 @@ function ubiq_match_first_command(text) {
     return first_match;
 }
 
-function _ubiq_image_error(elm) { 
-    elm.src = 'res/spacer.png';
-}
-
 function ubiq_command_icon(c) {
     var icon = CmdUtils.CommandList[c].icon || "";
-    if (icon.length>0 && icon.length < 3) return icon; // emojis/unicode
+    if (icon.length>0 && icon.length < 3) return `<span class='texticon'>${icon}</span>`; // emojis/unicode
     if (icon=="") icon = 'res/spacer.png';
-    icon = '<img src="' + icon + '" border="0" alt="" onerror="_ubiq_image_error(this);" align="absmiddle"> ';
+    icon = `<span class="texticon"><img class="icon" src="${icon}" border="0" alt="" align="absmiddle"></span>`;
     return icon;
 }
 
@@ -379,7 +375,7 @@ function ubiq_show_matching_commands(text) {
         var suggestions_list = document.createElement('ul');
         var selcmdidx = matches[ubiq_selected_command][0];
         ubiq_clear();
-        ubiq_set_preview( CmdUtils.CommandList[ selcmdidx ].description );
+        if (CmdUtils.CommandList[ selcmdidx ] !== undefined ) ubiq_set_preview( CmdUtils.CommandList[ selcmdidx ].description );
         ubiq_selected_option = -1;
         ubiq_show_preview(selcmdidx);
 
@@ -417,6 +413,8 @@ function ubiq_show_matching_commands(text) {
         if (text.length)
             ubiq_set_result( 'no commands found for <b>'+ ubiq_html_encode(text) +'</b>', true );
     }
+    // replace missing icons 
+    $(".icon").on("error", function(){ $(this).attr('src', 'res/spacer.png'); });    
     return;
 }
 
@@ -492,6 +490,7 @@ function ubiq_keydown_handler(evt) {
         // Cursor Down
         else if (kc == 40) {
             ubiq_selected_command++;
+            ubiq_selected_command = Math.min(ubiq_selected_command, 14);
             lcmd = "";
             evt.preventDefault();
         }

@@ -43,6 +43,7 @@ CmdUtils.CreateCommand({
 CmdUtils.makeSearchCommand({
   name: ["3example"],
   description: "Searches quant.com",
+  icon: "🔎",
   author: {name: "Your Name", email: "your-mail@example.com"},
   icon: "https://www.qwant.com/favicon-152.png?1503916917494",
   url: "https://www.qwant.com/?q={QUERY}&t=all",
@@ -76,7 +77,16 @@ function saveScripts() {
         CmdUtils.unloadCustomScripts(); 
         CmdUtils.loadCustomScripts(); 
     } catch (e) {
-        $("#info").html("<span style='background-color:red'>"+e.message+"</span>");
+        var m = e.message;
+        var l = /anonymous\>:(\d+)\:/.exec(e.stack);
+        if (l != null) {
+            l = l[1];
+            m += " <a href=# id=linerror>LINE:"+l+"</a>";
+        }
+        console.log(e)
+        console.log(l);
+        $("#info").html("<span style='background-color:red'>"+m+"</span>");
+        if (l != null) $("a#linerror").click( ()=>{ editor.setCursor({line:l,ch:0}); });
     }
     
     // download link

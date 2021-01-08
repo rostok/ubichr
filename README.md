@@ -50,7 +50,7 @@ Use ```CmdUtils.CreateCommand()``` and provide object with ```name``` string and
 The ```args``` object properties for ```execute``` command are as follows:
 
 * text: text passed as argument
-* _selection: currently selected text on tab
+* _selection: true if text is a current selection
 * _cmd: current command structure
 * _opt_idx: selected option (optional), -1 by default
 * _opt_val: value of option element set in data-option-value attribute
