@@ -12,7 +12,7 @@ function showHelp(type) {
         else
             i = "<span class='texticon'>"+i+"</span>"            
         r += "<td>"+i+"</td>";
-        r += "<td>"+(c.builtIn?"":"<b>")+c.names.join(", ")+(c.builtIn?"":"</b>")+"</td>";
+        r += "<td "+(c.external?"class=external":"")+">"+(c.builtIn?"":"<b>")+c.names.join(", ")+(c.builtIn?"":"</b>")+"</td>";
         r += "<td>"+c.description+"</td>";
         r += "</tr>";
 

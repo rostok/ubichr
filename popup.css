@@ -161,6 +161,10 @@ body {
     position:relative;
     width: 225px;
 }
+#ubiq-result-panel li.external {
+	/* color:#800000; */
+	text-shadow: 0px 0px 0px #f00, 0px 0px 4px #800;
+}
 #ubiq-result-panel .more-commands {
     width: 225px;
     line-height: 10px;

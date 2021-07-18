@@ -246,7 +246,17 @@ CmdUtils.CreateCommand({
     preview: function preview(pblock, {text:text, _cmd:_cmd}) {
         pblock.innerHTML = _cmd.description;
 	  	var c = CmdUtils.getcmdpart(text.trim());
-		if (c!=null) pblock.innerHTML = c.names.join(", ")+"<hr>"+(c.help || c.description);
+		if (c!=null) {
+		    var o = "";
+			o += c.names.join(", ");
+			o += "<hr>";
+			o += (c.help || c.description)+"<br>";
+			if (c.external) o += "WARNING! this command relies on external script!<br>";
+			o += "<br><br>";
+			if (typeof c.author !== 'undefined') o += "author: "+(c.author.name||c.author)+"<br>";
+			if (typeof c.homepage !== 'undefined' && c.homepage!="") o += "homepage : <a target=_blank href="+c.homepage+">"+c.homepage +"</a><br>";
+			pblock.innerHTML = o;
+		}
 	},
     execute: CmdUtils.SimpleUrlBasedCommand("help.html")
 });
@@ -270,12 +280,12 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "image-search",
-    description: "Search on Google for images",
+    description: "Google image search",
     author: {},
     icon: "http://www.google.com/favicon.ico",
     homepage: "",
     license: "",
-    preview: "Search on Google for images",
+    preview: "Google image search",
     execute: CmdUtils.SimpleUrlBasedCommand("https://images.google.com/images?hl=en&q={text}")
 });
 
@@ -288,12 +298,12 @@ CmdUtils.CreateCommand({
     license: "",
     timeout: 250,
     preview: async function define_preview(pblock, args) {
-        pblock.innerHTML = "Searches for movies on IMDb";
+        pblock.innerHTML = "Searches for movies on IMDB";
         args.text = args.text.replace(/[\.\\\/\s]+/g," ").trim();
         year = parseInt(args.text.replace(/[(\s)]/g," ").trim().split(/\s+/).slice(-1));
         var release_date = "";
         if(year>1900 && year<2050) {
-          args.text = args.text.split(/\s+/).slice(0,-1).join(" ");
+          args.text = args.text.split(/[(\s]+/).slice(0,-1).join(" ");
           release_date = "&release_date="+year;
         }
         if (args.text.trim()!="") {
@@ -324,7 +334,7 @@ CmdUtils.CreateCommand({
         var release_date = "";  
         year = parseInt(args.text.replace(/[(\s)]/g," ").trim().split(/\s+/).slice(-1));
         if(year>1900 && year<2050) {
-          args.text = args.text.split(/\s+/).slice(0,-1).join(" ");
+          args.text = args.text.split(/[(\s]+/).slice(0,-1).join(" ");
           release_date = "&release_date="+year;
         }
         var opt = args._opt_val || "";
@@ -447,7 +457,7 @@ CmdUtils.CreateCommand({
         pblock.innerHTML = `
                 <div class="mapouter">
                     <div class="gmap_canvas">
-                        <iframe width="540" height="505" id="gmap_canvas" src="https://maps.google.com/maps?q=`+encodeURIComponent(text)+`&t=&z=13&ie=UTF8&iwloc=&output=embed" 
+                        <iframe width="540" height="505" id="gmap_canvas" src="https://maps.google.com/maps?q=${encodeURIComponent(text)}&t=&z=13&ie=UTF8&iwloc=&output=embed" 
                         frameborder="0" scrolling="no" marginheight="0" marginwidth="0"></iframe>
                     </div>
                 <style>
@@ -973,6 +983,7 @@ CmdUtils.CreateCommand({
     name: "calc",
     description: desc = "evals math expressions",
     icon: "➕",
+    external: true,
     require: "https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.20.1/math.min.js",
     preview: pr = function preview(previewBlock, {text:text}) {
     	if (text.trim()!='') {
@@ -1858,7 +1869,7 @@ CmdUtils.CreateCommand({
     execute: function execute({text:text}) {
       text = text.replace("http:", "");
       text = text.replace("https:", "");
-      chrome.tabs.executeScript({code:"((e,s)=>{e.src=s;e.onload=function(){jQuery.noConflict();console.log('jQuery injected')};document.head.appendChild(e);})(document.createElement('script'),'"+text+"')"}, (r)=>{
+      chrome.tabs.executeScript({code:"((e,s)=>{e.src=s;e.onload=function(){console.log('script injected')};document.head.appendChild(e);})(document.createElement('script'),'"+text+"')"}, (r)=>{
       CmdUtils.notify(r+'', "Script injected.");
       });
     },
@@ -1883,6 +1894,106 @@ CmdUtils.CreateCommand({
     prevAttrs: {zoom: 0.75, scroll: [0, 0]},
 });
 
+CmdUtils.CreateCommand({
+    name: "allow-text-selecion",
+    author: "Alan Hogan",
+    icon: "Ꮖ",
+    external: true,
+    description: "Allows text selection by undoing user-select:none CSS rules.",
+    homepage: "https://alanhogan.com/bookmarklets",
+    execute: function execute(args) { CmdUtils.inject("https://cdn.jsdelivr.net/gh/alanhogan/bookmarklets/enable-text-selection.js"); },
+});
+
+CmdUtils.CreateCommand({
+    name: ["grayscale","greyscale"],
+    author: "Alan Hogan",
+    icon: "🎨",
+    external: true,
+    description: "Removes colors.",
+    homepage: "https://alanhogan.com/bookmarklets",
+    execute: function execute(args) { CmdUtils.inject("https://cdn.jsdelivr.net/gh/alanhogan/bookmarklets/grayscale.js"); },
+});
+
+CmdUtils.CreateCommand({
+    name: "2whois",
+    description: "Searches WHOIS by IP",
+    icon: "https://who.is/favicon.ico",
+    execute: function execute(args) {   
+        CmdUtils.addTab("https://duckduckgo.com/?q=" + encodeURIComponent(args.text));
+    },
+    preview: function preview(pblock, args) {
+  		url = "https://who.is/whois/{QUERY}";
+        addr = args.text;
+        if (trim(addr)=="") addr = url_domain(CmdUtils.getLocation());
+        if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(addr)) 
+          url = "https://who.is/whois-ip/ip-address/{QUERY}";
+	
+    	this.url = url;
+        CmdUtils._searchCommandPreview( pblock, args );  
+    },
+});
+
+CmdUtils.makeSearchCommand({
+  name: ["whois-ip"],
+  description: "Searche WHOIS by IP",
+  icon: "https://who.is/favicon.ico",
+  url: "https://who.is/whois-ip/ip-address/{QUERY}",
+  prevAttrs: {zoom: 0.75, scroll: [0, 0], anchor: ["c_13", "c_22"]},
+});
+
+CmdUtils.makeSearchCommand({
+  name: ["whois"],
+  description: "Searche WHOIS by domain",
+  icon: "https://who.is/favicon.ico",
+  url: "https://who.is/whois/{QUERY}",
+  prevAttrs: {zoom: 0.75, scroll: [0, 0], anchor: ["c_13", "c_22"]},
+});
+
+CmdUtils.makeSearchCommand({
+  name: ["wolfram"],
+  description: "Wolfram Alpha query",
+  icon: "http://www.wolframalpha.com/favicon.ico",
+  url: "https://www.wolframalpha.com/input/?i={QUERY}",
+  timeout: 500,
+  prevAttrs: {backgroundColor: "#FFFFFF", zoom: 0.75, scroll: [0/*x*/, 0/*y*/], anchor: ["c_13", "c_22"]},
+});
+
+CmdUtils.CreateCommand({
+    name: "history",
+    icon: "res/icon-128.png",
+    description: "browse and filter previously executed commands",
+    execute: function execute(args) {   
+      CmdUtils.popupWindow.ubiq_set_input(args._opt_val);
+    },
+    preview: function preview(pblock, args) {
+      var dos = "=selected ";
+      var o = "";
+      o += "<pre>";
+      o += "enter pattern to filter; select with Ctrl+up/down:\n\n";
+      CmdUtils.history.filter(c=>c.indexOf(args.text)>=0).forEach((c)=>{
+      	o += `<span data-option${dos} data-option-value='${c}'>${c}</span>\n`;  
+        dos = '';
+      });
+      o += "</pre>";
+      pblock.innerHTML = o;
+      if (CmdUtils.popupWindow) {
+        CmdUtils.popupWindow.ubiq_selected_option=0;
+        CmdUtils.popupWindow.ubiq_update_options();
+      }
+    },
+});
+
+CmdUtils.CreateCommand({
+    name: "history-clear",
+    icon: "res/icon-128.png",
+    description: "execute to clear UbiChr history buffer",
+    execute: function execute(args) {   
+    	CmdUtils.history = [];
+        CmdUtils.saveToHistory("");
+    },
+});
+
+
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -1891,13 +2002,6 @@ CmdUtils.CreateCommand({
 // mark built-int commands
 CmdUtils.CommandList.forEach((c)=>{c['builtIn']=true;});
 
-// load custom scripts
-if (typeof chrome!=='undefined')
-    if (chrome.storage)
-        chrome.storage.local.get('customscripts', function(result) {
-            try {
-                eval(result.customscripts || "");
-            } catch (e) {
-                console.error("custom scripts eval failed", e);
-            }
-        });
+CmdUtils.loadCustomScripts();
+
+CmdUtils.loadHistory();

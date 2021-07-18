@@ -189,7 +189,7 @@ CmdUtils.CreateCommand({
       CmdUtils.backgroundWindow.eval( `
 	   var callback = (tab) => {
             chrome.tabs.executeScript( tab.id, { code: \`
-              document.querySelector("input[name='inputfield']").value = "`+q+`";
+              document.querySelector("input[name='inputfield']").value = "${q}";
 			  document.querySelector("button[name='submitbutton']").click();
 			\`} );
           	chrome.tabs.onCreated.removeListener( callback );

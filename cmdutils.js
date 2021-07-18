@@ -5,6 +5,7 @@ if (!CmdUtils) var CmdUtils = {
     VERSION: chrome.runtime.getManifest().version,
     DEBUG: false,
     CommandList: [],
+    history: [],        // array of cmdline strings, first element is the most recent (like stack)
     jQuery: jQuery,
     backgroundWindow: window,
     popupWindow: null,
@@ -413,7 +414,7 @@ CmdUtils.setSelection = function setSelection(s) {
             range.text = replacementText;
         }
     }
-    replaceSelectedText("`+s+`");`;
+    replaceSelectedText("${s}");`;
     if (CmdUtils.active_tab && CmdUtils.active_tab.id)
         return chrome.tabs.executeScript( CmdUtils.active_tab.id, { code: insertCode } );
     else 
@@ -477,14 +478,26 @@ CmdUtils.loadCustomScripts = function loadCustomScripts() {
     // mark built-int commands
     CmdUtils.CommandList.forEach((c)=>{c['builtIn']=true;});
 
-    // load custom scripts
-    chrome.storage.local.get('customscripts', function(result) {
-    	try {
-    		eval(result.customscripts || "");
-    	} catch (e) {
-    		console.error("custom scripts eval failed", e);
-    	}
-    });
+    try {
+        // load custom scripts
+        chrome.storage.local.get('customscripts', function(result) {
+            try {
+                eval(result.customscripts || "");
+            } catch (e) {
+                console.error("custom scripts eval failed", e);
+            }
+        });
+    } catch (e) {
+        console.error("load custom scripts from chrome.storage failed", e);
+    }
+};
+
+// injcects script from url
+CmdUtils.inject = function inject(url, oninject) {
+	chrome.tabs.executeScript({
+		code:"((e,s)=>{e.src=s;e.onload=function(){console.log('script injected')};document.head.appendChild(e);})(document.createElement('script'),'"+url+"')"
+		}, oninject
+	);
 };
 
 // show browser notification with simple limiter 
@@ -499,6 +512,47 @@ CmdUtils.notify = function (message, title) {
     });
     CmdUtils.lastNotification = title+"/"+message;
 };
+
+// saves cmdline to history buffer and stores it 
+// history commands are not saved
+CmdUtils.saveToHistory = function (cmdline) {
+    if (cmdline.trim().startsWith("hist")) return;
+    if (cmdline.trim()!="") CmdUtils.history.unshift( cmdline );
+    if (CmdUtils.history.length > 32) CmdUtils.history.length = 32; // keep the cap
+    if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.set({'history': CmdUtils.history});
+};
+
+// saves preview cmdline to history buffer and stores it 
+// in case this is the same command than last it is only updated
+// preview commands are saved with couple of seconds delay (see popup.js::ubiq_show_preview())
+// history commands are not saved
+CmdUtils.saveToHistoryPreview = function (cmdline) {
+    if (cmdline.trim().startsWith("hist")) return;
+    if (CmdUtils.history.length>1) {
+        var curr = cmdline.split(' ')[0];
+        var last = CmdUtils.history[0].split(' ')[0];
+        if(curr==last) CmdUtils.history.shift();
+    }
+    CmdUtils.saveToHistory(cmdline);
+}
+
+// load history
+CmdUtils.loadHistory = function () {
+    try {
+        chrome.storage.local.get('history', function(result) { 
+            CmdUtils.history = result.history; 
+            if(!Array.isArray(CmdUtils.history)) CmdUtils.history = [];
+        });
+    } catch (e) {
+        console.error("history load failed", e);
+    }
+};
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+// - - JQUERY EXTRA FUNCTIONS  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 // changes anchors target to _blank
 (function ( $ ) {
@@ -599,3 +653,18 @@ CmdUtils.url_domain = url_domain;
     };
 }( jQuery ));
 
+
+// https://stackoverflow.com/posts/37285344
+(function ( $ ) {
+    $.fn.ensureInView = function(container, element) {
+        //Determine container top and bottom
+        let cTop = container.scrollTop;
+        let cBottom = cTop + container.clientHeight;
+        //Determine element top and bottom
+        let eTop = element.offsetTop;
+        let eBottom = eTop + element.clientHeight;
+        //Check if out of view
+        if (eTop < cTop) { container.scrollTop -= (cTop - eTop); }
+        else if (eBottom > cBottom) { container.scrollTop += (eBottom - cBottom); }
+    };
+}( jQuery ));
