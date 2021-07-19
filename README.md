@@ -203,6 +203,33 @@ CmdUtils.CreateCommand({
 
 UbiChr command creates internal chrome listener that is fired upon new tab being opened. The listerer callback executes JS into a page that fills the form and submits it and finally removes the callback. Please note, that the example above has no tab url check in place. 
 
+## commands that inject external JavaScript
+Build 1.0.0.31 includes two commands that rely on external sources. These are `allow-text-selection` that removes anti selection by overriding `user-select: none` CSS style, and `grayscale` (or `greyscale`) which just disables colors. Both commands inject JS source taken from CDN and as a precaution include `external: true` attribute. Be aware that the CDN provided source may change anytime.
+
+The intention here is to convert simple bookmarked javascript into typical commands. The author of the original JS scripts or the bookmarklets is [Alan Hogan](https://github.com/alanhogan/bookmarklets).
+
+```javascript
+CmdUtils.CreateCommand({
+    name: "allow-text-selecion",
+    author: "Alan Hogan",
+    icon: "Ꮖ",
+    external: true,
+    description: "Allows text selection by undoing user-select:none CSS rules.",
+    homepage: "https://alanhogan.com/bookmarklets",
+    execute: function execute(args) { CmdUtils.inject("https://cdn.jsdelivr.net/gh/alanhogan/bookmarklets/enable-text-selection.js"); },
+});
+
+CmdUtils.CreateCommand({
+    name: ["grayscale","greyscale"],
+    author: "Alan Hogan",
+    icon: "🎨",
+    external: true,
+    description: "Removes colors.",
+    homepage: "https://alanhogan.com/bookmarklets",
+    execute: function execute(args) { CmdUtils.inject("https://cdn.jsdelivr.net/gh/alanhogan/bookmarklets/grayscale.js"); },
+});
+```
+
 # alternatives
 Svalorzen has forked UbiChr and created UbiShell which has more shell like UI with piping and command options. Check it out here: https://github.com/Svalorzen/UbiShell
 
