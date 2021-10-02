@@ -235,7 +235,7 @@ The background script runs CmdUtils.updateActiveTab() method on couple of chrome
 * `CmdUtils.addUpdateHandler(name, handler)` which adds named handler function to CmdUtils.updateHandlers array, note that handler must be a function
 * `CmdUtils.removeUpdateHandler(name)` which removes named handler from 
 * `CmdUtils.updateHandlers` which is an array of `{name,handler}` objects
-In particular new highlight/mark command uses these methods to add permanent highlighting of chosen keywords.
+In particular the new `highlight`/`mark` command uses these methods to add permanent highlighting of chosen keywords.
 
 # alternatives
 Svalorzen has forked UbiChr and created UbiShell which has more shell like UI with piping and command options. Check it out here: https://github.com/Svalorzen/UbiShell
