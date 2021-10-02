@@ -11,6 +11,7 @@ if (!CmdUtils) var CmdUtils = {
     popupWindow: null,
     lastKeyEvent:null,
     log: console.log,
+    updateHandlers: [], // array of {name,handler} objects, handler functions are executed on CmdUtils.updateActiveTab(), +/- addUpdateHandler() removeUpdateHandler()
     active_tab: null,   // tab that is currently active, updated via background.js 
     selectedText: "",   // currently selected text, update via content script selection.js
     selectedHTML: "",   // currently selected text, update via content script selection.js
@@ -110,8 +111,10 @@ CmdUtils._restoreFocusToInput = function(event) {
             var scrollOffs = self.prevAttrs.scroll;
             wnd.setTimeout( function() {
                 var pblock = wnd.document.getElementById('ubiq-preview-div');
-                pblock.scrollLeft = scrollOffs[0];
-                pblock.scrollTop = scrollOffs[1];
+                if (pblock) {
+                    pblock.scrollLeft = scrollOffs[0];
+                    pblock.scrollTop = scrollOffs[1];
+                }
             }, 0);
         }
         wnd.setTimeout(function() {
@@ -369,6 +372,20 @@ CmdUtils.updateSelection = function (tab_id) {
     });
 };
 
+// adds named handler function to CmdUtils.updateHandlers array, handler must be a function
+CmdUtils.addUpdateHandler = function (name, handler) {
+    name ||= "";
+    if (name==""||typeof handler !== 'function') return;
+    CmdUtils.updateHandlers.push( {name:name, handler:handler});
+    CmdUtils.deblog("update handler",name,"added");
+};
+
+// removes named handler from CmdUtils.updateHandlers array
+CmdUtils.removeUpdateHandler = function (name) {
+    CmdUtils.updateHandlers = CmdUtils.updateHandlers.filter(v=>v.name!=name);
+    CmdUtils.deblog("update handler",name,"removed");
+};
+
 // called when tab is switched or changed, updates selectedText and activeTab
 CmdUtils.updateActiveTab = function () {
     CmdUtils.active_tab = null;
@@ -381,6 +398,7 @@ CmdUtils.updateActiveTab = function () {
             CmdUtils.active_tab = tab;
             CmdUtils.updateSelection(tab.id);
         }
+        CmdUtils.updateHandlers.forEach(v=>v.handler());
     });
 };
 
@@ -514,11 +532,12 @@ CmdUtils.notify = function (message, title) {
 };
 
 // saves cmdline to history buffer and stores it 
-// history commands are not saved
+// history commands, or command same as the first in history are not saved
 CmdUtils.saveToHistory = function (cmdline) {
     if (cmdline.trim().startsWith("hist")) return;
+    if (CmdUtils.history.length>0 && CmdUtils.history[0]==cmdline) return;
     if (cmdline.trim()!="") CmdUtils.history.unshift( cmdline );
-    if (CmdUtils.history.length > 32) CmdUtils.history.length = 32; // keep the cap
+    if (CmdUtils.history.length > 64) CmdUtils.history.length = 64; // keep the cap
     if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.set({'history': CmdUtils.history});
 };
 

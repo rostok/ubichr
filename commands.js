@@ -104,64 +104,67 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "currency-converter",
-    description: "Convert currency using xe.com/exchangeratesapi.io converter service",
-    help: "Convert currency using xe.com/exchangeratesapi.io converter service.<br>Example arguments:<br><br>5000 NOK to EUR<br>5000 NOKEUR<br>NOKEUR 5000",
-    author: "Cosimo Streppone/rostok",
-    icon: "http://www.xe.com/favicon.ico",
-    homepage: "http://xe.com/ucc/",
+    description: "Convert currency using x-rates.com",
+    help: "Convert currency using x-rates.com<br>Example arguments:<br><br>5000 NOK to EUR<br>5000 NOKEUR<br>NOKEUR 5000",
+    author: "rostok",
+    icon: "https://www.x-rates.com/favicon.ico",
     license: "",
-    preview: async function (pblock, directObj) {
+    preview: function (pblock, directObj) {
+        var curr_from, curr_to;
         var currency_spec = directObj.text.trim().toUpperCase();
         var matches = currency_spec.match(/^([\d\.]+)\s+(\w+)\s+TO\s+(\w+)$/);
         var amount;
         if (matches && matches.length>=4) {
             amount = matches[1];
-            var curr_from = matches[2];
-            var curr_to = matches[3];
+            curr_from = matches[2];
+            curr_to = matches[3];
         } else {
-            matches = currency_spec.match(/^([\d\.]+)\s+(\w{6})$/);
+            matches = currency_spec.match(/^([\d\.\+\-\\\/\*]+)\s+(\w{6})$/);
             if (matches && matches.length>=3) {
                 amount = matches[1];
-                var curr_from = matches[2].substring(0,3);
-                var curr_to = matches[2].substring(3);
+                curr_from = matches[2].substring(0,3);
+                curr_to = matches[2].substring(3);
             } else {
                 matches = currency_spec.match(/^(\w{6})\s+([\d\.]+)$/);
                 if (!matches || matches.length<3) return;
                 amount = matches[2];
-                var curr_from = matches[1].substring(0,3);
-                var curr_to = matches[1].substring(3);
+                curr_from = matches[1].substring(0,3);
+                curr_to = matches[1].substring(3);
             }
         }
-        CmdUtils.ajaxGetJSON("https://api.exchangeratesapi.io/latest?base=" + escape(curr_from) + "&symbols=" + escape(curr_to), (json)=>{
-            console.log("got result"+json);
-            CmdUtils.setTip("exchangeratesapi.io says<br>"+amount+" "+curr_from+" = <hr>");
-            pblock.innerHTML = (amount * parseFloat(json.rates[curr_to])).toFixed(2) + " " + curr_to;
+        try {
+          amount = eval(amount);
+        } catch (e) {
+          amount = parseFloat(amount) || 0;
+        }
+        jQuery(pblock).loadAbs(`https://www.x-rates.com/calculator/?from=${curr_from}&to=${curr_to}&amount=${amount} `+" span.ccOutputRslt", ()=>{
+        	jQuery(pblock).html(amount+" "+curr_from+" = " + jQuery(pblock).text());
         });
     },
     execute: function (directObj) {
+        var curr_from, curr_to;
         var currency_spec = directObj.text.trim().toUpperCase();
         var matches = currency_spec.match(/^([\d\.]+)\s+(\w+)\s+TO\s+(\w+)$/);
         var amount;
         if (matches && matches.length>=4) {
             amount = matches[1];
-            var curr_from = matches[2];
-            var curr_to = matches[3];
+            curr_from = matches[2];
+            curr_to = matches[3];
         } else {
             matches = currency_spec.match(/^([\d\.]+)\s+(\w{6})$/);
             if (matches && matches.length>=3) {
                 amount = matches[1];
-                var curr_from = matches[2].substring(0,3);
-                var curr_to = matches[2].substring(3);
+                curr_from = matches[2].substring(0,3);
+                curr_to = matches[2].substring(3);
             } else {
                 matches = currency_spec.match(/^(\w{6})\s+([\d\.]+)$/);
                 if (!matches || matches.length<3) return;
                 amount = matches[2];
-                var curr_from = matches[1].substring(0,3);
-                var curr_to = matches[1].substring(3);
+                curr_from = matches[1].substring(0,3);
+                curr_to = matches[1].substring(3);
             }
         }
-        var xe_url = "https://www.xe.com/ucc/convert.cgi?Amount=" + escape(amount) + "&From=" + escape(curr_from) + "&To=" + escape(curr_to);
-        CmdUtils.addTab(xe_url);
+        CmdUtils.addTab(`https://www.x-rates.com/calculator/?from=${curr_from}&to=${curr_to}&amount=${amount}`);
     }
 });
 
@@ -1464,22 +1467,6 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
-    name: "open",
-    description: "opens multiple links from clipboard or argument list in separate tabs",
-    author: "rostok",
-    icon: "res/icon-128.png",
-    execute: function execute({text:text}) {
-        if (text.trim()=="") text = CmdUtils.getClipboard();
-        text.trim().split(/\s+/).forEach( s => { if (s.trim()!='') CmdUtils.addTab(s) } );
-    },
-    preview: function preview(pblock, {text:text}) {
-        if (text.trim()=="") text = CmdUtils.getClipboard();
-        text = text.trim().split(/\s+/).map( (s,a) => { return "<br><a target=_blank href='"+s+"'>"+s+"</a>"; } ).join("");
-        pblock.innerHTML = "open:" + text;
-    },
-});
-
-CmdUtils.CreateCommand({
     icon: "🍪",
     name: "cookies",
     description: "gets cookies, press Enter to save file, filter by domain or * for all",
@@ -1827,6 +1814,28 @@ CmdUtils.CreateCommand({
     },
 });
 
+CmdUtils.CreateCommand({
+    names: ["unicode"],
+  	icon: "https://unicode.org/webscripts/logo60s2.gif",
+    preview: async function preview(pblock, {text:text}) {  
+        if (text === "") {
+            pblock.innerHTML = "finds đź…˘ đź‡ą â„ť ď˝ď˝Žď˝‡ â“” unicode characters đź»đźđź‡";
+        } else {
+            pblock.innerHTML = "";
+            var res = await CmdUtils.get( "https://unicode-search.net/unicode-namesearch.pl?print=1&.submit=Search&term=" + encodeURIComponent(text) );   
+            var div = jQuery("td.character,td.onecharacter", res).map((a,e)=>{return "<span>"+e.innerHTML+"</span>";}).get().join(" ");
+//            pblock.innerHTML = "<div style='font-face:\"FreeSans, Adobe Notdef\"; url(https://www.gnu.org/software/freefont/tt/full/FreeSans.woff) format(truetype); url(//db.onlinewebfonts.com/t/759da426cfd9b68abfd48a04230d2184.ttf) format(truetype); font-size:2em'>"+div+"</font>";
+            pblock.innerHTML = "<div style='font-face:Segoe Symbol; font-size:2em'>"+div+"</font>";
+            jQuery("span", pblock).each((i,e)=>{
+                jQuery(e).attr("data-option","");
+                jQuery(e).on("data-option-selected", e=>CmdUtils.setClipboard($(e.target).html()) );
+                jQuery(e).attr("data-option-value", jQuery(e).find("a").first().attr("href"));
+            });
+        }
+    },
+    execute: CmdUtils.SimpleUrlBasedCommand("https://unicode-search.net/unicode-namesearch.pl?.submit=Search&term={text}")
+});
+             
 CmdUtils.makeSearchCommand({
     name: ["emoji"],
     description: "Search Emojipedia",
@@ -1914,41 +1923,6 @@ CmdUtils.CreateCommand({
     execute: function execute(args) { CmdUtils.inject("https://cdn.jsdelivr.net/gh/alanhogan/bookmarklets/grayscale.js"); },
 });
 
-CmdUtils.CreateCommand({
-    name: "2whois",
-    description: "Searches WHOIS by IP",
-    icon: "https://who.is/favicon.ico",
-    execute: function execute(args) {   
-        CmdUtils.addTab("https://duckduckgo.com/?q=" + encodeURIComponent(args.text));
-    },
-    preview: function preview(pblock, args) {
-  		url = "https://who.is/whois/{QUERY}";
-        addr = args.text;
-        if (trim(addr)=="") addr = url_domain(CmdUtils.getLocation());
-        if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(addr)) 
-          url = "https://who.is/whois-ip/ip-address/{QUERY}";
-	
-    	this.url = url;
-        CmdUtils._searchCommandPreview( pblock, args );  
-    },
-});
-
-CmdUtils.makeSearchCommand({
-  name: ["whois-ip"],
-  description: "Searche WHOIS by IP",
-  icon: "https://who.is/favicon.ico",
-  url: "https://who.is/whois-ip/ip-address/{QUERY}",
-  prevAttrs: {zoom: 0.75, scroll: [0, 0], anchor: ["c_13", "c_22"]},
-});
-
-CmdUtils.makeSearchCommand({
-  name: ["whois"],
-  description: "Searche WHOIS by domain",
-  icon: "https://who.is/favicon.ico",
-  url: "https://who.is/whois/{QUERY}",
-  prevAttrs: {zoom: 0.75, scroll: [0, 0], anchor: ["c_13", "c_22"]},
-});
-
 CmdUtils.makeSearchCommand({
   name: ["wolfram"],
   description: "Wolfram Alpha query",
@@ -1993,7 +1967,141 @@ CmdUtils.CreateCommand({
     },
 });
 
+CmdUtils.CreateCommand({
+    name: ["highlight-remove","mark-remove"],
+    description: "removes highlight/mark",
+    icon: "🟨",
+    execute: function () { CmdUtils.removeUpdateHandler("markHandler"); }
+});
+CmdUtils.CreateCommand({
+    name: ["highlight","mark"],
+    description: "highlights/marks arguments on current tab, permanent on execute",
+    external: true,
+    icon: "🟨",
+    execute: function ({text:text}) {
+      if (text=="") 
+        CmdUtils.removeUpdateHandler("markHandler");
+      else			
+        CmdUtils.addUpdateHandler("markHandler", ()=>{ CmdUtils.getcmd("mark").preview(null, {text:text}); });
+    },
+    preview: function preview(pblock, {text:text}) {   
+      CmdUtils.ajaxGet("https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js", (data)=>{
+        chrome.tabs.executeScript({ file: "lib/jquery-3.5.1.min.js" }, (r)=>{
+          var code = data + `
+          		var args='${text}'.split(/\\s+/);
+            	jQuery("body").unmark();
+            	args.forEach( a => jQuery("body").mark(a,{separateWordSearch:false}) );
+				`;
+          chrome.tabs.executeScript({ code: code });
+        });
+      });
+    }
+});
 
+CmdUtils.CreateCommand({
+    name: "open",
+    description: "opens multiple links from clipboard or argument list in separate tabs",
+    author: "rostok",
+    icon: "res/icon-128.png",
+    execute: function execute({text:text}) {
+        if (text.trim()=="") text = CmdUtils.getClipboard();
+        text.trim().split(/\s+/).forEach( s => { 
+          if (!s.includes("://")) s="http://"+s; 
+          CmdUtils.addTab(s); 
+       	} );
+    },
+    preview: function preview(pblock, {text:text}) {
+        if (text.trim()=="") text = CmdUtils.getClipboard();
+        text = text.trim().split(/\s+/).map( (s,a) => { 
+          if (!s.includes("://")) s="http://"+s; 
+          return "<br><a target=_blank href='"+s+"'>"+s+"</a>"; 
+        } ).join("");
+        pblock.innerHTML = "open:" + text;
+    },
+});
+
+CmdUtils.makeSearchCommand({
+  name: ["man"],
+  description: "linux man via www",
+  icon: "📄",
+  url: "http://man.he.net/?section=all&topic={QUERY}",
+  prevAttrs: {zoom: 1, scroll: [100/*x*/, 0/*y*/], anchor: ["c_13", "c_22"]},
+});
+
+CmdUtils.CreateCommand({
+    name: "merge-tabs",
+  	icon: "🗀",
+    description: "merge chrome tabs to a single window",
+    execute: function execute(args) {   
+            chrome.windows.getCurrent(
+              	(win)=>{
+                        targetWindow = win;
+                        chrome.tabs.getAllInWindow(targetWindow.id, 
+                        	(tabs)=>{
+                                      chrome.windows.getAll({"populate" : true}, 
+                                        (windows)=>{
+                                          for (var i = 0; i < windows.length; i++) {
+                                            var win = windows[i];
+                                            if (targetWindow.id != win.id && win.type==='normal') {
+                                              for (var j = 0; j < win.tabs.length; j++) {
+                                                var tab = win.tabs[j];
+                                                chrome.tabs.move(tab.id,{"windowId": targetWindow.id, "index": -1});
+                                                if(tab.pinned==true){chrome.tabs.update(tab.id, {"pinned":true});}
+                                              }
+                                            }
+                                          }
+                                      });
+                        });
+            });
+
+    },
+});
+
+
+CmdUtils.CreateCommand({
+    name: ["translate-google", "google-translate"],
+    description: "translate text, selection or current tab with Google Translate",
+    icon: "https://translate.google.com/favicon.ico",
+    preview: (pblock, args)=>{
+      		args._cmd.url = "https://translate.google.com/translate?hl=&sl=auto&tl={text}&u={location}";
+            // empty args translates URL, text or selection opens standard translate form
+            if(args.text=="") {
+              args.text="EN";
+            } else {
+              args._cmd.url = "https://translate.google.com/?sl=auto&tl=pl&op=translate&text={text}";
+            }
+      		(CmdUtils._searchCommandPreview.bind(args._cmd))(pblock, args);
+    		},
+    execute: (args)=>{
+      		var url = "https://translate.google.com/translate?hl=&sl=auto&tl={text}&u={location}";
+            // empty args translates URL, text or selection opens standard translate form
+            if(args.text=="") {
+              args.text="EN";
+            } else {
+              url = "https://translate.google.com/?sl=auto&tl=pl&op=translate&text={text}";
+            }
+            url = url.replace(/\{text\}/g, "{QUERY}").replace(/\{QUERY\}/g, encodeURIComponent(args.text));
+            url = url.replace(/\{location\}/g, encodeURIComponent(CmdUtils.getLocation()));
+            CmdUtils.addTab(url);
+    	},
+});
+
+CmdUtils.CreateCommand({
+    name: "sum",
+    description: "sums selected numbers",
+  	icon: "https://www.greeksymbols.net/img/sigma-symbol-capital.png",
+    author: { name: "rostok" },
+    license: "MIT",
+    main: function main(args) {
+        return args.text.replace(/,/g, ".").split(/[ +;\n\t\r]+/).reduce(function(a, b) { return (parseFloat(a) || 0) + (parseFloat(b) || 0); }, 0);
+    },
+    execute: function execute(args) {
+        CmdUtils.setSelection(args._cmd.main(args));
+    },
+    preview: function preview(pblock, args) {
+        pblock.innerHTML = "" + args._cmd.main(args);
+    },
+});
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 

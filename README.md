@@ -229,6 +229,13 @@ CmdUtils.CreateCommand({
     execute: function execute(args) { CmdUtils.inject("https://cdn.jsdelivr.net/gh/alanhogan/bookmarklets/grayscale.js"); },
 });
 ```
+## update handlers
+The background script runs CmdUtils.updateActiveTab() method on couple of chrome's events
+(onUpdated,onActivated,onHighlighted). Version 0.1.0.32 adds possibility to attach/remove your custom handlers to CmdUtils.updateActiveTab(). This is managed via:
+* `CmdUtils.addUpdateHandler(name, handler)` which adds named handler function to CmdUtils.updateHandlers array, note that handler must be a function
+* `CmdUtils.removeUpdateHandler(name)` which removes named hanlder from 
+* `CmdUtils.updateHandlers` whic is an array of `{name,handler}` objects
+In particular new highlight/mark command uses these methods to add permanent highlighting of chosen keywords.
 
 # alternatives
 Svalorzen has forked UbiChr and created UbiShell which has more shell like UI with piping and command options. Check it out here: https://github.com/Svalorzen/UbiShell
