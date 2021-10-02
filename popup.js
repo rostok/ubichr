@@ -10,6 +10,7 @@
 var ubiq_selected_command = 0;
 var ubiq_selected_option = -1;
 var ubiq_first_match;
+var ubiq_history_index = 0;
 
 // sets the tip field (for time being this is the preview panel)
 function ubiq_set_tip(v) {
@@ -186,15 +187,18 @@ function ubiq_help() {
     html += "<p>";
     html += "<div style='position: absolute; bottom: 0;'>";
     html += "<u>Keys:</u><br>";
-    html += "<div style='column-count:2'>";
+    html += "<div style='column-count:3'>";
     html += "Enter - execute<br>";
-    html += "Shift+Enter - on execution new tab will be inactive<br>";
+    html += "Shift+Enter - execute to inactive tab<br>";
     html += "Ctrl+C - copy preview to clipboard<br>";
-    html += "up/down - cycle through commands suggestions<br>";
-    html += "Tab - expand suggstion<br>";
-    html += "Ctrl+up/down - cycle through preview options<br>";
-    html += "Ctrl+R - command history<br>";
-    html += "F5 - reload the extension";
+    html += "F5 - reload the extension<br>";
+    html += "↑ / ↓ - select suggestion<br>";
+    html += "Tab - expand suggestion<br>";
+    html += "Ctrl+↑ / ↓ - select preview option<br>";
+    html += "<br>";
+    html += "Ctrl+R / Alt+F8 - command history<br>";
+    html += "Ctrl+P / Ctrl+E - previous command<br>";
+    html += "Ctrl+N / Ctrl+X - next command<br>";
     html += "</div>";
     html += "</div>";
     return html;
@@ -501,8 +505,32 @@ function ubiq_keydown_handler(evt) {
         CmdUtils.setClipboard( el.innerText );
     }
 
-    // Ctrl+R shows history
-    if (kc == 82 && evt.ctrlKey) {
+    // Ctrl+P / Ctrl+E selects previous commands
+    if ((kc == 80 && evt.ctrlKey) || (kc == 69 && evt.ctrlKey)) {
+        ubiq_history_index++;
+        if (ubiq_history_index<0) ubiq_history_index = 0;
+        if (ubiq_history_index>=CmdUtils.history.length) ubiq_history_index = CmdUtils.history.length-1;
+        cmd = document.getElementById('ubiq_input');
+        if (!cmd) return;
+        cmd.value = CmdUtils.history[ubiq_history_index];
+        evt.preventDefault();
+        return;
+    }
+
+    // Ctrl+N / Ctrl+X selects previous commands
+    if ((kc == 78 && evt.ctrlKey) || (kc == 88 && evt.ctrlKey)) {
+        ubiq_history_index--;
+        if (ubiq_history_index<0) ubiq_history_index = 0;
+        if (ubiq_history_index>=CmdUtils.history.length) ubiq_history_index = CmdUtils.history.length-1;
+        cmd = document.getElementById('ubiq_input');
+        if (!cmd) return;
+        cmd.value = CmdUtils.history[ubiq_history_index];
+        evt.preventDefault();
+        return;
+    }
+
+    // Ctrl+R / Alt+F8 shows history
+    if ((kc == 82 && evt.ctrlKey) || (kc == 119 && evt.altKey)) {
         cmd = document.getElementById('ubiq_input');
         if (!cmd) return;
         cmd.value = "history ";
