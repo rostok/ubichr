@@ -67,7 +67,7 @@ CmdUtils.CreateCommand({
     homepage: "",
     license: "",
     preview: "Perform a clustered search through yippy.com",
-    execute: async function execute({text:text}) {
+    execute: async function execute({text}) {
             var xtoken = CmdUtils.get("http://yippy.com/");
             xtoken = jQuery("#xtoken", xtoken).val();
             CmdUtils.postNewTab("https://yippy.com/search/?v%3Aproject=clusty-new&query=kakao&xtoken="+xtoken);//, {"v:project":"clusty-new", xtoken:xtoken});
@@ -88,7 +88,7 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "cpan",
-    icon: "http://search.cpan.org/favicon.ico",
+    icon: "https://metacpan.org/favicon.ico",
     description: "Search for a CPAN package information",
     homepage: "",
     author: {
@@ -98,7 +98,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: "Search for a CPAN package information",
     execute: CmdUtils.SimpleUrlBasedCommand(
-        "https://search.cpan.org/dist/{text}"
+        "https://metacpan.org/search?q={text}"
     )
 });
 
@@ -138,7 +138,7 @@ CmdUtils.CreateCommand({
           amount = parseFloat(amount) || 0;
         }
         jQuery(pblock).loadAbs(`https://www.x-rates.com/calculator/?from=${curr_from}&to=${curr_to}&amount=${amount} `+" span.ccOutputRslt", ()=>{
-        	jQuery(pblock).html(amount+" "+curr_from+" = " + jQuery(pblock).text());
+            jQuery(pblock).html(amount+" "+curr_from+" = " + jQuery(pblock).text());
         });
     },
     execute: function (directObj) {
@@ -244,23 +244,23 @@ CmdUtils.CreateCommand({
 CmdUtils.CreateCommand({
     names: ["help", "command-list"],
     description: "execute to list all commands<br>or type <pre>help command-name</pre> for specific command help",
-	help: "Congratulations! Now you know how to help yourself!",
+    help: "Congratulations! Now you know how to help yourself!",
     icon: "res/icon-128.png",
-    preview: function preview(pblock, {text:text, _cmd:_cmd}) {
-        pblock.innerHTML = _cmd.description;
-	  	var c = CmdUtils.getcmdpart(text.trim());
-		if (c!=null) {
-		    var o = "";
-			o += c.names.join(", ");
-			o += "<hr>";
-			o += (c.help || c.description)+"<br>";
-			if (c.external) o += "WARNING! this command relies on external script!<br>";
-			o += "<br><br>";
-			if (typeof c.author !== 'undefined') o += "author: "+(c.author.name||c.author)+"<br>";
-			if (typeof c.homepage !== 'undefined' && c.homepage!="") o += "homepage : <a target=_blank href="+c.homepage+">"+c.homepage +"</a><br>";
-			pblock.innerHTML = o;
-		}
-	},
+    preview: function preview(pblock, {text, _cmd}) {
+        pblock.innerHTML = this.description;
+          var c = CmdUtils.getcmdpart(text.trim());
+        if (c!=null) {
+            var o = "";
+            o += c.names.join(", ");
+            o += "<hr>";
+            o += (c.help || c.description)+"<br>";
+            if (c.external) o += "WARNING! this command relies on external script!<br>";
+            o += "<br><br>";
+            if (typeof c.author !== 'undefined') o += "author: "+(c.author.name||c.author)+"<br>";
+            if (typeof c.homepage !== 'undefined' && c.homepage!="") o += "homepage : <a target=_blank href="+c.homepage+">"+c.homepage +"</a><br>";
+            pblock.innerHTML = o;
+        }
+    },
     execute: CmdUtils.SimpleUrlBasedCommand("help.html")
 });
 
@@ -311,7 +311,7 @@ CmdUtils.CreateCommand({
         }
         if (args.text.trim()!="") {
           jQuery(pblock).loadAbs("https://www.imdb.com/search/title?title="+encodeURIComponent(args.text)+release_date+" div.lister-list", ()=>{
-			jQuery(pblock).find("div.ratings-user-rating").remove();
+            jQuery(pblock).find("div.ratings-user-rating").remove();
             jQuery(pblock).find("p.sort-num_votes-visible").hide();
             jQuery(pblock).find("span.lister-item-index.unbold.text-primary").remove();
             jQuery(pblock).find("div.ratings-metascore").remove();
@@ -322,16 +322,16 @@ CmdUtils.CreateCommand({
               
                 var img = "<img style='float:left' aling=bottom src='"+jQuery(e).find("img.loadlate").first().attr("loadlate")+"'>";
                 var title = "<a href='"+jQuery(e).find("a").first().attr("href")+"'>"+jQuery(e).find("h3").text().trim()+"</a> ";
-                var info = "<span>"	+jQuery(e).find(".runtime").text()+" | "
-                					+jQuery(e).find(".genre").text()+" | "
-                					+"<span style='color:yellow'>"+jQuery(e).find(".ratings-imdb-rating").text()+"</span>"
-                					+"</span>";
+                var info = "<span>"    +jQuery(e).find(".runtime").text()+" | "
+                                    +jQuery(e).find(".genre").text()+" | "
+                                    +"<span style='color:yellow'>"+jQuery(e).find(".ratings-imdb-rating").text()+"</span>"
+                                    +"</span>";
                 var syno = "<br><span>"+jQuery(e).find(".ratings-bar").next("p").text()+"</span>";
                 jQuery(e).html("<div style='clear:both;overflow-y:auto;'>"+img+"<div style=''>"+ title + info + syno + "</div></div><p>");
             });
           });
         }
-	},
+    },
     execute: function execute(args) {
         args.text = args.text.replace(/[\.\\\/\s]+/g," ").trim();
         var release_date = "";  
@@ -448,11 +448,11 @@ CmdUtils.CreateCommand({
     name: "maps",
     description: "Shows a location on the map, iframe version",
     icon: "http://www.google.com/favicon.ico",
-    execute: function({text:text}) {
+    execute: function({text}) {
         if (text.substr(-2)=="-l") text = text.slice(0,-2);
         CmdUtils.addTab("https://maps.google.com/maps?q="+encodeURIComponent(text));
     },
-    preview: function preview(pblock, {text:text}) {
+    preview: function preview(pblock, {text}) {
         if (text=="") {
             pblock.innerHTML = "show objects or routes on google maps.<p>syntax: <pre>\tmaps [place]\n\tmaps [start] to [finish]</pre>"; 
             return;
@@ -491,10 +491,10 @@ CmdUtils.CreateCommand({
         }
         cc = "";
         if (text.substr(-2)=="-l") {
-	        var geoIP = await CmdUtils.get("https://freegeoip.net/json/"); // search locally
-    	    var cc = geoIP.country_code || "";
-        	cc = cc.toLowerCase();
-        	text = text.slice(0,-2);
+            var geoIP = await CmdUtils.get("https://freegeoip.net/json/"); // search locally
+            var cc = geoIP.country_code || "";
+            cc = cc.toLowerCase();
+            text = text.slice(0,-2);
         }
         from = text.split(' to ')[0];
         dest = text.split(' to ').slice(1).join();
@@ -503,7 +503,7 @@ CmdUtils.CreateCommand({
         CmdUtils.deblog("A",A[0]);
         previewBlock.innerHTML = '<div id="map-canvas" style="width:540px;height:505px"></div>';
 
-    	var pointA = new GM.LatLng(A[0].lat, A[0].lon);
+        var pointA = new GM.LatLng(A[0].lat, A[0].lon);
         var myOptions = {
             zoom: 10,
             center: pointA
@@ -554,7 +554,7 @@ CmdUtils.CreateCommand({
             });
         }
     },
-    execute: function({text:text}) {
+    execute: function({text}) {
         if (text.substr(-2)=="-l") text = text.slice(0,-2);
         CmdUtils.addTab("https://maps.google.com/maps?q="+encodeURIComponent(text));
     }
@@ -581,7 +581,7 @@ CmdUtils.CreateCommand({
     homepage: "",
     license: "",
     preview: "Open a new tab (or window) with the specified URL",
-    execute: function ({text:text}) {
+    execute: function ({text}) {
         if (!text.match('^https?://')) text = "https://"+text;
         CmdUtils.addTab(text);
     }
@@ -635,7 +635,7 @@ CmdUtils.CreateCommand({
         email: "cosimo@cpan.org"
     },
     license: "GPL",
-    preview: async function (pblock, {text:text}) {
+    preview: async function (pblock, {text}) {
         var words = text.split(' ');
         var host = words[1];
         pblock.innerHTML = "Shortens an URL (or the current tab) with bit.ly";
@@ -960,7 +960,7 @@ CmdUtils.CreateCommand({
     name: "yahoo-search",
     description: "Search Yahoo! for",
     author: {},
-    icon: "http://www.yahoo.com/favicon.ico",
+    icon: "https://s.yimg.com/rz/l/favicon.ico",
     homepage: "",
     license: "",
     preview: "Search Yahoo! for",
@@ -988,31 +988,31 @@ CmdUtils.CreateCommand({
     icon: "➕",
     external: true,
     require: "https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.20.1/math.min.js",
-    preview: pr = function preview(previewBlock, {text:text}) {
-    	if (text.trim()!='') {
-    		var m = new math.parser();
-    		text = text.replace(/,/g,".");
-    		text = text.replace(/ /g,"");
+    preview: pr = function preview(previewBlock, {text}) {
+        if (text.trim()!='') {
+            var m = new math.parser();
+            text = text.replace(/,/g,".");
+            text = text.replace(/ /g,"");
             try {
-            	previewBlock.innerHTML = m.eval(text);
+                previewBlock.innerHTML = m.eval(text);
             } catch (e) {
-				previewBlock.innerHTML = "eval error:"+e; // catching all errors as mathjs likes to throw them around
+                previewBlock.innerHTML = "eval error:"+e; // catching all errors as mathjs likes to throw them around
             }
-	        //CmdUtils.ajaxGet("http://api.mathjs.org/v1/?expr="+encodeURIComponent(args.text), (r)=>{ previewBlock.innerHTML = r; });
-	    }
-		else
-	        previewBlock.innerHTML = desc;
+            //CmdUtils.ajaxGet("http://api.mathjs.org/v1/?expr="+encodeURIComponent(args.text), (r)=>{ previewBlock.innerHTML = r; });
+        }
+        else
+            previewBlock.innerHTML = desc;
     },
-    execute: function ({text:text}) { 
-    	if (text.trim()!='') {
-    		var m = new math.parser();
-    		text = text.replace(",",".");
-    		text = text.replace(" ","");
+    execute: function ({text}) { 
+        if (text.trim()!='') {
+            var m = new math.parser();
+            text = text.replace(",",".");
+            text = text.replace(" ","");
             try {
-            	text = m.eval(text);
-            	CmdUtils.setSelection(text); 
+                text = m.eval(text);
+                CmdUtils.setSelection(text); 
             } catch (e) {
-				previewBlock.innerHTML = "eval error:"+e;
+                previewBlock.innerHTML = "eval error:"+e;
             }
         }
     }
@@ -1023,7 +1023,7 @@ CmdUtils.CreateCommand({
     icon: "res/icon-128.png",
     description: "Takes you to the Ubiquity command <a href=options.html target=_blank>editor page</a>.",
     execute: function () { 
-    	chrome.runtime.openOptionsPage();
+        chrome.runtime.openOptionsPage();
     }
 });
 
@@ -1061,20 +1061,20 @@ CmdUtils.CreateCommand({
         name: "rostok",
     },
     license: "GPL",
-    execute: function execute({text:text}) {
+    execute: function execute({text}) {
         if (text.trim()=="") text = CmdUtils.getClipboard();
         try{
-	        CmdUtils.setSelection(window.atob(text));
+            CmdUtils.setSelection(window.atob(text));
         } catch (e) {
         }
     },
-    preview: function preview(pblock, {text:text}) {
+    preview: function preview(pblock, {text}) {
         if (text.trim()=="") text = CmdUtils.getClipboard();
         var out = "";
         try{
-        	out = window.atob(text);
+            out = window.atob(text);
         } catch (e) {
-        	out = "error";
+            out = "error";
         }
         pblock.innerHTML = out;
     },
@@ -1087,20 +1087,20 @@ CmdUtils.CreateCommand({
         name: "rostok",
     },
     license: "GPL",
-    execute: function execute({text:text}) {
+    execute: function execute({text}) {
         if (text.trim()=="") text = CmdUtils.getClipboard();
         try{
-	        CmdUtils.setSelection(window.btoa(text));
+            CmdUtils.setSelection(window.btoa(text));
         } catch (e) {
         }
     },
-    preview: function preview(pblock, {text:text}) {
+    preview: function preview(pblock, {text}) {
         if (text.trim()=="") text = CmdUtils.getClipboard();
         var out = "";
         try{
-        	out = window.btoa(text);
+            out = window.btoa(text);
         } catch (e) {
-        	out = "error";
+            out = "error";
         }
         pblock.innerHTML = out;
     },
@@ -1114,10 +1114,10 @@ CmdUtils.CreateCommand({
         name: "rostok",
     },
     license: "GPL",
-    execute: function execute({text:text}) {
+    execute: function execute({text}) {
         CmdUtils.setSelection(decodeURI(text));
     },
-    preview: function preview(pblock, {text:text}) {
+    preview: function preview(pblock, {text}) {
         pblock.innerHTML = decodeURI(text);
     },
 });
@@ -1130,10 +1130,10 @@ CmdUtils.CreateCommand({
         name: "rostok",
     },
     license: "GPL",
-    execute: function execute({text:text}) {
+    execute: function execute({text}) {
         CmdUtils.setSelection(encodeURI(text));
     },
-    preview: function preview(pblock, {text:text}) {
+    preview: function preview(pblock, {text}) {
         pblock.innerHTML = encodeURI(text);
     },
 });
@@ -1198,7 +1198,7 @@ CmdUtils.CreateCommand({
     preview: function preview(pblock, {text, _cmd}) {
         text = text.trim();
         if (text.length <= 2) {
-            pblock.innerHTML = _cmd.description+"<br><br>to grep make the argument longer ("+text.length+"/3)";
+            pblock.innerHTML = this.description+"<br><br>to grep make the argument longer ("+text.length+"/3)";
         } else {
             var arr = [];
             chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
@@ -1211,7 +1211,7 @@ CmdUtils.CreateCommand({
                                           if (typeof ret==='undefined') return;
                                           //console.log("ret",ret);
                                           arr = arr.concat( ret[0].split(/\s/).filter(s=>s.indexOf(text)>=0) );
-                						  pblock.innerHTML = arr.filter((v, i, a) => a.indexOf(v) === i).join("<br/>");
+                                          pblock.innerHTML = arr.filter((v, i, a) => a.indexOf(v) === i).join("<br/>");
                                           chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
                                         });
             });
@@ -1222,7 +1222,7 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand( {
     names: ["regexp"],
-    icon: "http://dl1.cbsistatic.com/i/r/2017/07/06/0804523a-72e9-47ec-bcd9-e003548e6617/thumbnail/64x64/772606befe50fb3181b20c32020629cf/imgingest-1637296860404337622.png",
+    icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/OOjs_UI_icon_regular-expression.svg/24px-OOjs_UI_icon_regular-expression.svg.png",
     description: "search pages with regexp /<i>param</i>/g pattern",
     author: {
         name: "rostok"
@@ -1233,7 +1233,7 @@ CmdUtils.CreateCommand( {
     preview: function preview(pblock, {text, _cmd}) {
         text = text.trim();
         if (text.length <= 2) {
-            pblock.innerHTML = _cmd.description+"<br><br>to regexp make the argument longer ("+text.length+"/3)";
+            pblock.innerHTML = this.description+"<br><br>to regexp make the argument longer ("+text.length+"/3)";
         } else {
             var arr = [];
             chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
@@ -1244,16 +1244,16 @@ CmdUtils.CreateCommand( {
                                         {code:"document.body.innerText.toString();"}, 
                                         (ret)=>{
                                           if (typeof ret==='undefined') return;
-                						  var re = new RegExp(text, "gi");
-                						  var m;
+                                          var re = new RegExp(text, "gi");
+                                          var m;
                                           do {
                                               m = re.exec(ret);
                                               if (m) arr = arr.concat(m[0]);
                                           } while (m);
-                						  if (arr.length==0) return;
+                                          if (arr.length==0) return;
                                           arr = Array.from(new Set(arr));
-                						  pblock.innerHTML = arr.map(e=>"<a data-txt='"+escape(e)+"' href=# class=chtab data-id="+b.id+">"+e+"</a>").sort().join("<br/>")+"<br>";
-                						  jQuery("a.chtab", pblock).click( (e)=>{ chrome.tabs.update(jQuery(e.target).data("id"), {active: true}); } );
+                                          pblock.innerHTML = arr.map(e=>"<a data-txt='"+escape(e)+"' href=# class=chtab data-id="+b.id+">"+e+"</a>").sort().join("<br/>")+"<br>";
+                                          jQuery("a.chtab", pblock).click( (e)=>{ chrome.tabs.update(jQuery(e.target).data("id"), {active: true}); } );
                                           chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
                                         });
             });
@@ -1274,10 +1274,10 @@ CmdUtils.CreateCommand({
     execute: ()=> {
       CmdUtils.addTab("result.html");
     },
-    preview: function preview(pblock, {text:text, _cmd}) {
+    preview: function preview(pblock, {text, _cmd}) {
         text = text.trim();
         if (text.length <= 2) {
-            pblock.innerHTML = _cmd.description+"<br><br>to grep make the argument longer ("+text.length+"/3)";
+            pblock.innerHTML = this.description+"<br><br>to grep make the argument longer ("+text.length+"/3)";
         } else {
             var arr = [];
             chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
@@ -1288,7 +1288,7 @@ CmdUtils.CreateCommand({
                                         {code:"document.body.innerHTML.toString();"}, 
                                         (ret)=>{
                                           arr = arr.concat( ret[0].split(/\s/).filter(s=>s.indexOf(text)>=0) );
-                						  pblock.innerHTML = arr.filter((v, i, a) => a.indexOf(v) === i).join("<br/>");
+                                          pblock.innerHTML = arr.filter((v, i, a) => a.indexOf(v) === i).join("<br/>");
                                           chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
                                         });
             });
@@ -1308,11 +1308,11 @@ CmdUtils.CreateCommand({
     execute: ()=> {
       CmdUtils.addTab("result.html");
     },
-    preview: function preview(pblock, {text:text, _cmd}) {
+    preview: function preview(pblock, {text, _cmd}) {
         text = text.trim().toLowerCase();
         var substrings = text.split(/\s+/);
         if (text.length <= 2) {
-            pblock.innerHTML = _cmd.description+"<br><br>to filter make the argument longer ("+text.length+"/3)";
+            pblock.innerHTML = this.description+"<br><br>to filter make the argument longer ("+text.length+"/3)";
         } else {
             var arr = [];
             chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
@@ -1323,14 +1323,14 @@ CmdUtils.CreateCommand({
                                         {code:"document.body.innerHTML.toString();"}, 
                                         (ret)=>{
                                           arr = arr.concat( 
-                                            		jQuery('a', ret[0])
-                                            		.absolutize(CmdUtils.getLocation())
-                                            		.map( function() { return jQuery(this).attr('href'); })
-                                            		.get()
-                                            		//.filter(s=>s.indexOf(text)>=0) 
-                                            		.filter(s=>substrings.every(subs => s.toLowerCase().indexOf(subs)>=0))                                             
+                                                    jQuery('a', ret[0])
+                                                    .absolutize(CmdUtils.getLocation())
+                                                    .map( function() { return jQuery(this).attr('href'); })
+                                                    .get()
+                                                    //.filter(s=>s.indexOf(text)>=0) 
+                                                    .filter(s=>substrings.every(subs => s.toLowerCase().indexOf(subs)>=0))                                             
                                           );
-                						  pblock.innerHTML = arr.filter((v, i, a) => a.indexOf(v) === i).join("<br/>");
+                                          pblock.innerHTML = arr.filter((v, i, a) => a.indexOf(v) === i).join("<br/>");
                                           chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
                                         });
             });
@@ -1351,15 +1351,15 @@ CmdUtils.CreateCommand({
     execute: ()=> {
       CmdUtils.addTab("result.html");
     },
-    preview: function preview(pblock, {text:text}) {
+    preview: function preview(pblock, {text}) {
         text = text.trim()+'';
         var arr = [];
         chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
         chrome.tabs.query({}, (t)=>{
           t.forEach((a)=>{
             if (text=='' || a.url.indexOf(text)!=-1) 
-              	pblock.innerHTML += "<a target='_blank' href='"+a.url+"'>"+a.url+"</a><br/>";
- 			chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
+                  pblock.innerHTML += "<a target='_blank' href='"+a.url+"'>"+a.url+"</a><br/>";
+             chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
           });
         });
     },
@@ -1375,10 +1375,10 @@ CmdUtils.CreateCommand({
     execute: function execute(args) {   
         CmdUtils.addTab("https://www.mobygames.com/search/quick?q=" + encodeURIComponent(args.text));
     },
-    preview: function preview(pblock, {text:text}) {
+    preview: function preview(pblock, {text}) {
         pblock.innerHTML = "Search MobyGames";
         if (text.trim()!="") 
-        	jQuery(pblock).loadAbs("https://www.mobygames.com/search/quick?q=" + encodeURIComponent(text)+" #searchResults");
+            jQuery(pblock).loadAbs("https://www.mobygames.com/search/quick?q=" + encodeURIComponent(text)+" #searchResults");
     },
 });
 
@@ -1390,7 +1390,7 @@ CmdUtils.CreateCommand({
     author: {
         name: "rostok"
     },
-    execute: function execute({text:text}) {   
+    execute: function execute({text}) {   
         CmdUtils.addTab("https://www.google.com/search?q=intitle%3A\"index of\" %2B\"Last Modified\" "+ encodeURIComponent(text) );
     },
     preview: function preview(pblock, args) {
@@ -1402,7 +1402,7 @@ CmdUtils.CreateCommand({
     names: ["thesaurus", "english-thesaurus"],
     description: "Searches for different words with the same meaning",
     icon: "http://cdn.sfdict.com/hp/502812f9.ico",
-	preview: function preview(pblock, {text:text}) {
+    preview: function preview(pblock, {text}) {
         pblock.innerHTML = "Searches different words with the same meaning "+text;
         if (text=="") return;
         var url = "http://www.thesaurus.com/browse/" + encodeURIComponent(text);
@@ -1426,11 +1426,11 @@ CmdUtils.CreateCommand({
     execute: function execute(args) {
       chrome.tabs.query({}, (t)=>{
         var found = false;
-		t.map((b)=>{
+        t.map((b)=>{
           if (b.url=="chrome://extensions/") {
             chrome.tabs.update(b.id, {highlighted: true});
             found = true;
-          	return;
+              return;
           }
         });
         if (!found) CmdUtils.addTab("chrome://extensions/");
@@ -1445,11 +1445,11 @@ CmdUtils.CreateCommand({
     execute: function execute(args) {
       chrome.tabs.query({}, (t)=>{
         var found = false;
-		t.map((b)=>{
+        t.map((b)=>{
           if (b.url=="chrome://settings/") {
             chrome.tabs.update(b.id, {highlighted: true});
             found = true;
-          	return;
+              return;
           }
         });
         if (!found) CmdUtils.addTab("chrome://settings/");
@@ -1476,7 +1476,7 @@ CmdUtils.CreateCommand({
         var blob = new Blob([CmdUtils.popupWindow.jQuery("#ubiq-command-preview").text()], {type: "text/plain;charset=utf-8"});
         saveAs(blob, "cookies.txt");
     },
-    preview: function preview(pblock, {text:text}) {
+    preview: function preview(pblock, {text}) {
         var b = CmdUtils.getLocation();
       
         function parse(a) {
@@ -1528,7 +1528,7 @@ CmdUtils.CreateCommand({
 var thes = CmdUtils.getcmd("thesaurus");
 thes.name = ["thesaurus", "english-thesaurus"];
 CmdUtils.CreateCommand(thes);
-thes.preview = function preview(pblock, {text:text}) {
+thes.preview = function preview(pblock, {text}) {
     pblock.innerHTML = "Searches different words with the same meaning "+text;
     if (text=="") return;
     var url = "https://www.thesaurus.com/browse/" + encodeURIComponent(text);
@@ -1546,14 +1546,14 @@ thes.preview = function preview(pblock, {text:text}) {
 CmdUtils.getcmd("translate").icon = "http://www.microsoft.com/en-us/translator/wp-content/themes/ro-translator/img/banner-app-icon.png";
 CmdUtils.CreateCommand({
     icon: "http://www.microsoft.com/en-us/translator/wp-content/themes/ro-translator/img/banner-app-icon.png",
-	name: "translate-en",
+    name: "translate-en",
     execute: function translate_execute({text: text, _selection: _selection}) {
-		text = text.trim() + " to en";
-        CmdUtils.getcmd("translate").execute({text:text, _selection:_selection}).then();
+        text = text.trim() + " to en";
+        CmdUtils.getcmd("translate").execute({text, _selection:_selection}).then();
     },
     preview: function translate_preview(pblock, {text: text}) {
-		text = text.trim() + " to en";
-        CmdUtils.getcmd("translate").preview(pblock, {text:text}).then();
+        text = text.trim() + " to en";
+        CmdUtils.getcmd("translate").preview(pblock, {text}).then();
     }
 });
 
@@ -1561,12 +1561,12 @@ CmdUtils.CreateCommand({
     icon: "http://www.microsoft.com/en-us/translator/wp-content/themes/ro-translator/img/banner-app-icon.png",
     name: "translate-pl",
     execute: function translate_execute({text: text, _selection: _selection}) {
-		text = text.trim() + " to pl";
-        CmdUtils.getcmd("translate").execute({text:text, _selection:_selection}).then();
+        text = text.trim() + " to pl";
+        CmdUtils.getcmd("translate").execute({text, _selection:_selection}).then();
     },
     preview: function translate_preview(pblock, {text: text}) {
-		text = text.trim() + " to pl";
-        CmdUtils.getcmd("translate").preview(pblock, {text:text}).then();
+        text = text.trim() + " to pl";
+        CmdUtils.getcmd("translate").preview(pblock, {text}).then();
     }
 });
 
@@ -1577,11 +1577,11 @@ CmdUtils.CreateCommand({
     execute: function execute(args) {
       chrome.tabs.query({}, (t)=>{
         var found = false;
-		t.map((b)=>{
+        t.map((b)=>{
           if (b.url=="chrome://settings/passwords") {
             chrome.tabs.update(b.id, {highlighted: true});
             found = true;
-          	return;
+              return;
           }
         });
         if (!found) CmdUtils.addTab("chrome://settings/passwords");
@@ -1631,18 +1631,18 @@ CmdUtils.CreateCommand({
     author: "rostok",
     icon: "res/icon-128.png",
     require: ["https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js", "https://fastcdn.org/FileSaver.js/1.1.20151003/FileSaver.js"],
-	execute: function execute({text:text, _cmd:_cmd}) {
+    execute: function execute({text, _cmd}) {
         if (text.trim()=="") text = CmdUtils.getClipboard();
-        _cmd.lastDownload = undefined;
-        _cmd.lastFile = "";
-        _cmd.progress = [];
-		var time = 0;
-		var delay= 10;
-      	var links = text.trim().split(/\s+/);
+        this.lastDownload = undefined;
+        this.lastFile = "";
+        this.progress = [];
+        var time = 0;
+        var delay= 10;
+          var links = text.trim().split(/\s+/);
         var zip = new JSZip();
         var i=0;
         links.forEach((l, idx, array)=>{
-		    setTimeout( ()=>{
+            setTimeout( ()=>{
             var oReq = new XMLHttpRequest();
             oReq.open("GET", l, true);
             oReq.responseType = "blob";//"arraybuffer";
@@ -1745,7 +1745,7 @@ CmdUtils.CreateCommand({
                     }
                 }
                 if (filename!="") f=filename;
-   				if (!f.endsWith(ext)) f += ext;
+                   if (!f.endsWith(ext)) f += ext;
 
                 zip.file(f, arrayBuffer);
                 i++;
@@ -1761,7 +1761,7 @@ CmdUtils.CreateCommand({
                         var a = document.createElement('a');
                         a.download = 'bulk.zip';
                         a.href = url.createObjectURL(blob);
-		                CmdUtils.setPreview("");
+                        CmdUtils.setPreview("");
                         a.textContent = 'save zip';
                         a.dataset.downloadurl = ['zip', a.download, a.href].join(':');
                         _cmd.lastDownload = a;
@@ -1773,7 +1773,7 @@ CmdUtils.CreateCommand({
             }, time+=delay);
         });
     },
-    preview: function preview(pblock, {text:text,_cmd:_cmd}) {
+    preview: function preview(pblock, {text,_cmd}) {
         if (text.trim()=="") text = CmdUtils.getClipboard();
         text = text.trim().split(/\s+/).map( (s,a) => { return "<br><a target=_blank href='"+s+"'>"+s+"</a>"; } ).join("");
         pblock.innerHTML = "download & zip:" + text;
@@ -1789,7 +1789,7 @@ CmdUtils.CreateCommand({
     description: "kills cookies on current page",
     author: { name: "rostok" },
     execute: function execute(args) {
-      	chrome.tabs.executeScript({code:`
+          chrome.tabs.executeScript({code:`
           var cookies = document.cookie.split(';');
           for (var i = 0; i < cookies.length; i++) {
               var cookie = cookies[i];
@@ -1798,26 +1798,26 @@ CmdUtils.CreateCommand({
               document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT';
           }
           `
-		}, (r)=>{
-      		CmdUtils.setPreview("cookies killed");
-      	});    
+        }, (r)=>{
+              CmdUtils.setPreview("cookies killed");
+          });    
     },
     preview: function preview(pblock, args) {
-		// preview will only show cookies
-      	pblock = "";
-      	chrome.tabs.executeScript({code:"document.cookie.toString();"}, (r)=>{
-      		r=r+"";
-          	r=r.replace(/;\s*/g,";\n");
-          	r="<pre>"+r+"</pre>";
-          	CmdUtils.setPreview("cookies:"+r);
-      	});    
+        // preview will only show cookies
+          pblock = "";
+          chrome.tabs.executeScript({code:"document.cookie.toString();"}, (r)=>{
+              r=r+"";
+              r=r.replace(/;\s*/g,";\n");
+              r="<pre>"+r+"</pre>";
+              CmdUtils.setPreview("cookies:"+r);
+          });    
     },
 });
 
 CmdUtils.CreateCommand({
     names: ["unicode"],
-  	icon: "https://unicode.org/webscripts/logo60s2.gif",
-    preview: async function preview(pblock, {text:text}) {  
+      icon: "https://unicode.org/webscripts/logo60s2.gif",
+    preview: async function preview(pblock, {text}) {  
         if (text === "") {
             pblock.innerHTML = "finds đź…˘ đź‡ą â„ť ď˝ď˝Žď˝‡ â“” unicode characters đź»đźđź‡";
         } else {
@@ -1848,7 +1848,7 @@ CmdUtils.makeSearchCommand({
             pblock.innerHTML = "enter EMOJI description";
         else {
             pblock.innerHTML = "";
-          	jQuery(pblock).loadAbs("https://emojipedia.org/search/?q=" + encodeURIComponent(args.text)+ " div.content", ()=>{
+              jQuery(pblock).loadAbs("https://emojipedia.org/search/?q=" + encodeURIComponent(args.text)+ " div.content", ()=>{
               pblock.innerHTML = "<font size=12>"+jQuery("span.emoji", pblock).map((i,e)=>e.outerHTML).toArray().join("")+"</font>";
               jQuery("span", pblock).each((i,e)=>{
                 jQuery(e).attr("data-option","");
@@ -1875,7 +1875,7 @@ CmdUtils.CreateCommand({
     name: "inject-js",
     description: "injects JavaScript from url",
     icon: "https://jquery.com/favicon.ico",
-    execute: function execute({text:text}) {
+    execute: function execute({text}) {
       text = text.replace("http:", "");
       text = text.replace("https:", "");
       chrome.tabs.executeScript({code:"((e,s)=>{e.src=s;e.onload=function(){console.log('script injected')};document.head.appendChild(e);})(document.createElement('script'),'"+text+"')"}, (r)=>{
@@ -1888,9 +1888,9 @@ CmdUtils.CreateCommand({
     name: "whois",
     description: "Searches WHO.IS by IP or domain",
     icon: "https://who.is/favicon.ico",
-    execute: function execute(args) { args._cmd.preview(null, args); },
+    execute: function execute(args) { this.preview(null, args); },
     preview: function preview(pblock, args) {
-  		this.url = "https://who.is/whois/{QUERY}";
+          this.url = "https://who.is/whois/{QUERY}";
         if (args.text.trim()=="") args.text = url_domain(CmdUtils.getLocation());
         if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(args.text)) 
           this.url = "https://who.is/whois-ip/ip-address/{QUERY}";
@@ -1924,12 +1924,12 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.makeSearchCommand({
-  name: ["wolfram"],
-  description: "Wolfram Alpha query",
-  icon: "http://www.wolframalpha.com/favicon.ico",
-  url: "https://www.wolframalpha.com/input/?i={QUERY}",
-  timeout: 500,
-  prevAttrs: {backgroundColor: "#FFFFFF", zoom: 0.75, scroll: [0/*x*/, 0/*y*/], anchor: ["c_13", "c_22"]},
+    name: ["wolfram"],
+    description: "Wolfram Alpha query",
+    icon: "http://www.wolframalpha.com/favicon.ico",
+    url: "https://www.wolframalpha.com/input/?i={QUERY}",
+    timeout: 500,
+    prevAttrs: {backgroundColor: "#FFFFFF", zoom: 0.75, scroll: [0/*x*/, 0/*y*/], anchor: ["c_13", "c_22"]},
 });
 
 CmdUtils.CreateCommand({
@@ -1945,7 +1945,7 @@ CmdUtils.CreateCommand({
       o += "<pre>";
       o += "enter pattern to filter; select with Ctrl+up/down:\n\n";
       CmdUtils.history.filter(c=>c.indexOf(args.text)>=0).forEach((c)=>{
-      	o += `<span data-option${dos} data-option-value='${c}'>${c}</span>\n`;  
+          o += `<span data-option${dos} data-option-value='${c}'>${c}</span>\n`;  
         dos = '';
       });
       o += "</pre>";
@@ -1962,39 +1962,53 @@ CmdUtils.CreateCommand({
     icon: "res/icon-128.png",
     description: "execute to clear UbiChr history buffer",
     execute: function execute(args) {   
-    	CmdUtils.history = [];
+        CmdUtils.history = [];
         CmdUtils.saveToHistory("");
     },
 });
 
 CmdUtils.CreateCommand({
-    name: ["highlight-remove","mark-remove"],
+    name: ["unmark","mark-remove","highlight-remove"],
     description: "removes highlight/mark",
     icon: "🟨",
-    execute: function () { CmdUtils.removeUpdateHandler("markHandler"); }
+    execute: function () { 
+        CmdUtils.removeUpdateHandler("markHandler"); 
+        var c = CmdUtils.popupWindow.ubiq_command().split(' ').shift();
+        switch (c) {
+        case "unmark":      c = "mark "; break;
+        case "mark-remove": c = "mark "; break;
+        default:            c = "highlight "; break;
+        }
+        CmdUtils.popupWindow.ubiq_set_input(c, false);
+        if (CmdUtils.getcmd("mark")) CmdUtils.getcmd("mark").highlights=""; 
+    }
 });
 CmdUtils.CreateCommand({
-    name: ["highlight","mark"],
-    description: "highlights/marks arguments on current tab, permanent on execute",
-    external: true,
+    name: ["mark","highlight"],
+    description: "highlights/marks arguments on current tab, permanent on execute, clear on empty",
+    timeout: 250,
+    external: true, // uses mark.js v8.11.1 and jQuery
     icon: "🟨",
-    execute: function ({text:text}) {
+    execute: function ({text, _cmd}) {
       if (text=="") 
         CmdUtils.removeUpdateHandler("markHandler");
-      else			
-        CmdUtils.addUpdateHandler("markHandler", ()=>{ CmdUtils.getcmd("mark").preview(null, {text:text}); });
+      else
+        CmdUtils.addUpdateHandler("markHandler", ()=>{ this.preview(null, {text}); });
+      this.highlights = text;
+      CmdUtils.setPreview(this.description+"<hr>highlights: "+this.highlights);
     },
-    preview: function preview(pblock, {text:text}) {   
+    preview: function preview(pblock, {text, _cmd}) {   
       CmdUtils.ajaxGet("https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js", (data)=>{
         chrome.tabs.executeScript({ file: "lib/jquery-3.5.1.min.js" }, (r)=>{
           var code = data + `
-          		var args='${text}'.split(/\\s+/);
-            	jQuery("body").unmark();
-            	args.forEach( a => jQuery("body").mark(a,{separateWordSearch:false}) );
-				`;
+                  var args='${text}'.split(/\\s+/);
+                jQuery("body").unmark();
+                args.forEach( a => jQuery("body").mark(a,{separateWordSearch:false}) );
+                `;
           chrome.tabs.executeScript({ code: code });
         });
       });
+      if (_cmd)CmdUtils.setPreview(this.description+"<hr>highlights: "+this.highlights);
     }
 });
 
@@ -2003,19 +2017,19 @@ CmdUtils.CreateCommand({
     description: "opens multiple links from clipboard or argument list in separate tabs",
     author: "rostok",
     icon: "res/icon-128.png",
-    execute: function execute({text:text}) {
-        if (text.trim()=="") text = CmdUtils.getClipboard();
-        text.trim().split(/\s+/).forEach( s => { 
-          if (!s.includes("://")) s="http://"+s; 
-          CmdUtils.addTab(s); 
-       	} );
+    conv: function(text) {
+    	return [...new Set(text.split(/\s+/)
+                               .filter( v => v!="" )
+                               .map( v => v.startsWith("//") ? "https:"+v : v )
+                               .map( v => v.includes("://") ? v : "https://"+v ))]
     },
-    preview: function preview(pblock, {text:text}) {
+    execute: function execute({text}) {
         if (text.trim()=="") text = CmdUtils.getClipboard();
-        text = text.trim().split(/\s+/).map( (s,a) => { 
-          if (!s.includes("://")) s="http://"+s; 
-          return "<br><a target=_blank href='"+s+"'>"+s+"</a>"; 
-        } ).join("");
+        this.conv(text).forEach( s => CmdUtils.addTab(s) );
+    },
+    preview: function preview(pblock, {text}) {
+        if (text.trim()=="") text = CmdUtils.getClipboard();
+        text = this.conv(text).map( s => "<br><a target=_blank href='"+s+"'>"+s+"</a>" ).join("");
         pblock.innerHTML = "open:" + text;
     },
 });
@@ -2030,14 +2044,14 @@ CmdUtils.makeSearchCommand({
 
 CmdUtils.CreateCommand({
     name: "merge-tabs",
-  	icon: "🗀",
+    icon: "🗀",
     description: "merge chrome tabs to a single window",
     execute: function execute(args) {   
             chrome.windows.getCurrent(
-              	(win)=>{
+                  (win)=>{
                         targetWindow = win;
                         chrome.tabs.getAllInWindow(targetWindow.id, 
-                        	(tabs)=>{
+                            (tabs)=>{
                                       chrome.windows.getAll({"populate" : true}, 
                                         (windows)=>{
                                           for (var i = 0; i < windows.length; i++) {
@@ -2063,17 +2077,17 @@ CmdUtils.CreateCommand({
     description: "translate text, selection or current tab with Google Translate",
     icon: "https://translate.google.com/favicon.ico",
     preview: (pblock, args)=>{
-      		args._cmd.url = "https://translate.google.com/translate?hl=&sl=auto&tl={text}&u={location}";
+              this.url = "https://translate.google.com/translate?hl=&sl=auto&tl={text}&u={location}";
             // empty args translates URL, text or selection opens standard translate form
             if(args.text=="") {
               args.text="EN";
             } else {
-              args._cmd.url = "https://translate.google.com/?sl=auto&tl=pl&op=translate&text={text}";
+              this.url = "https://translate.google.com/?sl=auto&tl=pl&op=translate&text={text}";
             }
-      		(CmdUtils._searchCommandPreview.bind(args._cmd))(pblock, args);
-    		},
+              (CmdUtils._searchCommandPreview.bind(args._cmd))(pblock, args);
+            },
     execute: (args)=>{
-      		var url = "https://translate.google.com/translate?hl=&sl=auto&tl={text}&u={location}";
+              var url = "https://translate.google.com/translate?hl=&sl=auto&tl={text}&u={location}";
             // empty args translates URL, text or selection opens standard translate form
             if(args.text=="") {
               args.text="EN";
@@ -2083,23 +2097,23 @@ CmdUtils.CreateCommand({
             url = url.replace(/\{text\}/g, "{QUERY}").replace(/\{QUERY\}/g, encodeURIComponent(args.text));
             url = url.replace(/\{location\}/g, encodeURIComponent(CmdUtils.getLocation()));
             CmdUtils.addTab(url);
-    	},
+        },
 });
 
 CmdUtils.CreateCommand({
     name: "sum",
     description: "sums selected numbers",
-  	icon: "https://www.greeksymbols.net/img/sigma-symbol-capital.png",
+    icon: "https://www.greeksymbols.net/img/sigma-symbol-capital.png",
     author: { name: "rostok" },
     license: "MIT",
     main: function main(args) {
         return args.text.replace(/,/g, ".").split(/[ +;\n\t\r]+/).reduce(function(a, b) { return (parseFloat(a) || 0) + (parseFloat(b) || 0); }, 0);
     },
     execute: function execute(args) {
-        CmdUtils.setSelection(args._cmd.main(args));
+        CmdUtils.setSelection(this.main(args));
     },
     preview: function preview(pblock, args) {
-        pblock.innerHTML = "" + args._cmd.main(args);
+        pblock.innerHTML = "" + this.main(args);
     },
 });
 
