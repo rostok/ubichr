@@ -45,7 +45,6 @@ CmdUtils.CreateCommand = function CreateCommand(args) {
     //console.log("command created ", args.name);
     var to = parseFloat(args.timeout || 0);
     if (to>0) {
-    	args.timeoutFunc = null;
     	if (typeof args.preview == 'function') {
 		    args.preview_timeout = args.preview;
 			args.preview = function(b,a) {
@@ -53,7 +52,7 @@ CmdUtils.CreateCommand = function CreateCommand(args) {
                 clearTimeout(CmdUtils.lastPrevTimeoutID);
                 CmdUtils.lastPrevTimeoutID = setTimeout(function () { 
                     // CmdUtils.deblog("delated prev ", args.name, ":", to);
-                	args.preview_timeout(b, a); 
+                	(args.preview_timeout.bind(this))(b, a); 
                 }, to);
                 // CmdUtils.deblog("CmdUtils.lastPrevTimeoutID is ", CmdUtils.lastPrevTimeoutID);
 			};
@@ -64,7 +63,7 @@ CmdUtils.CreateCommand = function CreateCommand(args) {
                 clearTimeout(CmdUtils.lastExecTimeoutID);
                 CmdUtils.lastExecTimeoutID = setTimeout(function () {
                     // CmdUtils.deblog("delated exec ", args.name, ":", to);
-					args.execute_timeout(a);
+					(args.execute_timeout.bind(this))(a);
                 }, to);
                 // CmdUtils.deblog("CmdUtils.lastExecTimeoutID is ", CmdUtils.lastExecTimeoutID);
 			};
