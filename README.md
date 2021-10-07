@@ -1,8 +1,5 @@
 # UbiChr
-My humble attempt to create [Ubiquity](https://wiki.mozilla.org/Labs/Ubiquity) alternative for Chrome and Firefox Quantum browsers.
-
-# what is UbiChr?
-UbiChr is "Ubiquity for Chrome" - a revived *command line interface* that brings lots of useful command shortcuts. 
+UbiChr is "Ubiquity for Chrome" - a revived *command line interface* that brings lots of useful command shortcuts to your browser. 
 
 In particular you can:
 * **open a command like window (Ctrl+Space) execute commands with arguments and preview the results**
@@ -10,29 +7,33 @@ In particular you can:
 * fetch data via ajax, process it and display on extension popup preview (for example: IMDB movie lookup, currency converter)
 * alter current pages (highlight keywords, inverse or remove colors)
 * **add your custom JavaScript commands** via built-in editor in a syntax similar to original Ubiquity project 
-* utilize powerful features of chrome extension (access cookies, use alarms, bulk save and zip urls, filter opened tabs for text or links, ...)
+* utilize powerful features of chrome extension (inject scripts, access cookies, use alarms, bulk save and zip urls, filter opened tabs for text or links, ...)
 
-# installation
+UbiChr is my humble attempt to create [Ubiquity](https://wiki.mozilla.org/Labs/Ubiquity) alternative for Chrome and Firefox Quantum browsers.
+
+![UbiChr in action](marketing/ubiquity-wiki-search.gif)
+
+# Installation
 To install use Chrome Web Store https://chrome.google.com/webstore/search/ubichr
 
-# how to install dev version
+# How to install dev version
 To install latest commited version please follow 'Load the extension' section here https://developer.chrome.com/extensions/getstarted
 
-# license & origins
+# License & Origins
 MIT license
 
 Most of the code is based on http://github.com/cosimo/ubiquity-opera/
 
-# adding commands
+# Adding commands
 You can add your custom commands using built-in editor (CodeMirror) or modify commands.js. The syntax is quite simple and self explanatory.
 Press Ctrl+Space, type ```edit``` and press Enter.
 
-## key objects and functions
+## Key objects and functions
 The most important object of the extension is ```CmdUtils```. It's a global object providing many helper functions and storing all commands. 
 
 The most common function is ```CmdUtils.CreateCommand(cmd)``` which parses ```cmd``` argument and adds new command to UbiChr. Since this is a programming extension it is advised to both read examples below and browse [cmdutils.js](https://github.com/rostok/ubichr/blob/master/cmdutils.js).
 
-## basic command:
+## Basic command:
 ```javascript
 CmdUtils.CreateCommand({
     name: "example", 
@@ -57,35 +58,30 @@ The ```args``` object properties for ```execute``` and ```preview``` are as foll
 * _opt_idx: selected option (optional), -1 by default
 * _opt_val: value of option element set in data-option-value attribute
 
-Also both ```preview``` and ```execute``` functions are bound to command definition object before call.
+Also both ```preview``` and ```execute``` functions are bound to command definition object before call allowing access other properties or methods via ```this```.
 
-## full command definition
+## Full command definition
 The command definition object (refered also as cmd_struct) can have these properties when calling ```CmdUtils.CreateCommand(cmd)```:
 
-|property|necessary|type|info|
-|--------|---------|----|----|
-|name| yes | string / array of strings | the actuall command name or names|
-|preview|  | string / function | if string this will be placed instead of description, function has two arguments first being DOM preview element, second ```args``` object|
-|execute|  | function | function called when command is executed, takes a single ```args``` object as argument|
-|preview/execute| yes | function | one of these functions is necessary for command to actually do something|
-|description|  | string | short information on command shown in preview area|
-|author|  | string / object| unused feature from original Ubiquity, email or {name,email} object|
-|icon|  | string | url to icon/image or unicode or emoji |
-|license|  |string| totally unused legacy option|
-|homepage|  |string| totally unused legacy option|
-|external|  |bool| indicates if command relies on external scripts|
-|builtIn| |bool| true for all built-in commands           |
-|help| |string|additional text expanding description|
-|timeout| |number| if set ```preview```/```execute``` functions will be called after this delay, both functions will be saved as ```preview_timeout```/```execute_timeout```|
-|requirePopup| | string / array of strings | url(s) of necessary scripts loaded before ```preview``` is called | 
-|require     | | string / array of strings| as above but for ```execute``` function |
+| property       | necessary | type                      | info                             |
+|----------------|-----------|---------------------------|----------------------------------|          
+| name           | yes       | string / array of strings | the actuall command name or names|
+| preview        |           | string / function         | if string this will be placed instead of description, function has two arguments first being DOM preview element, second ```args``` object|
+| execute        |           | function                  | function called when command is executed, takes a single ```args``` object as argument|
+| preview/execute| yes       | function                  | one of these functions is necessary for command to actually do something|
+| description    |           | string                    | short information on command shown in preview area|
+| author         |           | string / object           | unused feature from original Ubiquity, email or {name,email} object|
+| icon           |           | string                    | url to icon/image or unicode or emoji |
+| license        |           | string                    | totally unused legacy option|
+| homepage       |           | string                    | totally unused legacy option|
+| external       |           | bool                      | indicates if command relies on external scripts|
+| builtIn        |           | bool                      | true for all built-in commands           |
+| help           |           | string                    | additional text expanding description|
+| timeout        |           | number                    | if set ```preview```/```execute``` functions will be called after this delay, both functions will be saved as ```preview_timeout```/```execute_timeout```|
+| requirePopup   |           | string / array of strings | url(s) of necessary scripts loaded before ```preview``` is called | 
+| require        |           | string / array of strings | as above but for ```execute``` function |
 
-
-
-
-
-
-## command with some action
+## Command with some action
 ```javascript
 CmdUtils.CreateCommand({
     name: "google-search",
@@ -98,7 +94,7 @@ CmdUtils.CreateCommand({
 
 Note that execute is created using ```CmdUtils.SimpleUrlBasedCommand()``` the output function will substitute {text} and {location} template literals with actual argument and current tab url.
 
-## getting outside data with async / await
+## Getting outside data with async / await
 ```javascript
 CmdUtils.CreateCommand({
     name: "imdb",
@@ -116,7 +112,7 @@ CmdUtils.CreateCommand({
 Here the ```preview``` function is defined with ```async``` keyword. This will allow to avoid callback hell when getting data with GET request (```CmdUtils.get(url)```). Note the destructuring assignment singling out the ```text``` parameter in ```preview``` function. Note: final implementation uses one liner with ```jQuery.load()```.
 
 
-## search command with iframe preview
+## Search command with iframe preview
 ```javascript
 CmdUtils.makeSearchCommand({
   name: ["qwant"],
@@ -130,7 +126,7 @@ CmdUtils.makeSearchCommand({
 ```
 The ```CmdUtils.makeSearchCommand()``` (provided by Sebres) simplifies even more common web fetching. Instead of loading part of HTML and parsing it with JQuery an iframe is created in UbiChr results area. Extra parameters allow to scale and translate it.
 
-## commands with options
+## Commands with options
 Version 0.1.0.16 adds options inside preview. To define them just mark any DOM element with data-option attribute and optional data-option-value. Once preview is shown you can navigate through options using Ctrl+up or Ctrl+down keys. Executing command with Enter will pass extra properties into args object. Here's a brief example:
 ```javascript
 CmdUtils.CreateCommand({
@@ -177,7 +173,7 @@ Inside ```preview``` after the results are loaded jQuery is used to iterate over
 
 The ```execute``` function check if option was set and if it is an URL (includes ```://```). If so another browser tab is added. In case it was not defined standard tab with search results is opened.
 
-## custom option selection event
+## Custom option selection event
 Selecting options triggers custom 'data-option-selected' event passed to selected element. In example below command searches Emojipedia for glyphs based on decription. Results are filtered and shown as a preview. Finally each of them is attributed with 'data-option'. Also, a custom event handler (final line) is attached that copies single glyph/emoji to clipboard.
 
 ```javascript
@@ -207,7 +203,7 @@ CmdUtils.makeSearchCommand({
 
 ```
 
-## open tab, post a form and dodge anti CSRF token
+## Open tab, post a form and dodge anti CSRF token
 The example below opens an URL and also fills a form than is finally submitted. This particular approach is suitable for to create a shortcut to all non-standard pages operating on forms with parameters passed with POST and some kind of CSRF protection (token, cookie, etc). 
 
 ```javascript
@@ -232,7 +228,7 @@ CmdUtils.CreateCommand({
 
 UbiChr command creates internal chrome listener that is fired upon new tab being opened. The listerer callback executes JS into a page that fills the form and submits it and finally removes the callback. Please note, that the example above has no tab url check in place. 
 
-## commands that inject external JavaScript
+## Commands that inject external JavaScript
 Build 1.0.0.31 includes two commands that rely on external sources. These are `allow-text-selection` that removes anti selection by overriding `user-select: none` CSS style, and `grayscale` (or `greyscale`) which just disables colors. Both commands inject JS source taken from CDN and as a precaution include `external: true` attribute. Be aware that the CDN provided source may change anytime.
 
 The intention here is to convert simple bookmarked javascript into typical commands. The author of the original JS scripts or the bookmarklets is [Alan Hogan](https://github.com/alanhogan/bookmarklets).
@@ -258,16 +254,16 @@ CmdUtils.CreateCommand({
     execute: function execute(args) { CmdUtils.inject("https://cdn.jsdelivr.net/gh/alanhogan/bookmarklets/grayscale.js"); },
 });
 ```
-## update handlers
-The background script runs CmdUtils.updateActiveTab() method on couple of chrome's events
-(onUpdated,onActivated,onHighlighted). Version 0.1.0.32 adds possibility to attach/remove your custom handlers to CmdUtils.updateActiveTab(). This is managed via:
-* `CmdUtils.addUpdateHandler(name, handler)` which adds named handler function to CmdUtils.updateHandlers array, note that handler must be a function
+## Update handlers
+The background script runs ```CmdUtils.updateActiveTab()``` method on couple of chrome's events
+(onUpdated,onActivated,onHighlighted). Version 0.1.0.32 adds possibility to attach/remove your custom handlers to ```CmdUtils.updateActiveTab()```. This is managed via:
+* `CmdUtils.addUpdateHandler(name, handler)` which adds named handler function to ```CmdUtils.updateHandlers``` array, note that handler must be a function
 * `CmdUtils.removeUpdateHandler(name)` which removes named handler from 
 * `CmdUtils.updateHandlers` which is an array of `{name,handler}` objects
 In particular the new `highlight`/`mark` command uses these methods to add permanent highlighting of chosen keywords.
 
-# alternatives
+# Alternatives
 Svalorzen has forked UbiChr and created UbiShell which has more shell like UI with piping and command options. Check it out here: https://github.com/Svalorzen/UbiShell
 
-# privacy policy
+# Privacy policy
 As Google requests privacy policy [here's one](https://github.com/rostok/ubichr/wiki/Privacy-Policy). Do not worry though, UbiChr doesn't collect any of your data.
