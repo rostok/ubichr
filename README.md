@@ -1,14 +1,16 @@
-# ubichr
+# UbiChr
 My humble attempt to create [Ubiquity](https://wiki.mozilla.org/Labs/Ubiquity) alternative for Chrome and Firefox Quantum browsers.
 
 # what is UbiChr?
 UbiChr is "Ubiquity for Chrome" - a revived *command line interface* that brings lots of useful command shortcuts. 
 
 In particular you can:
-* **open command like window (Ctrl+Space) execute commands with arguments and preview the results**
+* **open a command like window (Ctrl+Space) execute commands with arguments and preview the results**
 * open new tabs and pass GET or POST parameters (Wikipedia search, dictionary lookup, translate text)
-* fetch data via ajax, process it and display on extension popup preview (for example: IMDB movie lookup)
-* add your custom JavaScript commands via built-in editor in a syntax similar to original Ubiquity project (access cookies, bulk save and zip urls, filter opened tabs for text or links, ...)
+* fetch data via ajax, process it and display on extension popup preview (for example: IMDB movie lookup, currency converter)
+* alter current pages (highlight keywords, inverse or remove colors)
+* **add your custom JavaScript commands** via built-in editor in a syntax similar to original Ubiquity project 
+* utilize powerful features of chrome extension (access cookies, use alarms, bulk save and zip urls, filter opened tabs for text or links, ...)
 
 # installation
 To install use Chrome Web Store https://chrome.google.com/webstore/search/ubichr
@@ -28,7 +30,7 @@ Press Ctrl+Space, type ```edit``` and press Enter.
 ## key objects and functions
 The most important object of the extension is ```CmdUtils```. It's a global object providing many helper functions and storing all commands. 
 
-The most commonly used function is ```CmdUtils.CreateCommand(cmd)``` which parses ```cmd``` argument and adds new command to UbiChr. Since this is a programming extension it is advised to both read examples below and browse [cmdutils.js](https://github.com/rostok/ubichr/blob/master/cmdutils.js).
+The most common function is ```CmdUtils.CreateCommand(cmd)``` which parses ```cmd``` argument and adds new command to UbiChr. Since this is a programming extension it is advised to both read examples below and browse [cmdutils.js](https://github.com/rostok/ubichr/blob/master/cmdutils.js).
 
 ## basic command:
 ```javascript
@@ -45,15 +47,42 @@ CmdUtils.CreateCommand({
     },
 });
 ```
-Use ```CmdUtils.CreateCommand()``` and provide object with ```name``` string and ```preview``` and ```execute``` functions. The ```execute``` function takes argument which is an object containing ```text``` property - a single string following command. The ```preview``` function also has ```pblock``` parameter pointing to popup div for various output.
+Use ```CmdUtils.CreateCommand(cmd)``` and provide object with ```name``` string and ```preview``` and ```execute``` functions. The ```execute``` function takes argument which is an object containing ```text``` property - a single string following command. The ```preview``` function also has ```pblock``` parameter pointing to popup div for various output.
 
-The ```args``` object properties for ```execute``` command are as follows:
+The ```args``` object properties for ```execute``` and ```preview``` are as follows:
 
 * text: text passed as argument
 * _selection: true if text is a current selection
 * _cmd: current command structure
 * _opt_idx: selected option (optional), -1 by default
 * _opt_val: value of option element set in data-option-value attribute
+
+Also both ```preview``` and ```execute``` functions are bound to command definition object before call.
+
+## full command definition
+The command definition object (refered also as cmd_struct) can have these properties when calling ```CmdUtils.CreateCommand(cmd)```:
+
+|property|necessary|type|info|
+|--------|---------|----|----|
+|name| yes | string / array of strings | the actuall command name or names|
+|preview|  | string / function | if string this will be placed instead of description, function has two arguments first being DOM preview element, second ```args``` object|
+|execute|  | function | function called when command is executed, takes a single ```args``` object as argument|
+|preview/execute| yes | function | one of these functions is necessary for command to actually do something|
+|description|  | string | short information on command shown in preview area|
+|author|  | string / object| unused feature from original Ubiquity, email or {name,email} object|
+|icon|  | string | url to icon/image or unicode or emoji |
+|license|  |string| totally unused legacy option|
+|homepage|  |string| totally unused legacy option|
+|external|  |bool| indicates if command relies on external scripts|
+|builtIn| |bool| true for all built-in commands           |
+|help| |string|additional text expanding description|
+|timeout| |number| if set ```preview```/```execute``` functions will be called after this delay, both functions will be saved as ```preview_timeout```/```execute_timeout```|
+|requirePopup| | string / array of strings | url(s) of necessary scripts loaded before ```preview``` is called | 
+|require     | | string / array of strings| as above but for ```execute``` function |
+
+
+
+
 
 
 ## command with some action
