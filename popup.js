@@ -100,7 +100,6 @@ function ubiq_show_preview(cmd, args) {
                 CmdUtils.popupWindow.jQuery("#ubiq-command-preview").css("overflow-y", "auto"); 
                 try {
                     CmdUtils.deblog("prev [", cmd_struct.name ,"] [", text,"]");
-                    // CmdUtils.deblog("clear time out ", CmdUtils.lastPrevTimeoutID, ".");
                     CmdUtils.backgroundWindow.clearTimeout(CmdUtils.lastPrevTimeoutID);
                     (preview_func.bind(cmd_struct))(ubiq_preview_el(), directObj);
                 } catch (e) {
@@ -149,8 +148,6 @@ function ubiq_dispatch_command(line, args) {
     }
 
     // Create a fake Ubiquity-like object, to pass to
-    // command's "execute" function
-    var cmd_func = cmd_struct.execute;
     var directObj = { 
         text: text,
         _selection: text==CmdUtils.selectedText,
@@ -162,10 +159,9 @@ function ubiq_dispatch_command(line, args) {
     // Run command's "execute" function
     try {
         CmdUtils.deblog("exec [", cmd_struct.name ,"] [", text,"]");
-        // CmdUtils.deblog("clear time out ", CmdUtils.lastExecTimeoutID, ".");
         CmdUtils.backgroundWindow.clearTimeout(CmdUtils.lastExecTimeoutID);
         CmdUtils.saveToHistory(cmd_struct.name+" "+text);
-        cmd_func(directObj);
+        (cmd_struct.execute.bind(cmd_struct))(directObj);
     } catch (e) {
         CmdUtils.notify(e.toString(), "execute function error")
         console.error(e.stack);
@@ -510,9 +506,7 @@ function ubiq_keydown_handler(evt) {
         ubiq_history_index++;
         if (ubiq_history_index<0) ubiq_history_index = 0;
         if (ubiq_history_index>=CmdUtils.history.length) ubiq_history_index = CmdUtils.history.length-1;
-        cmd = document.getElementById('ubiq_input');
-        if (!cmd) return;
-        cmd.value = CmdUtils.history[ubiq_history_index];
+        ubiq_set_input(CmdUtils.history[ubiq_history_index], false)
         evt.preventDefault();
         return;
     }
@@ -522,18 +516,15 @@ function ubiq_keydown_handler(evt) {
         ubiq_history_index--;
         if (ubiq_history_index<0) ubiq_history_index = 0;
         if (ubiq_history_index>=CmdUtils.history.length) ubiq_history_index = CmdUtils.history.length-1;
-        cmd = document.getElementById('ubiq_input');
-        if (!cmd) return;
-        cmd.value = CmdUtils.history[ubiq_history_index];
+        ubiq_set_input(CmdUtils.history[ubiq_history_index], false)
         evt.preventDefault();
         return;
     }
 
     // Ctrl+R / Alt+F8 shows history
     if ((kc == 82 && evt.ctrlKey) || (kc == 119 && evt.altKey)) {
+        ubiq_set_input('history')
         cmd = document.getElementById('ubiq_input');
-        if (!cmd) return;
-        cmd.value = "history ";
         evt.preventDefault();
         return;
     }
@@ -585,10 +576,10 @@ function ubiq_save_input() {
     if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.set({ 'lastCmd': cmd.value });
 }
 
-function ubiq_set_input(v) {
+function ubiq_set_input(v, select=true) {
     cmd = document.getElementById('ubiq_input');
     cmd.value = v;
-    cmd.select();
+    if (select) cmd.select();
 }
 
 function ubiq_load_input(callback) {
