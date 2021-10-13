@@ -222,6 +222,20 @@ CmdUtils.getLocation = function getLocation() {
         return ""; 
 };
 
+// returns active tabs origin URL, if avaiable
+CmdUtils.getLocationOrigin = function getLocationOrigin() {
+    if (CmdUtils.active_tab && CmdUtils.active_tab.url) {
+    	try {
+    		var u = new URL(CmdUtils.active_tab.url);
+    		return u.origin;
+    	} catch (e) {
+    		return "";
+    	}
+    }
+    else 
+        return ""; 
+};
+
 // opens new tab with provided url
 CmdUtils.addTab = function addTab(url) {
     var active = true;
@@ -625,8 +639,25 @@ CmdUtils.url_domain = url_domain;
 }( jQuery ));
 
 // changes src and href attributes in jQuery resultset with absoulute urls
+
 (function ( $ ) {
-    $.fn.absolutize = function( url ) {
+    $.fn.absolutize = function(origin) { 
+        if (typeof origin === "undefined" || origin == "") origin = window.origin;
+        return this.each((i,e)=>{ 
+                                 $(e).attr('href', origin+$(e).prop('pathname')); 
+                                 if (e.tagName=="IMG") {
+                                     try {
+                                         var u = new URL(e.src);
+                                         $(e).attr('src',  origin+u.pathname); 
+                                     } catch (e) { }
+                                 }
+                                });        
+    };
+}( jQuery ));
+
+// changes src and href attributes in jQuery resultset with absoulute urls, the old version
+(function ( $ ) {
+    $.fn.absolutizeOld = function( url ) {
         if (typeof url === "undefined" || url == "") url = window.location;
         var others = this.find('[href^="http"],[href^="//:"],[href^="mailto:"],[href^="#"],[href!=""][href],[href^="//"]') 
                          .add('[src^="http"],[src^="//:"],[src^="mailto:"],[src^="#"],[src!=""][src],[src^="//"]');
