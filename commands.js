@@ -1999,7 +1999,7 @@ CmdUtils.CreateCommand({
     },
     preview: function preview(pblock, {text, _cmd}) {   
       CmdUtils.ajaxGet("https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js", (data)=>{
-        chrome.tabs.executeScript({ file: "lib/jquery-3.5.1.min.js" }, (r)=>{
+        chrome.tabs.executeScript({ file: "lib/jquery-3.6.0.min.js" }, (r)=>{
           var code = data + `
                   var args='${text}'.split(/\\s+/);
                 jQuery("body").unmark();
