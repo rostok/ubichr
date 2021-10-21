@@ -1,6 +1,62 @@
 // BuildIn CmdUtils command definitions
 // jshint esversion: 6 
 
+// shows command source in preview
+CmdUtils.CreateCommand({
+    name: "command-source",
+    description: "dumps command source",
+    icon: "res/icon-128.png",
+    preview: (pblock, args) => {
+        var d = CmdUtils.dump(args.text);
+        d = new Option(d).innerHTML;
+        pblock.innerHTML = "<pre>"+d;
+    },
+});
+
+// fills gist.github.com form without submitting
+// injects code via new script element https://stackoverflow.com/a/9517879/2451546
+CmdUtils.CreateCommand({
+    name: "command-gist",
+    description: "prefill gist form with a command source without submitting",
+    icon: "res/icon-128.png",
+    execute: (args) => {
+        var c = CmdUtils.getcmd(args.text);
+        if (c==undefined) return;
+        var d = CmdUtils.dump(args.text);
+        d = JSON.stringify(d);
+        d = JSON.stringify(`
+                var i = setInterval( ()=>{
+                                          var cm = document.getElementsByClassName("CodeMirror")[0]; 
+                                          if (cm && cm.CodeMirror) {
+                                              cm.CodeMirror.setValue(${d});
+                                              document.querySelector("input[name='gist[description]']").value = "${c.name} command for UbiChr";
+                                              document.querySelector("input[name='gist[contents][][name]']").value = "${c.name}.ubichr.js";
+                                              clearInterval(i);
+                                          }
+                                       }, 500);
+        `);
+        CmdUtils.gist_command_callback = (tab) => {
+            if (tab.pendingUrl!='https://gist.github.com/') return;
+            chrome.tabs.onCreated.removeListener( CmdUtils.gist_command_callback );
+            CmdUtils.gist_command_callback = null;
+            chrome.tabs.executeScript( tab.id, { code: `
+                  var script = document.createElement('script');
+                  script.textContent = ${d};
+                   (document.head || document.documentElement).append(script);
+                  script.remove();
+           `});
+       };
+       chrome.tabs.onCreated.addListener( CmdUtils.gist_command_callback );
+       CmdUtils.addTab("https://gist.github.com/");
+    },
+    preview: (pblock, args) => {
+        CmdUtils.popupWindow.ubiq_set_tip("execute to paste this into gist.github.com<hr>");
+        var d = CmdUtils.dump(args.text);
+        d = new Option(d).innerHTML;
+        pblock.innerHTML = `<pre>${d}</pre>`;
+    },
+});
+
 CmdUtils.CreateCommand({
     name: "amazon-search",
     description: "Search Amazon for books matching:",
@@ -2018,7 +2074,7 @@ CmdUtils.CreateCommand({
     author: "rostok",
     icon: "res/icon-128.png",
     conv: function(text) {
-    	return [...new Set(text.split(/\s+/)
+        return [...new Set(text.split(/\s+/)
                                .filter( v => v!="" )
                                .map( v => v.startsWith("//") ? "https:"+v : v )
                                .map( v => v.includes("://") ? v : "https://"+v ))]

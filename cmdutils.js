@@ -580,6 +580,18 @@ CmdUtils.loadHistory = function () {
     }
 };
 
+// dumps command definition along with all functions
+CmdUtils.dump = (cmd) => {
+  	var c = CmdUtils.getcmd(cmd);
+    if (c==null) return "";
+    var r = "// UbiChr '"+c.name+"' command\n";
+    r += "CmdUtils.CreateCommand({\n";
+    r += Object.entries(c).map(([k,v])=> "\t"+k+":"+(typeof v==='function' ? unescape(v.toString()) : JSON.stringify(v))).join(",\n");
+    r += "\n});\n";
+    return r;
+};
+
+
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // - - JQUERY EXTRA FUNCTIONS  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
