@@ -70,6 +70,7 @@ function saveScripts() {
         chrome.storage.local.set({'cursor': editor.getCursor()});
 	}
 	    
+    $("#info").html("");
     // eval
     try {
         $("#info").html("evaluated!");
@@ -107,6 +108,9 @@ editor = CodeMirror.fromTextArea( document.getElementById("code"), {
     gutters: ["CodeMirror-lint-markers"],
     lint:true,
     autofocus:true,
+    extraKeys: {
+       'Ctrl-/': 'toggleComment'
+    }
 });
 
 editor.on("blur", saveScripts);
