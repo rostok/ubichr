@@ -1918,15 +1918,23 @@ CmdUtils.makeSearchCommand({
 
 CmdUtils.CreateCommand({
     name: "jquery",
-    description: "injects jQuery to current tab",
+    description: "injects jQuery to current tab (v2)",
     icon: "https://jquery.com/favicon.ico",
-    execute: function execute(args) {
-      chrome.tabs.executeScript({code:"((e,s)=>{e.src=s;e.onload=function(){jQuery.noConflict();console.log('jQuery injected')};document.head.appendChild(e);})(document.createElement('script'),'//code.jquery.com/jquery-latest.min.js')"}, (r)=>{
-      CmdUtils.notify(r+'', "jQuery injected");
-      });
+    execute: async function execute(args) { 
+      var jq = chrome.runtime.getManifest().background.scripts.filter(a=>a.includes("jquery")).pop();
+      jq = await CmdUtils.get(jq);
+      jq = JSON.stringify(jq);
+      chrome.tabs.executeScript( { code: `
+      	var script = document.createElement('script'); 
+        script.textContent = ${jq}; 
+        (document.head || document.documentElement).append(script); 
+        script.remove();
+        console.log('💉jQuery injected');
+      `});
     },
 });
 
+// content security policy may forbid external scripts
 CmdUtils.CreateCommand({
     name: "inject-js",
     description: "injects JavaScript from url",
