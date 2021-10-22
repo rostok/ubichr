@@ -7,10 +7,11 @@
 // Original Ubiquity Project: http://labs.mozilla.org/ubiquity/
 // jshint esversion: 6 
 
-var ubiq_selected_command = 0;
+var ubiq_selected_command = 0; // index for matches[]
 var ubiq_selected_option = -1;
 var ubiq_first_match;
 var ubiq_history_index = 0;
+var ubiq_last_preview_command = -1; // index for CommandList
 
 // sets the tip field (for time being this is the preview panel)
 function ubiq_set_tip(v) {
@@ -68,6 +69,7 @@ function ubiq_show_preview(cmd, args) {
     var cmd_struct = CmdUtils.CommandList[cmd];
     if (!cmd_struct || !cmd_struct.preview) return;
     var preview_func = cmd_struct.preview;
+    ubiq_last_preview_command = cmd;
     switch(typeof preview_func)
     {
     case 'undefined':
@@ -400,8 +402,7 @@ function ubiq_show_matching_commands(text) {
         var suggestions_div = document.createElement('div');
         var suggestions_list = document.createElement('ul');
         var selcmdidx = matches[ubiq_selected_command][0];
-        ubiq_clear();
-        if (CmdUtils.CommandList[ selcmdidx ] !== undefined ) ubiq_set_preview( CmdUtils.CommandList[ selcmdidx ].description );
+        if (selcmdidx!=ubiq_last_preview_command) ubiq_clear();
         ubiq_selected_option = -1;
         ubiq_show_preview(selcmdidx);
 
@@ -484,12 +485,14 @@ function ubiq_keydown_handler(evt) {
     // On ENTER, execute the given command
     if (kc == 13) {
         ubiq_execute();
+        evt.preventDefault();
         return;
     }
 
     // On F5 restart extension
     if (kc == 116) {
         chrome.runtime.reload();
+        evt.preventDefault();
         return;
     }
 
@@ -499,6 +502,7 @@ function ubiq_keydown_handler(evt) {
         var el = ubiq_preview_el();
         if (!el) return;
         CmdUtils.setClipboard( el.innerText );
+        evt.preventDefault();
     }
 
     // Ctrl+P / Ctrl+E selects previous commands
