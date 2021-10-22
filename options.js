@@ -1,11 +1,8 @@
 // jshint esversion: 6
 
-// inserts stub (example command)
-function insertExampleStub() {
-
-    var stubs = {
-  'insertnotifystub': // simple notify command 
-`/* This is a template command. */
+var stubs = {
+  'notify': // simple notify command 
+`// basic command template with notification
 CmdUtils.CreateCommand({
     name: "1example",
     description: "A short description of your command.",
@@ -20,8 +17,8 @@ CmdUtils.CreateCommand({
 });
 
 `
-, 'insertsearchstub': // simple search / preview command (e. g. using ajax)
-`/* This is a template command. */
+, 'search': // simple search / preview command (e. g. using ajax)
+`// a simple search template
 CmdUtils.CreateCommand({
     name: "2example",
     description: "Commence DuckGoGo search.",
@@ -38,36 +35,64 @@ CmdUtils.CreateCommand({
 });
 
 `
-, 'insertenhsearchstub': // enhanced search / preview command
-`/* This is a template command. */
+, 'enhanced-search': // enhanced search / preview command
+`// search template
 CmdUtils.makeSearchCommand({
   name: ["3example"],
   description: "Searches quant.com",
   icon: "🔎",
-  author: {name: "Your Name", email: "your-mail@example.com"},
-  icon: "https://www.qwant.com/favicon-152.png?1503916917494",
-  url: "https://www.qwant.com/?q={QUERY}&t=all",
+  url: "https://www.qwant.com/?t=all&q={QUERY}",
   prevAttrs: {zoom: 0.75, scroll: [100/*x*/, 0/*y*/], anchor: ["c_13", "c_22"]},
 });
 
 `
-    };
+, 'options': // command with options
+`
+// template to demonstrate preview options, browse them with Ctrl+up/down arrows
+CmdUtils.CreateCommand({
+    name: ["4example", "optionexample"],
+    execute: function execute(args) {
+      	CmdUtils.setTip("chosen option idx:"+args._opt_idx+" chosen option val:"+args._opt_val+"<hr>");
+    },
+    preview: function preview(pblock, args) {
+        pblock.innerHTML  = "use Ctrl+↓/↑ to choose an option, then press Enter";
+        pblock.innerHTML += "<div data-option data-option-value=one>option 1</div>";
+        pblock.innerHTML += "<div data-option data-option-value=two>option 2</div>";
+        pblock.innerHTML += "<div data-option data-option-value=thr>option 3</div>";
+        pblock.innerHTML += "<div data-option data-option-value=fou>option 4</div>";
+        pblock.innerHTML += "<div data-option data-option-value=fiv>option 5</div>";
+    },
+});
+`
+	};
 
+
+// inserts stub (example command)
+function insertExampleStub() {
     var stub = stubs[this.id];
     editor.replaceRange(stub, editor.getCursor());
-
-    //editor.setValue( stub + editor.getValue() );
     saveScripts();
     return false;
 }
 
 // evaluates and saves scripts from editor
-function saveScripts() {
+async function saveScripts(instance, changeObj) {
+    // console.log("saveScripts",instance);
+    // console.log("saveScripts",changeObj);
+    if (changeObj.origin=='setValue') return; // save on user input
     var customscripts = editor.getValue();
+    if (customscripts.trim()=="") {
+        console.trace();
+        if (confirm("Are your sure you want remove all your scripts?")) {
+            editor.setValue("// removed all the scripts");
+        } else {
+            await chrome.storage.local.get('customscripts', function(result) { editor.setValue(result.customscripts || "// storage was empty, sorry"); });
+        }
+    }
+
     // save
     if (typeof chrome !== 'undefined' && chrome.storage) {
         chrome.storage.local.set({'customscripts': customscripts});
-        chrome.storage.local.set({'cursor': editor.getCursor()});
 	}
 	    
     $("#info").html("");
@@ -97,6 +122,12 @@ function saveScripts() {
     a.download = "ubichr-custom-scripts-"+(new Date()).toISOString().substr(0,10)+".js";
 }
 
+function saveCursorPos() {
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+        chrome.storage.local.set({'cursor': editor.getCursor()});
+	}
+}
+
 // initializes editor
 editor = CodeMirror.fromTextArea( document.getElementById("code"), {
     mode: "javascript",
@@ -113,18 +144,20 @@ editor = CodeMirror.fromTextArea( document.getElementById("code"), {
     }
 });
 
-editor.on("blur", saveScripts);
+editor.on("cursorActivity", saveCursorPos);
 editor.on("change", saveScripts);
 
-$("#insertnotifystub").click( insertExampleStub );
-$("#insertsearchstub").click( insertExampleStub );
-$("#insertenhsearchstub").click( insertExampleStub );
+Object.keys(stubs).forEach( k=> {
+    var s = $(`<a href=# id='${k}'>${k}</a>`);
+    $(s).click( insertExampleStub );
+	$("#stubs").append( s );
+});
+$("#stubs > a:not(:last)").after(" - ");
 
 // load scripts
 if (typeof chrome !== 'undefined' && chrome.storage) {
     chrome.storage.local.get('customscripts', function(result) {
-        editor.setValue(result.customscripts || "");
-        saveScripts();
+        editor.setValue(result.customscripts || "// jshint esversion: 8\n// check out examples and HELP in lower right corner!");
     });
     chrome.storage.local.get('cursor', function(result) {
         editor.setCursor(result.cursor || {line:0,ch:0});
