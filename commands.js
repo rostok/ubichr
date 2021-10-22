@@ -6,6 +6,11 @@ CmdUtils.CreateCommand({
     name: "command-source",
     description: "dumps command source",
     icon: "res/icon-128.png",
+    execute: (args) => {
+        var d = CmdUtils.dump(args.text);
+        CmdUtils.setClipboard(d);
+        CmdUtils.popupWindow.ubiq_set_tip("copied<hr>");
+    },
     preview: (pblock, args) => {
         var d = CmdUtils.dump(args.text);
         d = new Option(d).innerHTML;

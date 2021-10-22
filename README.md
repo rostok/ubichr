@@ -262,6 +262,13 @@ The background script runs ```CmdUtils.updateActiveTab()``` method on couple of 
 * `CmdUtils.updateHandlers` which is an array of `{name,handler}` objects
 In particular the new `highlight`/`mark` command uses these methods to add permanent highlighting of chosen keywords.
 
+# Sharing Commands
+All commands can be shared with an experimental `command-gist name` statement. This will open gist.github.com and fill in the form assuming you are already logged as GitHub user. It is up to you to decide if the source should be sercret or public.
+
+To search for commands shared by others go to https://gist.github.com/search?q=ubichr. For now commands can be added only by manual cut&paste of the source to the editor window.
+
+In case you just want to share command via other means execute `command-source name` to copy source to clipboard.
+
 # Alternatives
 Svalorzen has forked UbiChr and created UbiShell which has more shell like UI with piping and command options. Check it out here: https://github.com/Svalorzen/UbiShell
 
