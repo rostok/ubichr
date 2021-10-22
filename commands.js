@@ -1357,52 +1357,41 @@ CmdUtils.CreateCommand({
     names: ["links"],
     icon: "https://www.iconsdb.com/icons/download/black/search-13-32.png",
     description: "search and filter links on all tabs, case insensitive",
-    author: {
-        name: "rostok"
-    },
+    author: "rostok",
     license: "MIT",
-    execute: ()=> {
-      CmdUtils.addTab("result.html");
-    },
+    execute: ()=>{ CmdUtils.addTab("result.html"); },
     preview: function preview(pblock, {text, _cmd}) {
-        text = text.trim().toLowerCase();
-        var substrings = text.split(/\s+/);
-        if (text.length <= 2) {
-            pblock.innerHTML = this.description+"<br><br>to filter make the argument longer ("+text.length+"/3)";
-        } else {
-            var arr = [];
-            chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
-            chrome.tabs.query({}, (t)=>{
-            t.reduce((a,b)=>{
-              console.log(b.id);
-              chrome.tabs.executeScript(b.id, 
-                                        {code:"document.body.innerHTML.toString();"}, 
-                                        (ret)=>{
-                                          arr = arr.concat( 
-                                                    jQuery('a', ret[0])
-                                                    .absolutize(CmdUtils.getLocationOrigin())
-                                                    .map( function() { return jQuery(this).attr('href'); })
-                                                    .get()
-                                                    //.filter(s=>s.indexOf(text)>=0) 
-                                                    .filter(s=>substrings.every(subs => s.toLowerCase().indexOf(subs)>=0))                                             
-                                          );
-                                          pblock.innerHTML = arr.filter((v, i, a) => a.indexOf(v) === i).join("<br/>");
-                                          chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
-                                        });
-            });
+      text = text.trim().toLowerCase();
+      var substrings = text.split(/\s+/);
+      if (text.length <= 2) {
+        pblock.innerHTML = this.description+"<br><br>to filter make the argument longer ("+text.length+"/3)";
+      } else {
+        var arr = [];
+        chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
+        chrome.tabs.query({}, (t)=>{
+          t.filter(t=>!t.url.startsWith("chrome:")).reduce((a,b)=>{
+              chrome.tabs.executeScript(b.id, {code:"document.body.innerHTML.toString();"}, (ret)=>{
+                arr = arr.concat( 
+                  jQuery('a', ret[0])
+                  .absolutize(CmdUtils.getLocationOrigin(b.url))
+                  .map( function() { return jQuery(this).attr('href'); })
+                  .get()
+                  .filter(s=>substrings.every(subs => s.toLowerCase().indexOf(subs)>=0))                                             
+                );
+                pblock.innerHTML = arr.filter((v, i, a) => a.indexOf(v) === i).join("<br/>");
+                chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
+              });
           });
-        }
+        });
+    }
     },
 });
-
 
 CmdUtils.CreateCommand({
     names: ["get-urls"],
     icon: "https://www.iconsdb.com/icons/download/black/search-13-32.png",
     description: "gets all open tab urls, add argument to filter",
-    author: {
-        name: "rostok"
-    },
+    author: "rostok",
     license: "MIT",
     execute: ()=> {
       CmdUtils.addTab("result.html");

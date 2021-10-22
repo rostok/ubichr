@@ -222,18 +222,15 @@ CmdUtils.getLocation = function getLocation() {
         return ""; 
 };
 
-// returns active tabs origin URL, if avaiable
-CmdUtils.getLocationOrigin = function getLocationOrigin() {
-    if (CmdUtils.active_tab && CmdUtils.active_tab.url) {
-    	try {
-    		var u = new URL(CmdUtils.active_tab.url);
-    		return u.origin;
-    	} catch (e) {
-    		return "";
-    	}
-    }
-    else 
-        return ""; 
+// returns url origin or if empty an active tabs origin URL, if avaiable
+CmdUtils.getLocationOrigin = function getLocationOrigin(url="") {
+    if (url=="" && CmdUtils.active_tab && CmdUtils.active_tab.url) url = CmdUtils.active_tab.url;
+	try {
+		var u = new URL(url);
+		return u.origin;
+	} catch (e) {
+		return "";
+	}
 };
 
 // opens new tab with provided url
