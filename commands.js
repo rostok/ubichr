@@ -2176,6 +2176,61 @@ CmdUtils.CreateCommand({
     },
 });
 
+CmdUtils.CreateCommand({
+    name: "alarm-clear",
+    icon: "⏰",
+    description: "clears all alarms",
+  	execute: function execute({text}) {
+      CmdUtils.setTip("alarms cleared");
+      chrome.alarms.clearAll();
+      CmdUtils.refreshPreview();
+    },
+    preview: async function preview(pblock, {text}) {
+	  pblock.innerHTML = "";
+      chrome.alarms.getAll((a)=>{
+        pblock.innerHTML += "<pre>current alarms:\n"+a.map((v)=>v.name +"\tin\t"+Math.round((v.scheduledTime-new Date())/1000/60*10)/10+" minutes").join("\n");
+      });
+    },
+});
+
+CmdUtils.CreateCommand({
+    name: "alarm",
+    icon: "⏰",
+    description: "sets alarm notification in defined time. syntax: [alarm-name] [hh:]mm",
+    lastalarmname: "ALARM",
+    nametime: function (text) {
+          var a = text.split(/\s+/);
+          for (var p=a.pop().split(':'), s=0, m=1; p.length>0; m*=60) s+=m*(parseFloat(p.pop(),10)||0);
+          var n = this.lastalarmname;
+          if (a.length>0) n = a[0]; 
+          return {name:n,time:s};
+    },
+  	execute: function execute({text}) {
+      var {name,time} = this.nametime(text);
+      if (time<=0) return;
+      CmdUtils.setTip("alarm set!");
+      CmdUtils.refreshPreview();
+      chrome.alarms.create(name,{delayInMinutes:time});
+      chrome.alarms.onAlarm.addListener(function( alarm ) { if (alarm.name==name) CmdUtils.notify("alarm: "+name); });
+    },
+    preview: async function preview(pblock, {text}) {
+	  pblock.innerHTML = "";
+      if (text!="") {
+        var {name,time} = this.nametime(text);
+        pblock.innerHTML += `<pre>set alarm '${name}' in ${time} minutes (${text.split(/\s+/).pop()})</pre>`;
+      } else {
+        CmdUtils.setTip(this.description);
+      }
+      chrome.alarms.getAll((a)=>{
+        pblock.innerHTML += "<pre>current alarms:\n"+
+        a.map(v=>{
+          this.lastalarmname = v.name.split("-").shift()+"-"+((parseInt(v.name.split("-").pop())||0)+1);
+          return `${v.name}\tin\t${(Math.round((v.scheduledTime-new Date())/1000/60*10)/10).toString()} minutes`;
+        }).join("\n")+"</pre>";
+      });
+    },
+});
+
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 

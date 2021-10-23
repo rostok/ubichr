@@ -294,6 +294,14 @@ CmdUtils.SimpleUrlBasedCommand = function SimpleUrlBasedCommand(url) {
     return search_func;
 };
 
+// hackish refresh preview
+CmdUtils.refreshPreview = ()=>{
+    if (CmdUtils.popupWindow) {
+    CmdUtils.popupWindow.lcmd="";
+    CmdUtils.popupWindow.ubiq_show_matching_commands();
+  }
+};
+
 // closes ubiquity popup
 CmdUtils.closePopup = function closePopup(w) {
     if (typeof popupWindow !== "undefined") popupWindow.close();
