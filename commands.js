@@ -1865,11 +1865,12 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
-    names: ["unicode"],
-      icon: "https://unicode.org/webscripts/logo60s2.gif",
+    name: "unicode",
+    description: "finds unicode characters, ctrl+up/down copies to clipboard",
+    icon: "https://unicode.org/webscripts/logo60s2.gif",
     preview: async function preview(pblock, {text}) {  
         if (text === "") {
-            pblock.innerHTML = "finds đź…˘ đź‡ą â„ť ď˝ď˝Žď˝‡ â“” unicode characters đź»đźđź‡";
+            pblock.innerHTML = this.description;
         } else {
             pblock.innerHTML = "";
             var res = await CmdUtils.get( "https://unicode-search.net/unicode-namesearch.pl?print=1&.submit=Search&term=" + encodeURIComponent(text) );   
