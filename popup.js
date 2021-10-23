@@ -527,7 +527,7 @@ function ubiq_keydown_handler(evt) {
 
     // Ctrl+R / Alt+F8 shows history
     if ((kc == 82 && evt.ctrlKey) || (kc == 119 && evt.altKey)) {
-        ubiq_set_input('history')
+        ubiq_set_input('history ', false)
         cmd = document.getElementById('ubiq_input');
         evt.preventDefault();
         return;
