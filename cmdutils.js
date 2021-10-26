@@ -45,29 +45,29 @@ CmdUtils.CreateCommand = function CreateCommand(args) {
     //console.log("command created ", args.name);
     var to = parseFloat(args.timeout || 0);
     if (to>0) {
-    	if (typeof args.preview == 'function') {
-		    args.preview_timeout = args.preview;
-			args.preview = function(b,a) {
+        if (typeof args.preview == 'function') {
+            args.preview_timeout = args.preview;
+            args.preview = function(b,a) {
                 // CmdUtils.deblog("clear time out ", CmdUtils.lastPrevTimeoutID, ".");
                 clearTimeout(CmdUtils.lastPrevTimeoutID);
                 CmdUtils.lastPrevTimeoutID = setTimeout(function () { 
                     // CmdUtils.deblog("delated prev ", args.name, ":", to);
-                	(args.preview_timeout.bind(this))(b, a); 
+                    (args.preview_timeout.bind(this))(b, a); 
                 }, to);
                 // CmdUtils.deblog("CmdUtils.lastPrevTimeoutID is ", CmdUtils.lastPrevTimeoutID);
-			};
-    	}
-    	if (typeof args.execute == 'function') {
-		    args.execute_timeout = args.execute;
-			args.execute = function(a) {
+            };
+        }
+        if (typeof args.execute == 'function') {
+            args.execute_timeout = args.execute;
+            args.execute = function(a) {
                 clearTimeout(CmdUtils.lastExecTimeoutID);
                 CmdUtils.lastExecTimeoutID = setTimeout(function () {
                     // CmdUtils.deblog("delated exec ", args.name, ":", to);
-					(args.execute_timeout.bind(this))(a);
+                    (args.execute_timeout.bind(this))(a);
                 }, to);
                 // CmdUtils.deblog("CmdUtils.lastExecTimeoutID is ", CmdUtils.lastExecTimeoutID);
-			};
-    	}
+            };
+        }
     }
     CmdUtils.CommandList.push(args);
 };
@@ -206,12 +206,12 @@ CmdUtils._searchCommandPreview = function _searchCommandPreview( pblock, {text: 
 
 // closes current tab
 CmdUtils.closeTab = function closeTab() {
-	chrome.tabs.query({active:true,currentWindow:true},function(tabs){
+    chrome.tabs.query({active:true,currentWindow:true},function(tabs){
         if (tabs && tabs[0]) 
             chrome.tabs.remove(tabs[0].id, function() { });
         else 
             console.error("closeTab failed because 'tabs' is not set");
-	});
+    });
 };
 
 // returns active tabs URL if avaiable
@@ -225,12 +225,12 @@ CmdUtils.getLocation = function getLocation() {
 // returns url origin or if empty an active tabs origin URL, if avaiable
 CmdUtils.getLocationOrigin = function getLocationOrigin(url="") {
     if (url=="" && CmdUtils.active_tab && CmdUtils.active_tab.url) url = CmdUtils.active_tab.url;
-	try {
-		var u = new URL(url);
-		return u.origin;
-	} catch (e) {
-		return "";
-	}
+    try {
+        var u = new URL(url);
+        return u.origin;
+    } catch (e) {
+        return "";
+    }
 };
 
 // opens new tab with provided url
@@ -238,37 +238,37 @@ CmdUtils.addTab = function addTab(url) {
     var active = true;
     if (CmdUtils.lastKeyEvent && CmdUtils.lastKeyEvent.shiftKey) active = false;
 
-	if (typeof browser !== 'undefined') {
-		browser.tabs.create({ "url": url, "active": active });
-	} else 
-	if (typeof chrome !== 'undefined' && typeof chrome.tabs !== 'undefined') {
-		chrome.tabs.create({ "url": url, "active": active });
-	} else {
-		window.open(url);
-	}
+    if (typeof browser !== 'undefined') {
+        browser.tabs.create({ "url": url, "active": active });
+    } else 
+    if (typeof chrome !== 'undefined' && typeof chrome.tabs !== 'undefined') {
+        chrome.tabs.create({ "url": url, "active": active });
+    } else {
+        window.open(url);
+    }
 };
 
 // opens new tab with post request and provided data
 CmdUtils.postNewTab = function postNewTab(url, data) {
-	var form = document.createElement("form");
-	form.setAttribute("method", "post");
-	form.setAttribute("action", url);
-	form.setAttribute("target", "_blank");
+    var form = document.createElement("form");
+    form.setAttribute("method", "post");
+    form.setAttribute("action", url);
+    form.setAttribute("target", "_blank");
 
-	if (typeof data === 'string') data = Utils.urlToParams(data);
-	for (var i in data) {
-		if (data.hasOwnProperty(i)) {
-			var input = document.createElement('input');
-			input.type = 'hidden';
-			input.name = i;
-			input.value = data[i];
-			form.appendChild(input);
-		}
-	}
+    if (typeof data === 'string') data = Utils.urlToParams(data);
+    for (var i in data) {
+        if (data.hasOwnProperty(i)) {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = i;
+            input.value = data[i];
+            form.appendChild(input);
+        }
+    }
 
-	document.body.appendChild(form);
-	form.submit();
-	document.body.removeChild(form);
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
 }
 
 // returns a function that opens new tab with substituted {text} and {location}
@@ -281,8 +281,8 @@ CmdUtils.SimpleUrlBasedCommand = function SimpleUrlBasedCommand(url) {
         var opt = directObj._opt_val || "";
         if(opt.includes("://")) {
             CmdUtils.addTab(opt);
-		}
-		else {
+        }
+        else {
             var text = directObj.text;
             text = encodeURIComponent(text);
             var finalurl = url;
@@ -334,43 +334,43 @@ CmdUtils.ajaxGet = function ajaxGet(url, callback) {
 
 // performs jQuery get and returns jqXHR that implements Promise 
 CmdUtils.get = function get(url) {
-	return jQuery.ajax({
-    	url: url,
+    return jQuery.ajax({
+        url: url,
         async: true
-	});
+    });
 };
 
 // performs jQuery post and return jsXHR
 CmdUtils.post = function post(url, data) {
-	return jQuery.ajax({
-    	url: url,
-    	data: data,
+    return jQuery.ajax({
+        url: url,
+        data: data,
         async: true
-	});
+    });
 };
 
 // loads remote scripts into specified window (or backround if not specified)
 CmdUtils.loadScripts = function loadScripts(url, callback, wnd=window) {
     // this array will hold all loaded scripts into this window
     wnd.loadedScripts = wnd.loadedScripts || [];
-	url = url || [];
-	if (url.constructor === String) url = [url];
+    url = url || [];
+    if (url.constructor === String) url = [url];
 
     if (typeof wnd.jQuery === "undefined") {
         console.error("there's no jQuery at "+wnd+".");
         return false;
     }
-	if (url.length == 0) 
-		return callback();
+    if (url.length == 0) 
+        return callback();
 
-	var thisurl = url.shift();
-	tempfunc = function(data, textStatus, jqXHR) {
-		return loadScripts(url, callback, wnd);
-	};
-	if (wnd.loadedScripts.indexOf(thisurl)==-1) {
-		console.log("loading :::: ", thisurl);
-		wnd.loadedScripts.push(thisurl);
-    	wnd.jQuery.ajax({
+    var thisurl = url.shift();
+    tempfunc = function(data, textStatus, jqXHR) {
+        wnd.loadedScripts.push(thisurl);
+        return loadScripts(url, callback, wnd);
+    };
+    if (wnd.loadedScripts.indexOf(thisurl)==-1) {
+        console.log("loading :::: ", thisurl);
+        return wnd.jQuery.ajax({
             url: thisurl,
             dataType: 'script',
             success: tempfunc,
@@ -378,7 +378,7 @@ CmdUtils.loadScripts = function loadScripts(url, callback, wnd=window) {
         });
     }
     else {
-    	tempfunc();
+        return loadScripts(url, callback, wnd);
     }
 };
 
@@ -460,7 +460,7 @@ CmdUtils.setSelection = function setSelection(s) {
 // for measuring time the input is changed
 CmdUtils.inputUpdateTime = performance.now();
 CmdUtils.timeSinceInputUpdate = function timeSinceInputUpdate() {
-	return (performance.now() - CmdUtils.inputUpdateTime)*0.001;
+    return (performance.now() - CmdUtils.inputUpdateTime)*0.001;
 };
 
 // returns command with this name
@@ -473,9 +473,9 @@ CmdUtils.getcmd = function getcmd(cmdname) {
 // returns command that name starts with arg
 CmdUtils.getcmdpart = function getcmdpart(cmdname) {
     if (cmdname !== null && cmdname !== '')
-	    for (let [ci,c] of Object.entries(CmdUtils.CommandList)) 
-		    for (let n of c.names) 
-        	    if (n.startsWith(cmdname.toLowerCase())) return c;
+        for (let [ci,c] of Object.entries(CmdUtils.CommandList)) 
+            for (let n of c.names) 
+                if (n.startsWith(cmdname.toLowerCase())) return c;
     return null;
 };
 
@@ -530,10 +530,10 @@ CmdUtils.loadCustomScripts = function loadCustomScripts() {
 
 // injcects script from url
 CmdUtils.inject = function inject(url, oninject) {
-	chrome.tabs.executeScript({
-		code:"((e,s)=>{e.src=s;e.onload=function(){console.log('script injected')};document.head.appendChild(e);})(document.createElement('script'),'"+url+"')"
-		}, oninject
-	);
+    chrome.tabs.executeScript({
+        code:"((e,s)=>{e.src=s;e.onload=function(){console.log('script injected')};document.head.appendChild(e);})(document.createElement('script'),'"+url+"')"
+        }, oninject
+    );
 };
 
 // show browser notification with simple limiter 
@@ -587,7 +587,7 @@ CmdUtils.loadHistory = function () {
 
 // dumps command definition along with all functions
 CmdUtils.dump = (cmd) => {
-  	var c = CmdUtils.getcmd(cmd);
+    var c = CmdUtils.getcmd(cmd);
     if (c==null) return "";
     var r = "// UbiChr '"+c.name+"' command\n";
     r += "CmdUtils.CreateCommand({\n";
