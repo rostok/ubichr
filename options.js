@@ -79,8 +79,15 @@ function insertExampleStub() {
 async function saveScripts(instance, changeObj) {
     // console.log("saveScripts",instance);
     // console.log("saveScripts",changeObj);
-    if (changeObj.origin=='setValue') return; // save on user input
+
     var customscripts = editor.getValue();
+    // download link
+    var a = document.getElementById("download");
+    var file = new Blob([customscripts], {type: "text/plain"});
+    a.href = URL.createObjectURL(file);
+    a.download = "ubichr-custom-scripts-"+(new Date()).toISOString().substr(0,10)+".js";
+
+    if (changeObj && changeObj.origin=='setValue') return; // save on user input
     if (customscripts.trim()=="") {
         console.trace();
         if (confirm("Are your sure you want remove all your scripts?")) {
@@ -114,12 +121,6 @@ async function saveScripts(instance, changeObj) {
         $("#info").html("<span style='background-color:red'>"+m+"</span>");
         if (l != null) $("a#linerror").click( ()=>{ editor.setCursor({line:l,ch:0}); });
     }
-    
-    // download link
-    var a = document.getElementById("download");
-    var file = new Blob([customscripts], {type: "text/plain"});
-    a.href = URL.createObjectURL(file);
-    a.download = "ubichr-custom-scripts-"+(new Date()).toISOString().substr(0,10)+".js";
 }
 
 function saveCursorPos() {
@@ -146,6 +147,7 @@ editor = CodeMirror.fromTextArea( document.getElementById("code"), {
 
 editor.on("cursorActivity", saveCursorPos);
 editor.on("change", saveScripts);
+saveScripts(null, {origin:'setValue'}); // prepare initial download
 
 Object.keys(stubs).forEach( k=> {
     var s = $(`<a href=# id='${k}'>${k}</a>`);
