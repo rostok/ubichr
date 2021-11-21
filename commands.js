@@ -2238,6 +2238,204 @@ CmdUtils.CreateCommand({
     },
 });
 
+CmdUtils.CreateCommand({
+    name: "urban",
+    description: "neural language adapter for boomers",
+    author: "rostok",
+    icon: "https://www.urbandictionary.com/favicon.ico",
+    execute: function execute({text}) {
+        CmdUtils.addTab(`https://www.urbandictionary.com/define.php?term=${text}`);
+    },
+    preview: async function preview(pblock, {text}) {
+        if (text != '') {
+            var u = await CmdUtils.get("https://www.urbandictionary.com/define.php?term=" + encodeURIComponent(text));
+            // content
+            $(pblock)
+                .append($("div#content", u))
+                .find("a,img")
+                .absolutize("https://www.urbandictionary.com").prop("target", "_blank");
+            // style, if anything should change contnet looks allright w/o styling as well
+            var s = await CmdUtils.get(u.split(".css").shift().split("href=\"").pop() + ".css");
+            s = s.replace(/body/g, "b");
+            s = s.replace(/html/g, "h");
+            $("a", pblock).css("color", "blue");
+            $(pblock).append(`<style> a.autolink {text-color:blue !important;}${s}</style>`);
+            // cleanup
+            $("a.mug-ad,a.social-interaction addthis_button_twitter,img,i,svg,.contributor,a.circle-link,.thumbs,.ad-panel", pblock).remove();
+        } else {
+            pblock.innerHTML = this.description;
+        }
+    },
+});
+
+CmdUtils.CreateCommand({
+    name: "color-picker",
+    author: "rostok",
+    icon: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgBAMAAACBVGfHAAAAG1BMVEUAo9TwK1Y3TaTo2ie/KZD4gSgArYkPr1p8xkpAC8JZAAAAUElEQVQ"+
+          "okWMQDTU27ihPY2BgUlJycREUZIAKJDAwoAqAVKi4ODoiCRBSATZDBVOFILoZjrhVJGBVoUIFMzDcoUIFM/C6lFwzMNyB16VUDVMAh/5pgpJEPwwAAAAASUVORK5CYII=",
+    description: "shows color picker, press Enter to copy selected color to clipboard",
+    execute: function execute({text}) {
+      CmdUtils.setClipboard(text);
+    },
+    preview: async function preview(pblock, {text}) {
+      Math.clamp=function(a,b,c){return Math.max(b,Math.min(c,a));};
+      log = pblock.ownerDocument.defaultView.console.log;
+      var canvas = document.createElement('canvas');
+      var context = canvas.getContext('2d');
+      if (text=="") text = "white";
+      context.fillStyle = text;
+      context.fillRect(0,0,1,1);
+      var k =[...context.getImageData(0,0,1,1).data];
+      var c = {r:255,g:255,b:255,a:255,h:0,s:0,l:100}; // rgb 0..255, h 0..360, sl 0..100
+      c.r = k[0]; c.g=k[1]; c.b=k[2];
+      function bi(){return `url("data:image/svg+xml;utf8,${encodeURIComponent(
+      `<svg preserveAspectRatio='none' viewBox='0 0 1 1' version='1.1' xmlns='http://www.w3.org/2000/svg'>
+      <defs>
+      <linearGradient id='g'>
+      <stop offset='0' stop-color='#fff' stop-opacity='0'/>
+      <stop offset='1' stop-color='#fff' stop-opacity='1'/>
+      </linearGradient>
+      <mask id='m'><rect x='0' y='0' width='1' height='1' fill='url(#g)'></rect></mask>
+      <linearGradient id='a' gradientTransform='rotate(90)'>
+      <stop offset='0' stop-color='white'/>
+      <stop offset='0.5' stop-color='hsl(${c.h} 100% 50%)'/>
+      <stop offset='1' stop-color='black'/>
+      </linearGradient>
+      <linearGradient id='b' gradientTransform='rotate(90)'>
+      <stop offset='0' stop-color='black'/>
+      <stop offset='1' stop-color='white'/>
+      </linearGradient>
+      </defs>
+      <rect x='0' y='0' width='1' height='1' fill='url(#a)' mask='url(#m)'></rect>
+      <rect x='0' y='0' width='1' height='1' fill='url(#b)' mask='url(#m)' transform='translate(1,1) rotate(180)'/>
+      </svg>`)}")`;}
+      pblock.innerHTML=`
+<style>
+#snl{ margin:2px 2px; display:inline-block; width:256px; height:256px; xbackground-image:${bi()}; }
+#sl{mix-blend-mode:difference;position:absolute;transform:translate(-50%,-50%);pointer-events: none;}
+#picker { user-select: none; }
+input.slider { display:inline; width:256px; left:16px; color:pink; }
+input[type='range'] { -webkit-appearance: none; overflow: hidden; background-color: gray; }
+input[type='range']#alf { background: linear-gradient(to right,#0000,#ffff); }
+input[type='range']#hue { background: linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00); }
+input[type='range']::-webkit-slider-runnable-track { -webkit-appearance: none; }
+input[type='range']::-webkit-slider-thumb { -webkit-appearance: none; width: 8px; height: 20px; background: #000; }
+#rgbc, #hslc { display:inline-block; width:64px; height:24px; border: 1px solid black; margin:8px 16px -8px 0px;}
+</style>
+        <br>
+        <div id=picker>
+        <input id=alf class=slider type=range min=0 max=255> α <br>
+      	<input id=hue class=slider type=range min=0 max=360> H <br>
+        <div id=snl><div id=sl>✛</div></div> L/S <br>
+        <input id=red class=slider type=range min=0 max=255> R<br>
+        <input id=grn class=slider type=range min=0 max=255> G<br>
+        <input id=blu class=slider type=range min=0 max=255> B<br>
+        <div id=rgbc></div><input id=rgb><br>
+        <div id=hslc></div><input id=hsl>
+        <div id=tmp></div>
+        </div>
+      `;
+      function fromRGB(r, g, b) {
+        r /= 255; g /= 255; b /= 255;
+        let max = Math.max(r, g, b);
+        let min = Math.min(r, g, b);
+        let d = max - min;
+        let h;
+        if (d === 0) h = 0;
+        else if (max === r) h = (g - b) / d % 6;
+        else if (max === g) h = (b - r) / d + 2;
+        else if (max === b) h = (r - g) / d + 4;
+        let l = (min + max) / 2;
+        let s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+        if(h<0)h+=360;
+        c.h = Math.round(h*60);
+        c.s = Math.round(s*100);
+        c.l = Math.round(l*100);
+      }
+      function fromHSL(h, s, l) {
+        s /= 100; l /= 100;
+        let k = (1 - Math.abs(2 * l - 1)) * s;
+        let hp = h / 60.0;
+        let x = k * (1 - Math.abs((hp % 2) - 1));
+        let rgb1;
+        if (isNaN(h)) rgb1 = [0, 0, 0];
+        else if (hp <= 1) rgb1 = [k, x, 0];
+        else if (hp <= 2) rgb1 = [x, k, 0];
+        else if (hp <= 3) rgb1 = [0, k, x];
+        else if (hp <= 4) rgb1 = [0, x, k];
+        else if (hp <= 5) rgb1 = [x, 0, k];
+        else if (hp <= 6) rgb1 = [k, 0, x];
+        let m = l - k * 0.5;
+        c.r = Math.round(255 * (rgb1[0] + m));
+        c.g = Math.round(255 * (rgb1[1] + m));
+        c.b = Math.round(255 * (rgb1[2] + m));
+      }
+      function chg(prop, val, setinput=true) {
+        if (setinput)pblock.ownerDocument.defaultView.ubiq_set_input("picker "+$("#rgb",pblock).val(),false);
+        c[prop]=Math.round(val);
+        if ("rgb".includes(prop)) fromRGB(c.r,c.g,c.b);
+        else                      fromHSL(c.h,c.s,c.l);
+        $("#alf",pblock).val(c.a);
+        $("#hue",pblock).val(c.h);
+        $("#sl",pblock).css("margin",`${(100-c.l)*2.55}px ${c.s*2.55}px`);
+        $("#red",pblock).val(c.r);
+        $("#grn",pblock).val(c.g);
+        $("#blu",pblock).val(c.b);
+        $("#rgb",pblock).val("#"+((256+c.r<<8|c.g)<<8|c.b).toString(16).slice(1));
+        if (c.a<255) $("#rgb",pblock).val( $("#rgb",pblock).val() + (256+c.a).toString(16).slice(1) );
+        $("#rgbc",pblock).css("background-color",$("#rgb",pblock).val());
+        $("#hsl",pblock).val(`hsla(${c.h}, ${c.s}%, ${c.l}%, ${Math.round(c.a/255*100)}%)`);
+        $("#hslc",pblock).css("background-color",$("#hsl",pblock).val());
+        $("#snl",pblock).css("background-image",bi());
+      }
+      $("#snl",pblock).css("background-image",bi());
+      $("#alf",pblock).on("input change", (e)=>chg("a",$(e.target).val()));
+      $("#hue",pblock).on("input change", (e)=>chg("h",$(e.target).val()));
+      $("#red",pblock).on("input change", (e)=>chg("r",$(e.target).val()));
+      $("#grn",pblock).on("input change", (e)=>chg("g",$(e.target).val()));
+      $("#blu",pblock).on("input change", (e)=>chg("b",$(e.target).val()));
+      $("#snl",pblock).on("mousedown mousemove mouseout", (e)=>{
+        if (e.buttons!=1) return;
+        var po = $(e.target).offset(); 
+        var x = Math.round(Math.clamp(e.offsetX,0,255));
+        var y = Math.round(Math.clamp(e.offsetY,0,255));
+        chg("s",(x)/2.55);
+        chg("l",(255-y)/2.55);
+      });
+      chg("r",c.r,false);
+      chg("g",c.g,false);
+      chg("b",c.b,false);
+    },
+});
+
+CmdUtils.CreateCommand({
+    icon: "🔣",
+    names: ["decodeuricomponent"],
+    description: "urldecode",
+    execute: function execute({text}) {
+        if (text.trim()=="") text = CmdUtils.getClipboard();
+        CmdUtils.setSelection(decodeURIComponent(text));
+    },
+    preview: function preview(pblock, {text}) {
+        if (text.trim()=="") text = CmdUtils.getClipboard();
+        pblock.innerHTML = decodeURIComponent(text);
+    },
+});
+
+CmdUtils.CreateCommand({
+    icon: "🔣",
+    names: ["encodeuricomponent"],
+    description: "urlencode",
+    execute: function execute({text}) {
+        if (text.trim()=="") text = CmdUtils.getClipboard();
+        CmdUtils.setSelection(encodeURIComponent(text));
+    },
+    preview: function preview(pblock, {text}) {
+        if (text.trim()=="") text = CmdUtils.getClipboard();
+        pblock.innerHTML = encodeURIComponent(text);
+    },
+});
+
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
