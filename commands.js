@@ -333,6 +333,13 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
+    names: ["debug-popup-editor"],
+    description: "Opens UbiChr popup in a tab and with commands editor",
+    icon: "res/icon-128.png",
+    execute: CmdUtils.SimpleUrlBasedCommand("debugpopup.html")
+});
+
+CmdUtils.CreateCommand({
     names: ["reload-ubiquity", "restart-ubiquity"],
     description: "Reloads Ubiquity extension",
     icon: "res/icon-128.png",

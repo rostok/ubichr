@@ -1,5 +1,5 @@
 // CmdUtils
-// jshint esversion: 6 
+// jshint esversion: 8
 
 if (!CmdUtils) var CmdUtils = { 
     VERSION: chrome.runtime.getManifest().version,
@@ -10,7 +10,7 @@ if (!CmdUtils) var CmdUtils = {
     backgroundWindow: window,
     popupWindow: null,
     lastKeyEvent:null,
-    log: console.log,
+//    log: console.log,
     updateHandlers: [], // array of {name,handler} objects, handler functions are executed on CmdUtils.updateActiveTab(), +/- addUpdateHandler() removeUpdateHandler()
     active_tab: null,   // tab that is currently active, updated via background.js 
     selectedText: "",   // currently selected text, update via content script selection.js
@@ -18,6 +18,13 @@ if (!CmdUtils) var CmdUtils = {
     setPreview: function setPreview(message, prepend) { console.log(message); },
     setResult: function setResult(message, prepend) { console.log(message); },
     setTip: function setTip(message, prepend) { console.log(message); },
+};
+
+// normal log, should popup everywhere
+CmdUtils.log = function (...args) {
+  if (CmdUtils.backgroundWindow) CmdUtils.backgroundWindow.console.log.apply(CmdUtils.backgroundWindow.console, args);
+  if (CmdUtils.popupWindow) CmdUtils.popupWindow.console.log.apply(CmdUtils.popupWindow.console, args);
+  console.log.apply(console, args);
 };
 
 // debug log
@@ -394,6 +401,7 @@ CmdUtils.updateSelection = function (tab_id) {
 CmdUtils.addUpdateHandler = function (name, handler) {
     name ||= "";
     if (name==""||typeof handler !== 'function') return;
+    CmdUtils.updateHandlers = CmdUtils.updateHandlers.filter(h=>h.name!=name);
     CmdUtils.updateHandlers.push( {name:name, handler:handler});
     CmdUtils.deblog("update handler",name,"added");
 };
@@ -661,7 +669,7 @@ CmdUtils.url_domain = url_domain;
     $.fn.absolutize = function(origin) { 
         if (typeof origin === "undefined" || origin == "") origin = window.origin;
         return this.each((i,e)=>{ 
-                                 $(e).attr('href', origin+$(e).prop('pathname')); 
+                                 $(e).attr('href', origin+$(e).prop('pathname')+$(e).prop('search')); 
                                  if (e.tagName=="IMG") {
                                      try {
                                          var u = new URL(e.src);
