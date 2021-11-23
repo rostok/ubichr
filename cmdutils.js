@@ -255,6 +255,31 @@ CmdUtils.addTab = function addTab(url) {
     }
 };
 
+// this helper wraps chrome.tabs.create() function however properties object can have additional input, value, submit keys set
+// in this case DOM element with input selector will be assigned value
+// and DOM element with submit selector will be clicked
+// finally callback is called after tab is created
+// use this to immediately fill in and submit form
+CmdUtils.createTab = (props, callback=undefined) => {
+  callback = callback || (()=>{});
+  var cb = callback;
+  var inp = props.input;  delete props.input;
+  var val = props.value;  delete props.value;
+  var sub = props.submit; delete props.submit;
+  if ( (inp!==undefined && val!==undefined) || sub!==undefined ) cb = (tab) => {
+    var code = 'try {\n console.log("CmdUtils.createTab() starts");\n';
+    if (inp!==undefined) code += ` document.querySelector("${inp}").value = ${JSON.stringify(val)}; console.log("value",${JSON.stringify(val)});\n`;
+    if (sub!==undefined) code += ` document.querySelector("${sub}").click(); console.log("submit");\n`;
+    code += ' console.log("CmdUtils.createTab() ends");\n}\n catch(e) {\n console.error("CmdUtils.createTab() failed", e);\n} ';
+    CmdUtils.log(tab);
+    chrome.tabs.executeScript(tab.id, {code:code}, (ret)=>{
+      // script was injected, nothing to do here
+    });
+    callback(tab);
+  };
+  chrome.tabs.create(props, cb);
+};
+
 // opens new tab with post request and provided data
 CmdUtils.postNewTab = function postNewTab(url, data) {
     var form = document.createElement("form");
