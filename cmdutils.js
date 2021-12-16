@@ -34,7 +34,17 @@ CmdUtils.deblog = function (...args) {
         if (CmdUtils.popupWindow) CmdUtils.popupWindow.console.log.apply(CmdUtils.popupWindow.console, args)
         console.log.apply(console, args);
     }
-}
+};
+
+CmdUtils.setBadge = function(text='OK', color='#77c') {
+  chrome.browserAction.setBadgeBackgroundColor({color:color});
+  setTimeout(function(){
+    chrome.browserAction.setBadgeText({'text':text});
+    setTimeout(function(){
+      chrome.browserAction.setBadgeText({'text':''});
+    }, 1000);
+  }, 0);
+};
 
 // creates command and adds it to command array, name or names must be provided and preview execute functions
 CmdUtils.CreateCommand = function CreateCommand(args) {
@@ -255,21 +265,23 @@ CmdUtils.addTab = function addTab(url) {
     }
 };
 
-// this helper wraps chrome.tabs.create() function however properties object can have additional input, value, submit keys set
+// this helper wraps chrome.tabs.create() function however properties object can have additional input, value, submit, delay keys set
 // in this case DOM element with input selector will be assigned value
 // and DOM element with submit selector will be clicked
 // finally callback is called after tab is created
-// use this to immediately fill in and submit form
+// use this to immediately fill in and submit form after delay (default is 0ms)
+// selectors are for document.querySelector()
 CmdUtils.createTab = (props, callback=undefined) => {
   callback = callback || (()=>{});
   var cb = callback;
   var inp = props.input;  delete props.input;
   var val = props.value;  delete props.value;
   var sub = props.submit; delete props.submit;
+  var del = parseInt(props.delay) || 0;  delete props.delay;
   if ( (inp!==undefined && val!==undefined) || sub!==undefined ) cb = (tab) => {
     var code = 'try {\n console.log("CmdUtils.createTab() starts");\n';
     if (inp!==undefined) code += ` document.querySelector("${inp}").value = ${JSON.stringify(val)}; console.log("value",${JSON.stringify(val)});\n`;
-    if (sub!==undefined) code += ` document.querySelector("${sub}").click(); console.log("submit");\n`;
+    if (sub!==undefined) code += ` window.setTimeout(()=>{document.querySelector("${sub}").click(); console.log("submit ${del}ms");},${del});\n`;
     code += ' console.log("CmdUtils.createTab() ends");\n}\n catch(e) {\n console.error("CmdUtils.createTab() failed", e);\n} ';
     CmdUtils.log(tab);
     chrome.tabs.executeScript(tab.id, {code:code}, (ret)=>{

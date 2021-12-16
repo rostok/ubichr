@@ -547,6 +547,7 @@ CmdUtils.CreateCommand({
     homepage: "",
     timeout: 600,
     license: "",
+    external: true,
     requirePopup: "https://maps.googleapis.com/maps/api/js?sensor=false",
     preview: async function mapsPreview(previewBlock, args) {
         var GM = CmdUtils.popupWindow.google.maps;
@@ -1528,6 +1529,7 @@ CmdUtils.CreateCommand({
     name: "cookies",
     description: "gets cookies, press Enter to save file, filter by domain or * for all",
     author: "Genuinous/rostok",
+    external: true,
     require: ["https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js"],
     execute: function execute(args) {
         var blob = new Blob([CmdUtils.popupWindow.jQuery("#ubiq-command-preview").text()], {type: "text/plain;charset=utf-8"});
@@ -1542,43 +1544,43 @@ CmdUtils.CreateCommand({
         function request(search) {
             if(text=="") text = CmdUtils.getLocation().split("//").pop().split("/").shift() || "";
             var s="";
-    var i;
+            var i;
             for (i in search) {
                 var obj = search[i];
-      var indent = parse(obj.domain) + "\t";
-      indent = indent + (parse((!obj.hostOnly).toString().toUpperCase()) + "\t");
-      indent = indent + (parse(obj.path) + "\t");
-      indent = indent + (parse(obj.secure.toString().toUpperCase()) + "\t");
-      indent = indent + (parse(obj.expirationDate ? Math.round(obj.expirationDate) : "0") + "\t");
-      indent = indent + (parse(obj.name) + "\t");
-      indent = indent + parse(obj.value);
-      indent = indent + "\n";
+                var indent = parse(obj.domain) + "\t";
+                indent = indent + (parse((!obj.hostOnly).toString().toUpperCase()) + "\t");
+                indent = indent + (parse(obj.path) + "\t");
+                indent = indent + (parse(obj.secure.toString().toUpperCase()) + "\t");
+                indent = indent + (parse(obj.expirationDate ? Math.round(obj.expirationDate) : "0") + "\t");
+                indent = indent + (parse(obj.name) + "\t");
+                indent = indent + parse(obj.value);
+                indent = indent + "\n";
                 if (text=="*") 
-        s = s + indent;
+                    s = s + indent;
                 else if (obj.domain.includes(text)) {
-        s = s + indent;
-      }
-    }
+                    s = s + indent;
+            }
+        }
 
-            var data = "data:application/octet-stream;base64," + btoa(unescape(encodeURIComponent(info + s)));
-            var link = "<a href=" + data + " download='cookies.txt'>cookies.txt</a>";
-            var info = "# Enter to save " + link + "\n";
-            info += "# Filter by domain or * for all\n#\n";
-            info += "# HTTP Cookie File for <b>" + parse(text) + "</b> by Genuinous @genuinous.\n";
-            info += "# This file can be used by wget, curl, aria2c and other standard compliant tools.\n";
-            info += "# Usage Examples:\n";
-            info += ('#   1) wget -x --load-cookies cookies.txt "' + parse(b) + '"\n');
-            info += ('#   2) curl --cookie cookies.txt "' + parse(b) + '"\n');
-            info += ('#   3) aria2c --load-cookies cookies.txt "' + parse(b) + '"\n');
-            info += "#\n";
-    if (s) {
-                info = "\n" + info + s;
-    } else {
-                info = "\n# No cookies for " + text;
-    }
-            pblock.innerHTML = "<pre>"+info+"</pre>";
-  }
-  chrome.cookies.getAll({}, request);
+        var data = "data:application/octet-stream;base64," + btoa(unescape(encodeURIComponent(info + s)));
+        var link = "<a href=" + data + " download='cookies.txt'>cookies.txt</a>";
+        var info = "# Enter to save " + link + "\n";
+        info += "# Filter by domain or * for all\n#\n";
+        info += "# HTTP Cookie File for <b>" + parse(text) + "</b> by Genuinous @genuinous.\n";
+        info += "# This file can be used by wget, curl, aria2c and other standard compliant tools.\n";
+        info += "# Usage Examples:\n";
+        info += ('#   1) wget -x --load-cookies cookies.txt "' + parse(b) + '"\n');
+        info += ('#   2) curl --cookie cookies.txt "' + parse(b) + '"\n');
+        info += ('#   3) aria2c --load-cookies cookies.txt "' + parse(b) + '"\n');
+        info += "#\n";
+        if (s) {
+                    info = "\n" + info + s;
+        } else {
+                    info = "\n# No cookies for " + text;
+        }
+                pblock.innerHTML = "<pre>"+info+"</pre>";
+      }
+      chrome.cookies.getAll({}, request);
     },
 });
 
@@ -1687,6 +1689,7 @@ CmdUtils.CreateCommand({
     description: "saves multiple links from clipboard or argument list to a single zip",
     author: "rostok",
     icon: "res/icon-128.png",
+    external: true,
     require: ["https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js", "https://fastcdn.org/FileSaver.js/1.1.20151003/FileSaver.js"],
     execute: function execute({text, _cmd}) {
         if (text.trim()=="") text = CmdUtils.getClipboard();
@@ -1695,7 +1698,7 @@ CmdUtils.CreateCommand({
         this.progress = [];
         var time = 0;
         var delay= 10;
-          var links = text.trim().split(/\s+/);
+        var links = text.trim().split(/\s+/);
         var zip = new JSZip();
         var i=0;
         links.forEach((l, idx, array)=>{
@@ -1846,18 +1849,18 @@ CmdUtils.CreateCommand({
     description: "kills cookies on current page",
     author: { name: "rostok" },
     execute: function execute(args) {
-          chrome.tabs.executeScript({code:`
-          var cookies = document.cookie.split(';');
-          for (var i = 0; i < cookies.length; i++) {
-              var cookie = cookies[i];
-              var eqPos = cookie.indexOf('=');
-              var name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
-              document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT';
-          }
-          `
+        chrome.tabs.executeScript({code:`
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = cookies[i];
+                var eqPos = cookie.indexOf('=');
+                var name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+                document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT';
+            }
+            `
         }, (r)=>{
-              CmdUtils.setPreview("cookies killed");
-          });    
+            CmdUtils.setPreview("cookies killed");
+        });    
     },
     preview: function preview(pblock, args) {
         // preview will only show cookies
@@ -1956,7 +1959,7 @@ CmdUtils.CreateCommand({
     icon: "https://who.is/favicon.ico",
     execute: function execute(args) { this.preview(null, args); },
     preview: function preview(pblock, args) {
-          this.url = "https://who.is/whois/{QUERY}";
+        this.url = "https://who.is/whois/{QUERY}";
         if (args.text.trim()=="") args.text = url_domain(CmdUtils.getLocation());
         if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(args.text)) 
           this.url = "https://who.is/whois-ip/ip-address/{QUERY}";
@@ -2012,7 +2015,7 @@ CmdUtils.CreateCommand({
       o += "enter pattern to filter; select with Ctrl+up/down:\n\n";
       CmdUtils.history.filter(c=>c.indexOf(args.text)>=0).forEach((c)=>{
           o += `<span data-option${dos} data-option-value='${c}'>${c}</span>\n`;  
-        dos = '';
+          dos = '';
       });
       o += "</pre>";
       pblock.innerHTML = o;
@@ -2176,9 +2179,11 @@ CmdUtils.CreateCommand({
         return args.text.replace(/,/g, ".").split(/[ +;\n\t\r]+/).reduce(function(a, b) { return (parseFloat(a) || 0) + (parseFloat(b) || 0); }, 0);
     },
     execute: function execute(args) {
+        if (args.text.trim()=="") args.text = CmdUtils.getClipboard();
         CmdUtils.setSelection(this.main(args));
     },
     preview: function preview(pblock, args) {
+    	if (args.text.trim()=="") args.text = CmdUtils.getClipboard();
         pblock.innerHTML = "" + this.main(args);
     },
 });
