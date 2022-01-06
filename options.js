@@ -85,7 +85,7 @@ async function saveScripts(instance, changeObj) {
     var a = document.getElementById("download");
     var file = new Blob([customscripts], {type: "text/plain"});
     a.href = URL.createObjectURL(file);
-    a.download = "ubichr-custom-scripts-"+(new Date()).toISOString().substr(0,10)+".js";
+    a.download = "ubichr-custom-scripts-"+(new Date()).toISOString().substring(0,10)+".js";
 
     if (changeObj && changeObj.origin=='setValue') return; // save on user input
     if (customscripts.trim()=="") {
@@ -141,7 +141,8 @@ editor = CodeMirror.fromTextArea( document.getElementById("code"), {
     lint:true,
     autofocus:true,
     extraKeys: {
-       'Ctrl-/': 'toggleComment'
+       'Ctrl-/': 'toggleComment',
+       "Ctrl-S": function(instance) { saveScripts(null, {origin:'setValue'}); document.getElementById("download").click(); },       
     }
 });
 

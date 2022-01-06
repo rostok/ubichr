@@ -139,7 +139,7 @@ function ubiq_dispatch_command(line, args) {
     if (text=="") text = CmdUtils.selectedText;
 
     // Expand match (typing 'go' will expand to 'google')
-    cmd = ubiq_match_first_command(cmd);
+    var cmd = ubiq_match_first_command(cmd);
     ubiq_replace_first_word(cmd);
 
     // Find command element
@@ -192,8 +192,8 @@ function ubiq_help() {
     html += "F5 - reload the extension<br>";
     html += "↑ / ↓ - select suggestion<br>";
     html += "Tab - expand suggestion<br>";
+    html += "Space (selected input) - hide params<br>";
     html += "Ctrl+↑ / ↓ - select preview option<br>";
-    html += "<br>";
     html += "Ctrl+R / Alt+F8 - command history<br>";
     html += "Ctrl+P / Ctrl+E - previous command<br>";
     html += "Ctrl+N / Ctrl+X - next command<br>";
@@ -203,15 +203,8 @@ function ubiq_help() {
 }
 
 function ubiq_focus() {
-    el = document.getElementById('ubiq_input');
-    if (el.createTextRange) {
-        var oRange = el.createTextRange();
-        oRange.moveStart("character", 0);
-        oRange.moveEnd("character", el.value.length);
-        oRange.select();
-    } else if (el.setSelectionRange) {
-        el.setSelectionRange(0, el.value.length);
-    }
+    var el = document.getElementById('ubiq_input');
+    el.setSelectionRange(0, el.value.length);
     el.focus();
 }
 
@@ -482,6 +475,12 @@ function ubiq_keydown_handler(evt) {
         return;
     }
 
+    // SPACE will remove everything beyond first word+space ONLY if whole input is selected
+    if (kc == 32) {
+        let el = document.getElementById('ubiq_input');
+        if (el.selectionStart==0 && el.selectionEnd==el.value.length) ubiq_set_input(ubiq_command().split(" ").shift().trim(), false)
+    }
+
     // On ENTER, execute the given command
     if (kc == 13) {
         ubiq_execute();
@@ -499,7 +498,7 @@ function ubiq_keydown_handler(evt) {
     // Ctrl+C copies preview to clipboard
     if (kc == 67 && evt.ctrlKey) {
         backgroundPage.console.log("copy to clip");
-        var el = ubiq_preview_el();
+        let el = ubiq_preview_el();
         if (!el) return;
         CmdUtils.setClipboard( el.innerText );
         evt.preventDefault();
@@ -528,7 +527,7 @@ function ubiq_keydown_handler(evt) {
     // Ctrl+R / Alt+F8 shows history
     if ((kc == 82 && evt.ctrlKey) || (kc == 119 && evt.altKey)) {
         ubiq_set_input('history ', false)
-        cmd = document.getElementById('ubiq_input');
+        let cmd = document.getElementById('ubiq_input');
         evt.preventDefault();
         return;
     }
@@ -576,18 +575,18 @@ function ubiq_keyup_handler(evt) {
 }
 
 function ubiq_save_input() {
-    cmd = document.getElementById('ubiq_input');
+    let cmd = document.getElementById('ubiq_input');
     if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.set({ 'lastCmd': cmd.value });
 }
 
 function ubiq_set_input(v, select=true) {
-    cmd = document.getElementById('ubiq_input');
+    let cmd = document.getElementById('ubiq_input');
     cmd.value = v;
     if (select) cmd.select();
 }
 
 function ubiq_load_input(callback) {
-    cmd = document.getElementById('ubiq_input');
+    let cmd = document.getElementById('ubiq_input');
     if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.get('lastCmd', function(result) {
         lastCmd = result.lastCmd || "";
         cmd.value = lastCmd;

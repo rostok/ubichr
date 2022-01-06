@@ -269,6 +269,26 @@ To search for commands shared by others go to https://gist.github.com/search?q=u
 
 In case you just want to share command via other means execute `command-source name` to copy source to clipboard.
 
+# Keyboard shortcuts
+## Command popup
+- Enter - execute current command
+- Shift+Enter - execute to inactive tab
+- Ctrl+C - copy preview output to clipboard
+- F5 - reload the extension
+- ↑ / ↓ - select command suggestion
+- Tab - expand current suggestion to default command name
+- Space - remove command parameters; works only when input is fully selected (useful for calling last command with different parameter)
+- Ctrl+↑ / ↓ - select preview option
+- Ctrl+R / Alt+F8 - shows command history, enter parameter to filter results
+- Ctrl+P / Ctrl+E - previous command
+- Ctrl+N / Ctrl+X - next command
+
+## Scripts editor
+- Ctrl-/ - comment block of code
+- Ctrl-S - save scripts to file
+- Ctrl-F - search
+- Ctrl-G - go to next search location
+
 # Alternatives
 Svalorzen has forked UbiChr and created UbiShell which has more shell like UI with piping and command options. Check it out here: https://github.com/Svalorzen/UbiShell
 
