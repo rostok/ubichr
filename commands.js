@@ -1374,7 +1374,6 @@ CmdUtils.CreateCommand({
     license: "MIT",
     execute: ()=>{ CmdUtils.addTab("result.html"); },
     preview: function preview(pblock, {text, _cmd}) {
-      var d = "<hr>";
       text = text.trim().toLowerCase();
       var substrings = text.split(/\s+/);
       if (text.length <= 2) {
