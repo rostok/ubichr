@@ -1374,6 +1374,7 @@ CmdUtils.CreateCommand({
     license: "MIT",
     execute: ()=>{ CmdUtils.addTab("result.html"); },
     preview: function preview(pblock, {text, _cmd}) {
+      var d = "<hr>";
       text = text.trim().toLowerCase();
       var substrings = text.split(/\s+/);
       if (text.length <= 2) {
@@ -1383,15 +1384,14 @@ CmdUtils.CreateCommand({
         chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
         chrome.tabs.query({}, (t)=>{
           t.filter(t=>!t.url.startsWith("chrome:")).reduce((a,b)=>{
-              chrome.tabs.executeScript(b.id, {code:"document.body.innerHTML.toString();"}, (ret)=>{
-                arr = arr.concat( 
-                  jQuery('a', ret[0])
-                  .absolutize(CmdUtils.getLocationOrigin(b.url))
-                  .map( function() { return jQuery(this).attr('href'); })
-                  .get()
-                  .filter(s=>substrings.every(subs => s.toLowerCase().indexOf(subs)>=0))                                             
-                );
-                pblock.innerHTML = arr.filter((v, i, a) => a.indexOf(v) === i).join("<br/>");
+              chrome.tabs.executeScript(b.id, 
+                {code:"[...document.querySelectorAll('a')].map(a=>a.href);"}, 
+                (ret)=>{
+                var rrr = [];
+                ret.forEach(a => rrr=rrr.concat(a)); // ret is array of values for every frame !
+                arr = arr.concat( rrr.filter(s=>substrings.every(subs => s.toLowerCase().includes(subs))) );
+                arr = arr.filter((v, i, a) => a.indexOf(v) === i);
+                pblock.innerHTML = arr.join("<br/>");
                 chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
               });
           });
