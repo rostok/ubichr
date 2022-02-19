@@ -2051,6 +2051,7 @@ CmdUtils.CreateCommand({
         if (CmdUtils.getcmd("mark")) CmdUtils.getcmd("mark").highlights=""; 
     }
 });
+
 CmdUtils.CreateCommand({
     name: ["mark","highlight"],
     description: "highlights/marks arguments on current tab, permanent on execute, clear on empty",
@@ -2061,7 +2062,7 @@ CmdUtils.CreateCommand({
       if (text=="") 
         CmdUtils.removeUpdateHandler("markHandler");
       else
-        CmdUtils.addUpdateHandler("markHandler", ()=>{ this.preview(null, {text}); });
+        CmdUtils.addUpdateHandler("markHandler", ()=>{ _cmd.preview(null, {text}); });
       this.highlights = text;
       CmdUtils.setPreview(this.description+"<hr>highlights: "+this.highlights);
     },
@@ -2069,7 +2070,7 @@ CmdUtils.CreateCommand({
       CmdUtils.ajaxGet("https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js", (data)=>{
         chrome.tabs.executeScript({ file: "lib/jquery-3.6.0.min.js" }, (r)=>{
           var code = data + `
-                  var args='${text}'.split(/\\s+/);
+                var args='${text}'.split(/\\s+/);
                 jQuery("body").unmark();
                 args.forEach( a => jQuery("body").mark(a,{separateWordSearch:false}) );
                 `;
