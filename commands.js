@@ -26,7 +26,7 @@ CmdUtils.CreateCommand({
     icon: "res/icon-128.png",
     execute: (args) => {
         var c = CmdUtils.getcmd(args.text);
-        if (c==undefined) return;
+        if (c === undefined) return;
         var d = CmdUtils.dump(args.text);
         d = JSON.stringify(d);
         d = JSON.stringify(`
@@ -849,7 +849,7 @@ function msTranslator(method, params, back) {
 CmdUtils.CreateCommand({
     name: "translate",
     description: "Translates from one language to another.",
-    icon: "https://www.bing.com/translator/favicon.ico",
+    icon: "http://www.microsoft.com/en-us/translator/wp-content/themes/ro-translator/img/banner-app-icon.png",
     help: '\
     You can specify the language to translate to,\
     and the language to translate from.\
@@ -1277,7 +1277,7 @@ CmdUtils.CreateCommand({
               chrome.tabs.executeScript(b.id, 
                                         {code:"document.body.innerText.toString();"}, 
                                         (ret)=>{
-                                          if (typeof ret==='undefined') return;
+                                          if (typeof ret === 'undefined') return;
                                           //console.log("ret",ret);
                                           arr = arr.concat( ret[0].split(/\s/).filter(s=>s.indexOf(text)>=0) );
                                           pblock.innerHTML = arr.filter((v, i, a) => a.indexOf(v) === i).join("<br/>");
@@ -1312,7 +1312,7 @@ CmdUtils.CreateCommand( {
               chrome.tabs.executeScript(b.id, 
                                         {code:"document.body.innerText.toString();"}, 
                                         (ret)=>{
-                                          if (typeof ret==='undefined') return;
+                                          if (typeof ret === 'undefined') return;
                                           var re = new RegExp(text, "gi");
                                           var m;
                                           do {
@@ -1462,12 +1462,12 @@ CmdUtils.CreateCommand({
     preview: function preview(pblock, {text}) {
         pblock.innerHTML = "Searches different words with the same meaning "+text;
         if (text=="") return;
-        var url = "http://www.thesaurus.com/browse/" + encodeURIComponent(text);
+        var url = "https://www.thesaurus.com/browse/" + encodeURIComponent(text);
         CmdUtils.ajaxGet(url, function(data) {
             pblock.innerHTML = jQuery(".MainContentContainer", data).html();
             jQuery("a", pblock).each(function() {
                 var href = $(this).attr("href");
-                if (href==undefined) return;
+                if (href === undefined) return;
                 $(this).attr("target", "_blank").attr("href", 'https://www.thesaurus.com'+href);
             });
             if (pblock.innerHTML=="undefined") pblock.innerHTML = "no words";
@@ -1583,25 +1583,6 @@ CmdUtils.CreateCommand({
     },
 });
 
-var thes = CmdUtils.getcmd("thesaurus");
-thes.name = ["thesaurus", "english-thesaurus"];
-CmdUtils.CreateCommand(thes);
-thes.preview = function preview(pblock, {text}) {
-    pblock.innerHTML = "Searches different words with the same meaning "+text;
-    if (text=="") return;
-    var url = "https://www.thesaurus.com/browse/" + encodeURIComponent(text);
-    CmdUtils.ajaxGet(url, function(data) {
-        pblock.innerHTML = jQuery(".MainContentContainer", data).html();
-        jQuery("a", pblock).each(function() {
-            var href = $(this).attr("href");
-            if (href==undefined) return;
-            $(this).attr("target", "_blank").attr("href", 'https://www.thesaurus.com'+href);
-        });
-        if (pblock.innerHTML=="undefined") pblock.innerHTML = "no words";
-    });
-};
-
-CmdUtils.getcmd("translate").icon = "http://www.microsoft.com/en-us/translator/wp-content/themes/ro-translator/img/banner-app-icon.png";
 CmdUtils.CreateCommand({
     icon: "http://www.microsoft.com/en-us/translator/wp-content/themes/ro-translator/img/banner-app-icon.png",
     name: "translate-en",
@@ -2056,30 +2037,29 @@ CmdUtils.CreateCommand({
     name: ["mark","highlight"],
     description: "highlights/marks arguments on current tab, permanent on execute, clear on empty",
     timeout: 250,
-    external: true, // uses mark.js v8.11.1 and jQuery
+    external: true, // uses vanilla mark.js v8.11.1 
     icon: "🟨",
     execute: function ({text, _cmd}) {
       if (text=="") 
         CmdUtils.removeUpdateHandler("markHandler");
       else
         CmdUtils.addUpdateHandler("markHandler", ()=>{ _cmd.preview(null, {text}); });
-      this.highlights = text;
-      CmdUtils.setPreview(this.description+"<hr>highlights: "+this.highlights);
+      _cmd.highlights = text;
+      CmdUtils.setPreview(_cmd.description+"<hr>highlights: "+_cmd.highlights);
     },
     preview: function preview(pblock, {text, _cmd}) {   
-      CmdUtils.ajaxGet("https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js", (data)=>{
-        chrome.tabs.executeScript({ file: "lib/jquery-3.6.0.min.js" }, (r)=>{
+      CmdUtils.ajaxGet("https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js", (data)=>{
           var code = data + `
                 var args='${text}'.split(/\\s+/);
-                jQuery("body").unmark();
-                args.forEach( a => jQuery("body").mark(a,{separateWordSearch:false}) );
+                var markinstance = new Mark(document.querySelector("body"));
+				markinstance.unmark({done:()=>markinstance.mark(args)});
                 `;
           chrome.tabs.executeScript({ code: code });
-        });
       });
-      if (_cmd)CmdUtils.setPreview(this.description+"<hr>highlights: "+this.highlights);
+      if (_cmd)CmdUtils.setPreview(_cmd.description+"<hr>highlights: "+_cmd.highlights);
     }
 });
+
 
 CmdUtils.CreateCommand({
     name: "open",

@@ -278,10 +278,10 @@ CmdUtils.createTab = (props, callback=undefined) => {
   var val = props.value;  delete props.value;
   var sub = props.submit; delete props.submit;
   var del = parseInt(props.delay) || 0;  delete props.delay;
-  if ( (inp!==undefined && val!==undefined) || sub!==undefined ) cb = (tab) => {
+  if ( (inp !== undefined && val !== undefined) || sub !== undefined ) cb = (tab) => {
     var code = 'try {\n console.log("CmdUtils.createTab() starts");\n';
-    if (inp!==undefined) code += ` document.querySelector("${inp}").value = ${JSON.stringify(val)}; console.log("value",${JSON.stringify(val)});\n`;
-    if (sub!==undefined) code += ` window.setTimeout(()=>{document.querySelector("${sub}").click(); console.log("submit ${del}ms");},${del});\n`;
+    if (inp !== undefined) code += ` document.querySelector("${inp}").value = ${JSON.stringify(val)}; console.log("value",${JSON.stringify(val)});\n`;
+    if (sub !== undefined) code += ` window.setTimeout(()=>{document.querySelector("${sub}").click(); console.log("submit ${del}ms");},${del});\n`;
     code += ' console.log("CmdUtils.createTab() ends");\n}\n catch(e) {\n console.error("CmdUtils.createTab() failed", e);\n} ';
     CmdUtils.log(tab);
     chrome.tabs.executeScript(tab.id, {code:code}, (ret)=>{
@@ -348,7 +348,7 @@ CmdUtils.refreshPreview = ()=>{
 
 // closes ubiquity popup
 CmdUtils.closePopup = function closePopup(w) {
-    if (typeof popupWindow !== "undefined") popupWindow.close();
+    if (popupWindow !== 'undefined') popupWindow.close();
 };
 
 // gets json with xhr
@@ -400,7 +400,7 @@ CmdUtils.loadScripts = function loadScripts(url, callback, wnd=window) {
     url = url || [];
     if (url.constructor === String) url = [url];
 
-    if (typeof wnd.jQuery === "undefined") {
+    if (typeof wnd.jQuery === 'undefined') {
         console.error("there's no jQuery at "+wnd+".");
         return false;
     }
@@ -445,6 +445,7 @@ CmdUtils.addUpdateHandler = function (name, handler) {
 
 // removes named handler from CmdUtils.updateHandlers array
 CmdUtils.removeUpdateHandler = function (name) {
+    if (name === undefined) return CmdUtils.updateHandlers = [];
     CmdUtils.updateHandlers = CmdUtils.updateHandlers.filter(v=>v.name!=name);
     CmdUtils.deblog("update handler",name,"removed");
 };
@@ -684,14 +685,14 @@ CmdUtils.url_domain = url_domain;
                     .attr("target", "_blank")
                     .not('[href^="http"],[href^="//:"],[href^="mailto:"],[href^="#"],[href^="//"]')
                     .attr('href', function(index, value) {
-                if (typeof value === "undefined") return url;
+                if (typeof value === 'undefined') return url;
                 if (value.substr(0,1) !== "/") value = "/" + value;
                 return url + value;
             });
             result.find("img")
                     .not('[src^="http"],[src^="//:"],[src^="mailto:"],[src^="#"],[src^="//"]')
                     .attr('src', function(index, value) {
-                if (typeof value === "undefined") return url;
+                if (typeof value === 'undefined') return url;
                 if (value.substr(0,1) !== "/") value = "/" + value;
                 return url + value;
             });
@@ -704,7 +705,7 @@ CmdUtils.url_domain = url_domain;
 
 (function ( $ ) {
     $.fn.absolutize = function(origin) { 
-        if (typeof origin === "undefined" || origin == "") origin = window.origin;
+        if (typeof origin === 'undefined' || origin == '') origin = window.origin;
         return this.each((i,e)=>{ 
                                  $(e).attr('href', origin+$(e).prop('pathname')+$(e).prop('search')); 
                                  if (e.tagName=="IMG") {
@@ -720,18 +721,18 @@ CmdUtils.url_domain = url_domain;
 // changes src and href attributes in jQuery resultset with absoulute urls, the old version
 (function ( $ ) {
     $.fn.absolutizeOld = function( url ) {
-        if (typeof url === "undefined" || url == "") url = window.location;
+        if (typeof url === 'undefined' || url == '') url = window.location;
         var others = this.find('[href^="http"],[href^="//:"],[href^="mailto:"],[href^="#"],[href!=""][href],[href^="//"]') 
                          .add('[src^="http"],[src^="//:"],[src^="mailto:"],[src^="#"],[src!=""][src],[src^="//"]');
         var anchors = this.not('[href^="http"],[href^="//:"],[href^="mailto:"],[href^="#"],[href^="//"]')
                     .attr('href', function(index, value) {
-                        if (typeof value === "undefined") return url;
+                        if (typeof value === 'undefined') return url;
                         if (value.substr(0,1) !== "/" && url.substr(-1) !== "/") value = "/" + value;
                         return url + value;
                     });
         var images = this.not('[src^="http"],[src^="//:"],[src^="mailto:"],[src^="#"],[src^="//"]')
                     .attr('src', function(index, value) {
-                        if (typeof value === "undefined") return url;
+                        if (typeof value === 'undefined') return url;
                         if (value.substr(0,1) !== "/" && url.substr(-1) !== "/") value = "/" + value;
                         return url + value;
                     });
