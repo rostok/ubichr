@@ -348,7 +348,7 @@ CmdUtils.refreshPreview = ()=>{
 
 // closes ubiquity popup
 CmdUtils.closePopup = function closePopup(w) {
-    if (popupWindow !== 'undefined') popupWindow.close();
+    if (typeof popupWindow !== 'undefined') popupWindow.close();
 };
 
 // gets json with xhr
