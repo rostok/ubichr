@@ -391,7 +391,7 @@ CmdUtils.makeSearchCommand({
           
         },
       };
-      if (args._cmd.key !== undefined || args._cmd.cx !== undefined) {
+      if (args._cmd.key !== undefined && args._cmd.cx !== undefined) {
           for (options.data.start=0; options.data.start<30; options.data.start+=10) CmdUtils.jQuery.ajax(options);
       } else {
             pblock.innerHTML = `
