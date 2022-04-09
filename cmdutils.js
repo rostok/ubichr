@@ -2,7 +2,7 @@
 // jshint esversion: 8
 
 if (!CmdUtils) var CmdUtils = { 
-    VERSION: chrome.runtime.getManifest().version,
+    VERSION: typeof chrome !== 'undefined' && typeof chrome.runtime!== 'undefined' ? chrome.runtime.getManifest().version : "N/A",
     DEBUG: false,
     CommandList: [],
     history: [],        // array of cmdline strings, first element is the most recent (like stack)
@@ -177,7 +177,6 @@ CmdUtils._searchCommandPreview = function _searchCommandPreview( pblock, {text: 
       url += '#'+hashanch[0];
     }
     var zoom = this.prevAttrs.zoom || 0.85;
-    //pblock.style.overflow = 'hidden'; 
     var doc = pblock.ownerDocument;
     var wnd = doc.defaultView || doc.parentWindow;
     if (wnd._ubi_prevTO != null) {
@@ -211,7 +210,7 @@ CmdUtils._searchCommandPreview = function _searchCommandPreview( pblock, {text: 
         (CmdUtils._afterLoadPreview.bind(self))(pblock.lastChild); 
       };
       // zoom overflow dirty fix
-      CmdUtils.popupWindow.jQuery("#ubiq-command-preview").css("overflow-y", "hidden"); 
+      CmdUtils.popupWindow.jQuery("#ubiq-command-preview").css("overflow", "hidden"); 
       if (scrollOffs[0] || scrollOffs[1]) {
         wnd.setTimeout(function() {
           pblock.scrollLeft = scrollOffs[0];
@@ -265,33 +264,49 @@ CmdUtils.addTab = function addTab(url) {
     }
 };
 
-// this helper wraps chrome.tabs.create() function however properties object can have additional input, value, submit, delay keys set
-// in this case DOM element with input selector will be assigned value
+// this helper wraps chrome.tabs.create() function however properties object can have additional input, value, submit, form, delay keys set
+// in this case DOM element with input selector will be assigned value, and bubbled change event dispatched
 // and DOM element with submit selector will be clicked
+// then DOM element with form selector will be submitted
 // finally callback is called after tab is created
+// all parameters are optional
 // use this to immediately fill in and submit form after delay (default is 0ms)
-// selectors are for document.querySelector()
+// selectors should be strings for document.querySelector() query
 CmdUtils.createTab = (props, callback=undefined) => {
-  callback = callback || (()=>{});
-  var cb = callback;
-  var inp = props.input;  delete props.input;
-  var val = props.value;  delete props.value;
-  var sub = props.submit; delete props.submit;
-  var del = parseInt(props.delay) || 0;  delete props.delay;
-  if ( (inp !== undefined && val !== undefined) || sub !== undefined ) cb = (tab) => {
-    var code = 'try {\n console.log("CmdUtils.createTab() starts");\n';
-    if (inp !== undefined) code += ` document.querySelector("${inp}").value = ${JSON.stringify(val)}; console.log("value",${JSON.stringify(val)});\n`;
-    if (sub !== undefined) code += ` window.setTimeout(()=>{document.querySelector("${sub}").click(); console.log("submit ${del}ms");},${del});\n`;
-    code += ' console.log("CmdUtils.createTab() ends");\n}\n catch(e) {\n console.error("CmdUtils.createTab() failed", e);\n} ';
-    CmdUtils.log(tab);
-    chrome.tabs.executeScript(tab.id, {code:code}, (ret)=>{
-      // script was injected, nothing to do here
-    });
-    callback(tab);
-  };
-  chrome.tabs.create(props, cb);
+    callback = callback || (()=>{});
+    var cb = callback;
+    var inp = props.input || "";  delete props.input;
+    var val = props.value; delete props.value;
+    var sub = props.submit || ""; delete props.submit;
+    var frm = props.form || ""; delete props.form;
+    var del = parseInt(props.delay) || 0;  delete props.delay;
+    if ( (inp != "" && val !== undefined) || sub != "" ) cb = (tab) => {
+      var code = `
+      try {
+        window.setTimeout(()=>{
+          console.log("CmdUtils.createTab() starts i:${inp} v:${val} s:${sub} d:${del} ");
+          if ("${inp}"!="") {
+            var i = document.querySelector("${inp}");
+            i.value = ${JSON.stringify(val)};
+            i.dispatchEvent(new Event('change', { 'bubbles': true }))
+          }
+          if ("${sub}"!="") document.querySelector("${sub}").click(); 
+          if ("${frm}"!="") document.querySelector("${frm}").submit(); 
+          console.log("CmdUtils.createTab() ends");
+        },${del});
+      } 
+      catch(e) {
+        console.error("CmdUtils.createTab() failed", e);
+      }`;
+      CmdUtils.log(tab);
+      chrome.tabs.executeScript(tab.id, {code:code}, (ret)=>{
+        // script was injected, nothing to do here
+      });
+      callback(tab);
+    };
+    chrome.tabs.create(props, cb);
 };
-
+  
 // opens new tab with post request and provided data
 CmdUtils.postNewTab = function postNewTab(url, data) {
     var form = document.createElement("form");
@@ -560,6 +575,7 @@ CmdUtils.loadCustomScripts = function loadCustomScripts() {
     // mark built-int commands
     CmdUtils.CommandList.forEach((c)=>{c['builtIn']=true;});
 
+    if (typeof chrome === 'undefined' || typeof chrome.storage === 'undefined') return;
     try {
         // load custom scripts
         chrome.storage.local.get('customscripts', function(result) {
@@ -621,6 +637,7 @@ CmdUtils.saveToHistoryPreview = function (cmdline) {
 
 // load history
 CmdUtils.loadHistory = function () {
+    if (typeof chrome === 'undefined' || typeof chrome.storage === 'undefined') return;
     try {
         chrome.storage.local.get('history', function(result) { 
             CmdUtils.history = result.history; 
@@ -701,8 +718,7 @@ CmdUtils.url_domain = url_domain;
     };
 }( jQuery ));
 
-// changes src and href attributes in jQuery resultset with absoulute urls
-
+// changes src and href attributes in jQuery resultset with absolute urls
 (function ( $ ) {
     $.fn.absolutize = function(origin) { 
         if (typeof origin === 'undefined' || origin == '') origin = window.origin;
@@ -737,12 +753,12 @@ CmdUtils.url_domain = url_domain;
                         return url + value;
                     });
         return others.add(anchors).add(images);
-        };
+    };
 }( jQuery ));
 
 // neat function by mike https://stackoverflow.com/questions/2346011/how-do-i-scroll-to-an-element-within-an-overflowed-div
 (function ( $ ) {
-        $.fn.scrollTo = function(elem, speed) {
+    $.fn.scrollTo = function(elem, speed) {
         var $this = jQuery(this);
         var $this_top = $this.offset().top;
         var $this_bottom = $this_top + $this.height();
@@ -765,6 +781,19 @@ CmdUtils.url_domain = url_domain;
     };
 }( jQuery ));
 
+// https://stackoverflow.com/posts/37285344
+(function ( $ ) {
+    $.fn.inView = function(container, element) {
+        //Determine container top and bottom
+        let cTop = container.scrollTop;
+        let cBottom = cTop + container.clientHeight;
+        //Determine element top and bottom
+        let eTop = element.offsetTop;
+        let eBottom = eTop + element.clientHeight;
+        //Check if out of view
+        return (eTop > cTop || eBottom < cBottom)
+    };
+}( jQuery ));
 
 // https://stackoverflow.com/posts/37285344
 (function ( $ ) {
@@ -778,5 +807,18 @@ CmdUtils.url_domain = url_domain;
         //Check if out of view
         if (eTop < cTop) { container.scrollTop -= (cTop - eTop); }
         else if (eBottom > cBottom) { container.scrollTop += (eBottom - cBottom); }
+    };
+}( jQuery ));
+
+// https://stackoverflow.com/a/40658647/2451546
+(function ( $ ) {
+    $.fn.inViewport = function() {
+        var elementTop = $(this).offset().top;
+        var elementBottom = elementTop + $(this).outerHeight();
+
+        var viewportTop = $(window).scrollTop();
+        var viewportBottom = viewportTop + $(window).height();
+
+        return elementBottom > viewportTop && elementTop < viewportBottom;
     };
 }( jQuery ));

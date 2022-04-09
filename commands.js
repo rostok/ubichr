@@ -9,7 +9,7 @@ CmdUtils.CreateCommand({
     execute: (args) => {
         var d = CmdUtils.dump(args.text);
         CmdUtils.setClipboard(d);
-        CmdUtils.popupWindow.ubiq_set_tip("copied<hr>");
+        CmdUtils.popupWindow.ubiq_set_tip("copied");
     },
     preview: (pblock, args) => {
         var d = CmdUtils.dump(args.text);
@@ -55,7 +55,7 @@ CmdUtils.CreateCommand({
        CmdUtils.addTab("https://gist.github.com/");
     },
     preview: (pblock, args) => {
-        CmdUtils.popupWindow.ubiq_set_tip("execute to paste this into gist.github.com<hr>");
+        CmdUtils.popupWindow.ubiq_set_tip("execute to paste this into gist.github.com");
         var d = CmdUtils.dump(args.text);
         d = new Option(d).innerHTML;
         pblock.innerHTML = `<pre>${d}</pre>`;
@@ -333,7 +333,7 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
-    names: ["debug-popup-editor"],
+    names: ["debug-popup-editor","debug-sandbox"],
     description: "Opens UbiChr popup in a tab and with commands editor",
     icon: "res/icon-128.png",
     execute: CmdUtils.SimpleUrlBasedCommand("debugpopup.html")
@@ -349,17 +349,62 @@ CmdUtils.CreateCommand({
     }
 });
 
-CmdUtils.CreateCommand({
-    name: "image-search",
-    description: "Google image search",
-    author: {},
-    icon: "http://www.google.com/favicon.ico",
-    homepage: "",
-    license: "",
-    preview: "Google image search",
-    execute: CmdUtils.SimpleUrlBasedCommand("https://images.google.com/images?hl=en&q={text}")
+CmdUtils.makeSearchCommand({
+    name: ["gimages","image-search"],
+    timeout: 1000,
+    author: {name: "Federico Parodi", email: "getimages@jimmy2k.it"},
+    contributor: "satyr,rostok",
+    homepage: "http://www.jimmy2k.it/getimagescommand",
+    license: "MPL",
+    icon: "https://support.google.com/favicon.ico",
+    description: "Browse pictures from Google Images.",
+    url: "https://www.google.com/search?tbm=isch&q={QUERY}",
+    preview: function gi_preview(pblock, args) {
+      if (!args.text) { pblock.innerText = 'no args'; return; }
+      pblock.innerHTML = "";
+      var options = {
+        data: {q: args.text, start: 0, count:10, searchType:"image", key:args._cmd.key, cx:args._cmd.cx}, 
+        url: "https://customsearch.googleapis.com/customsearch/v1",
+        error: xhr => {
+          pblock.innerHTML += `<a target=_blank href='${options.url}/?q=${options.data.q}&start=${options.data.start}&searchType=${options.data.searchType}&key=${options.data.key}&cx=${options.data.cx}'>link</a>`;
+          pblock.innerHTML += `<em class=error>${xhr.status} ${xhr.statusText}</em>`;
+          pblock.innerHTML += `<em class=error><div><pre>${JSON.stringify(xhr.responseJSON,0,4)}</pre></div></em>`;
+          pblock.innerHTML += JSON.stringify(options,0,4);
+        },
+        success: (json, status, xhr) => {
+          var info = "";
+          json
+          .items.sort((a,b)=>a.image.thumbnailHeight-b.image.thumbnailHeight)
+          .forEach(item => {
+            info += `<a target=_blank href='${item.link}'><img width=102 src='${item.image.thumbnailLink}'></a>`;
+          });
+          // info = "<pre>"+JSON.stringify(json.items,0,4);
+          pblock.innerHTML += info;
+          
+          $(pblock).on('scroll', (e)=>{
+            var elem = $(e.currentTarget);
+            if (options.data.start<240 && CmdUtils.popupWindow.ubiq_last_preview_cmd==args._cmd && elem[0].scrollHeight - elem.scrollTop() == elem.outerHeight()) {
+              options.data.start+=10;
+              CmdUtils.jQuery.ajax(options);
+            }
+          });
+          
+        },
+      };
+      if (args._cmd.key !== undefined || args._cmd.cx !== undefined) {
+          for (options.data.start=0; options.data.start<30; options.data.start+=10) CmdUtils.jQuery.ajax(options);
+      } else {
+            pblock.innerHTML = `
+          To get the preview you need to obtain key/cx API credentials here:<p>
+          <a target=_blank href="https://developers.google.com/custom-search/v1/introduction">google_cse_api_key</a><br>
+          <a target=_blank href="https://support.google.com/programmable-search/answer/2649143">google_cse_api_id</a><p>
+          Afterward paste them using 'edit' command like this:
+          <pre>  CmdUtils.getcmd("gimages").key = "your-key";\n  CmdUtils.getcmd("gimages").cx = "your-search-engine-id";</pre>
+          `;
+      }
+    }
 });
-
+  
 CmdUtils.CreateCommand({
     name: ["imdb", "imdb-movies"],
     description: "Searches for movies on IMDB. Dots are replaced with spaces, if last word is a year (may be in brackets) it narrows down results",
@@ -880,7 +925,7 @@ CmdUtils.CreateCommand({
                 from: "",
                 to: dest
             });
-            if (T[0] = '"') T.split("").slice(1, -1).join("");
+            T = JSON.parse(T);
             if (typeof isSelected !== 'undefined' && _selection == true) {
                 CmdUtils.setSelection(T);
                 CmdUtils.closePopup();
@@ -906,7 +951,7 @@ CmdUtils.CreateCommand({
                 from: "",
                 to: dest
             });
-            if (T[0] = '"') T.split("").slice(1, -1).join("");
+            T = JSON.parse(T);
             CmdUtils.setPreview(T);
         } else {
             pblock.innerHTML = "text is too short or too long<BR><BR>[" + text + "]";
@@ -1080,6 +1125,7 @@ CmdUtils.CreateCommand({
             try {
                 text = m.eval(text);
                 CmdUtils.setSelection(text); 
+                CmdUtils.popupWindow.ubiq_set_input("calc "+text, false);
             } catch (e) {
                 previewBlock.innerHTML = "eval error:"+e;
             }
@@ -1213,8 +1259,7 @@ CmdUtils.CreateCommand({
     description: "Inverts all colors on current page. Based on <a target=_blank href=https://stackoverflow.com/questions/4766201/javascript-invert-color-on-all-elements-of-a-page>this</a>.",
     execute: function execute(){
         chrome.tabs.executeScript({code:`
-        javascript: (
-            function () { 
+            (()=>{ 
             // the css we are going to inject
             var css = 'html {-webkit-filter: invert(100%);' +
                 '-moz-filter: invert(100%);' + 
@@ -1224,6 +1269,7 @@ CmdUtils.CreateCommand({
             head = document.getElementsByTagName('head')[0],
             style = document.createElement('style');
             
+            if (document.body.style.backgroundColor=='') document.body.style.backgroundColor="white";
             // a hack, so you can "invert back" clicking the bookmarklet again
             if (!window.counter) { window.counter = 1;} else  { window.counter ++;
             if (window.counter % 2 == 0) { var css ='html {-webkit-filter: invert(0%); -moz-filter:    invert(0%); -o-filter: invert(0%); -ms-filter: invert(0%); }'}
@@ -1246,9 +1292,8 @@ CmdUtils.CreateCommand({
                 }
                 return rgb;
             }
-
-            document.body.style.backgroundColor = "rgb("+invert(window.getComputedStyle(document.body, null).getPropertyValue('background-color')).join(",")+")";
-            }());
+            // document.body.style.backgroundColor = "rgb("+invert(window.getComputedStyle(document.body, null).getPropertyValue('background-color')).join(",")+")";
+            })();
         `})
     },
 });
@@ -1381,16 +1426,18 @@ CmdUtils.CreateCommand({
       } else {
         var arr = [];
         chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
-        chrome.tabs.query({}, (t)=>{
-          t.filter(t=>!t.url.startsWith("chrome:")).reduce((a,b)=>{
+        chrome.tabs.query({lastFocusedWindow:true}, (t)=>{
+        t = t.filter(t=>!t.url.startsWith("chrome:"));
+        t.map(b=>{
               chrome.tabs.executeScript(b.id, 
                 {code:"[...document.querySelectorAll('a')].map(a=>a.href);"}, 
                 (ret)=>{
+                if (typeof ret==='undefined') return;
                 var rrr = [];
                 ret.forEach(a => rrr=rrr.concat(a)); // ret is array of values for every frame !
                 arr = arr.concat( rrr.filter(s=>substrings.every(subs => s.toLowerCase().includes(subs))) );
                 arr = arr.filter((v, i, a) => a.indexOf(v) === i);
-                pblock.innerHTML = arr.join("<br/>");
+                $(pblock).html(arr.join("<br/>") + ret).css({"width":"540px","height":"505px","overflow-x":"hidden"});
                 chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
               });
           });
@@ -1599,13 +1646,13 @@ CmdUtils.CreateCommand({
 CmdUtils.CreateCommand({
     icon: "http://www.microsoft.com/en-us/translator/wp-content/themes/ro-translator/img/banner-app-icon.png",
     name: "translate-pl",
-    execute: function translate_execute({text: text, _selection: _selection}) {
-        text = text.trim() + " to pl";
-        CmdUtils.getcmd("translate").execute({text, _selection:_selection}).then();
+    execute: function translate_execute(args) {
+        args.text = args.text.trim() + " to pl";
+        CmdUtils.getcmd("translate").execute(args).then();
     },
-    preview: function translate_preview(pblock, {text: text}) {
-        text = text.trim() + " to pl";
-        CmdUtils.getcmd("translate").preview(pblock, {text}).then();
+    preview: function translate_preview(pblock, args) {
+        args.text = args.text.trim() + " to pl";
+        CmdUtils.getcmd("translate").preview(pblock, args).then();
     }
 });
 
@@ -2418,6 +2465,45 @@ CmdUtils.CreateCommand({
     preview: function preview(pblock, {text}) {
         if (text.trim()=="") text = CmdUtils.getClipboard();
         pblock.innerHTML = encodeURIComponent(text);
+    },
+});
+
+function escapeHTML(html) {
+    return document.createElement('div').appendChild(document.createTextNode(html)).parentNode.innerHTML;
+}
+CmdUtils.CreateCommand( {
+    names: ["omnijquery"],
+    icon: "https://jquery.com/favicon.ico",
+    description: "searches all tabs with jquery selector and shows tags found",
+    author: "rostok",
+    execute: function() {
+      CmdUtils.addTab("result.html");
+    },
+    preview: function preview(pblock, {text, _cmd}) {
+        text = text.trim();
+        if (text.length < 2) {
+            pblock.innerHTML = this.description+"<br><br>make the selector longer ("+text.length+"/3)";
+        } else {
+            var arr = [];
+            chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
+            chrome.tabs.query({}, (t)=>{
+            t.map((b)=>{
+              if (b.url.match('^http'))
+              chrome.tabs.executeScript(b.id, 
+                {code:"document.body.innerHTML;"}, 
+                (ret)=>{
+                  if (typeof ret==='undefined') return;
+                  var r = CmdUtils.jQuery(text,ret[0]).get();
+                   r = r.map(v=>v.outerHTML);
+                   r = r.map(v=>escapeHTML(v));
+                  arr = arr.concat( r );
+                  CmdUtils.popupWindow.ubiq_set_tip(arr.length);  
+                  $(pblock).html(arr.join("<br>")).css({"width":"540px","height":"505px","overflow-x":"hidden"});
+                  chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
+                });
+            });
+          });
+        }
     },
 });
 

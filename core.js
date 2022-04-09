@@ -8,18 +8,12 @@ switch(window.location.protocol) {
    					backgroundPage = window;
    					var head = document.getElementsByTagName("head")[0];
 					var s;
-					s = document.createElement("script");
-					s.type = "text/javascript";
-					s.src = "utils.js";
-					head.appendChild(s);
-					s = document.createElement("script");
-					s.type = "text/javascript";
-					s.src = "cmdutils.js";
-					head.appendChild(s);
-					s = document.createElement("script");
-					s.type = "text/javascript";
-					s.src = "commands.js";
-					head.appendChild(s);
+					["utils.js","cmdutils.js","commands.js"].forEach(v=>{
+    					s = document.createElement("script");
+    					s.type = "text/javascript";
+    					s.src = v;
+    					head.appendChild(s);
+					});
      				break;
 
    case 'chrome-extension:':

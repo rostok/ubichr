@@ -11,7 +11,8 @@ var ubiq_selected_command = 0; // index for matches[]
 var ubiq_selected_option = -1;
 var ubiq_first_match;
 var ubiq_history_index = 0;
-var ubiq_last_preview_command = -1; // index for CommandList
+var ubiq_last_preview_command_index = -1; // index for CommandList, changed from ubiq_last_preview_command
+var ubiq_last_preview_cmd = null; // the last command structure
 
 // sets the tip field (for time being this is the preview panel)
 function ubiq_set_tip(v) {
@@ -69,7 +70,8 @@ function ubiq_show_preview(cmd, args) {
     var cmd_struct = CmdUtils.CommandList[cmd];
     if (!cmd_struct || !cmd_struct.preview) return;
     var preview_func = cmd_struct.preview;
-    ubiq_last_preview_command = cmd;
+    ubiq_last_preview_command_index = cmd;
+    ubiq_last_preview_cmd = cmd_struct;
     switch(typeof preview_func)
     {
     case 'undefined':
@@ -176,7 +178,7 @@ function ubiq_dispatch_command(line, args) {
 }
 
 function ubiq_help() {
-    var html = '<div style="position:absolute; top:56px; right:0px; color: #666;">UbiChr v'+chrome.runtime.getManifest().version+'</div>';
+    var html = '<div style="position:absolute; top:56px; right:0px; color: #666;">UbiChr v'+CmdUtils.VERSION+'</div>';
     html += '<p>Type the name of a command and press Enter to execute it, or <b>help</b> for assistance.</p>';
     html += "<p>commands loaded:<BR>";
     html += CmdUtils.CommandList.map((c)=>{
@@ -395,7 +397,7 @@ function ubiq_show_matching_commands(text) {
         var suggestions_div = document.createElement('div');
         var suggestions_list = document.createElement('ul');
         var selcmdidx = matches[ubiq_selected_command][0];
-        if (selcmdidx!=ubiq_last_preview_command) ubiq_clear();
+        if (selcmdidx!=ubiq_last_preview_command_index) ubiq_clear();
         ubiq_selected_option = -1;
         ubiq_show_preview(selcmdidx);
 
@@ -460,6 +462,9 @@ function ubiq_update_options()
 var lcmd = "";
 
 function ubiq_keydown_handler(evt) {
+    // update the window 
+    CmdUtils.popupWindow = window;
+
     // measure the input 
     CmdUtils.lastKeyEvent = evt;
     CmdUtils.inputUpdateTime = performance.now();
