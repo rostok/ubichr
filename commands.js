@@ -1424,20 +1424,21 @@ CmdUtils.CreateCommand({
       if (text.length <= 2) {
         pblock.innerHTML = this.description+"<br><br>to filter make the argument longer ("+text.length+"/3)";
       } else {
-        var arr = [];
+        _cmd.arr = [];
         chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
         chrome.tabs.query({lastFocusedWindow:true}, (t)=>{
         t = t.filter(t=>!t.url.startsWith("chrome:"));
         t.map(b=>{
               chrome.tabs.executeScript(b.id, 
-                {code:"[...document.querySelectorAll('a')].map(a=>a.href);"}, 
+                {code:"[...document.querySelectorAll('a')].map(a=>a.href).filter(a=>a!='');"}, 
                 (ret)=>{
                 if (typeof ret==='undefined') return;
                 var rrr = [];
                 ret.forEach(a => rrr=rrr.concat(a)); // ret is array of values for every frame !
-                arr = arr.concat( rrr.filter(s=>substrings.every(subs => s.toLowerCase().includes(subs))) );
-                arr = arr.filter((v, i, a) => a.indexOf(v) === i);
-                $(pblock).html(arr.join("<br/>") + ret).css({"width":"540px","height":"505px","overflow-x":"hidden"});
+                _cmd.arr = _cmd.arr
+                            .concat( rrr.filter(s=>substrings.every(subs => s.toLowerCase().includes(subs))) )
+                            .filter( (v, i, a) => a.indexOf(v) === i );
+                $(pblock).html(_cmd.arr.join("<br/>")).css({"width":"540px","height":"505px","overflow-x":"hidden"});
                 chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
               });
           });
@@ -1445,6 +1446,15 @@ CmdUtils.CreateCommand({
     }
     },
 });
+
+CmdUtils.CreateCommand({
+    name: "links-open",
+    description: "search and filter links on all tabs, case insensitive; open them on execute",
+    author: "rostok",
+    execute: function execute(args) { CmdUtils.getcmd("open").execute({text:(args._cmd.arr||[]).join(" ")});  },
+    preview: CmdUtils.getcmd("links").preview
+});
+
 
 CmdUtils.CreateCommand({
     names: ["get-urls"],
