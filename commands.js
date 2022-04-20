@@ -9,7 +9,7 @@ CmdUtils.CreateCommand({
     execute: (args) => {
         var d = CmdUtils.dump(args.text);
         CmdUtils.setClipboard(d);
-        CmdUtils.popupWindow.ubiq_set_tip("copied");
+        CmdUtils.setTip("copied");
     },
     preview: (pblock, args) => {
         var d = CmdUtils.dump(args.text);
@@ -55,7 +55,7 @@ CmdUtils.CreateCommand({
        CmdUtils.addTab("https://gist.github.com/");
     },
     preview: (pblock, args) => {
-        CmdUtils.popupWindow.ubiq_set_tip("execute to paste this into gist.github.com");
+        CmdUtils.setTip("execute to paste this into gist.github.com");
         var d = CmdUtils.dump(args.text);
         d = new Option(d).innerHTML;
         pblock.innerHTML = `<pre>${d}</pre>`;
@@ -1116,6 +1116,7 @@ CmdUtils.CreateCommand({
         }
         else
             previewBlock.innerHTML = desc;
+        return previewBlock.innerText;
     },
     execute: function ({text}) { 
         if (text.trim()!='') {
@@ -1417,7 +1418,10 @@ CmdUtils.CreateCommand({
     description: "search and filter links on all tabs, case insensitive",
     author: "rostok",
     license: "MIT",
-    execute: ()=>{ CmdUtils.addTab("result.html"); },
+    execute: ({text, _cmd})=>{
+        CmdUtils.setClipboard(_cmd.arr.join("\n"));
+        CmdUtils.setTip("copied");
+    },
     preview: function preview(pblock, {text, _cmd}) {
       text = text.trim().toLowerCase();
       var substrings = text.split(/\s+/);
@@ -1439,7 +1443,6 @@ CmdUtils.CreateCommand({
                             .concat( rrr.filter(s=>substrings.every(subs => s.toLowerCase().includes(subs))) )
                             .filter( (v, i, a) => a.indexOf(v) === i );
                 $(pblock).html(_cmd.arr.join("<br/>")).css({"width":"540px","height":"505px","overflow-x":"hidden"});
-                chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
               });
           });
         });
@@ -1702,9 +1705,9 @@ CmdUtils.makeSearchCommand({
       if (args.text.trim()!="" && CmdUtils.getLocation()!="") {
         var url = new URL(CmdUtils.getLocation());
         args.text = args.text + " site:"+url.hostname;
-        CmdUtils.popupWindow.ubiq_set_result("");
+        CmdUtils.setResult("");
         CmdUtils.getcmd("site-search").oldpreview(pblock, args);
-        CmdUtils.popupWindow.ubiq_set_result("");
+        CmdUtils.setResult("");
       }
     },
 });
@@ -2050,7 +2053,7 @@ CmdUtils.CreateCommand({
       var o = "";
       o += "<pre>";
       o += "enter pattern to filter; select with Ctrl+up/down:\n\n";
-      CmdUtils.history.filter(c=>c.indexOf(args.text)>=0).forEach((c)=>{
+      CmdUtils.history.filter(c=>c.indexOf(args.text)>=0 || args.text=="").forEach((c)=>{
           o += `<span data-option${dos} data-option-value='${c}'>${c}</span>\n`;  
           dos = '';
       });
@@ -2507,7 +2510,7 @@ CmdUtils.CreateCommand( {
                    r = r.map(v=>v.outerHTML);
                    r = r.map(v=>escapeHTML(v));
                   arr = arr.concat( r );
-                  CmdUtils.popupWindow.ubiq_set_tip(arr.length);  
+                  CmdUtils.setTip(arr.length);  
                   $(pblock).html(arr.join("<br>")).css({"width":"540px","height":"505px","overflow-x":"hidden"});
                   chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
                 });
@@ -2515,6 +2518,29 @@ CmdUtils.CreateCommand( {
           });
         }
     },
+});
+
+CmdUtils.makeSearchCommand({
+    name: ["discogs"],
+    description: "search discogs",
+    icon: "https://discogs.com/favicon.ico",
+    url: "https://www.discogs.com/search/?type=all&q={text}"
+});
+
+CmdUtils.makeSearchCommand({
+    name: ["genius","lyrics"],
+    description: "search genius.com",
+    icon: "https://genius.com/favicon.ico",
+    url: "https://genius.com/search?q={QUERY}",
+    prevAttrs: {zoom: 0.70},
+});
+  
+CmdUtils.makeSearchCommand({
+    name: "12ft",
+    icon: "https://12ft.io/favicon.png",
+    url: "https://12ft.io/proxy?q={location}",
+    description: "skips paywalls with help of 12ft.io",
+    author: "rostok",
 });
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
