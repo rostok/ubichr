@@ -107,7 +107,8 @@ function ubiq_show_preview(cmd, args) {
                     CmdUtils.backgroundWindow.clearTimeout(CmdUtils.lastPrevTimeoutID);
                     (preview_func.bind(cmd_struct))(ubiq_preview_el(), directObj);
                 } catch (e) {
-                    CmdUtils.notify(e.toString(), "preview function error")
+                    CmdUtils.lastError = `preview [${cmd_struct.name} [${text}]\n\n${e.stack}`;
+                    CmdUtils.notify(e.toString(), "preview function error");
                     console.error(e.stack);
                     if (CmdUtils.backgroundWindow && typeof CmdUtils.backgroundWindow.error === 'function') {
                         CmdUtils.backgroundWindow.error(e.stack);
@@ -167,7 +168,8 @@ function ubiq_dispatch_command(line, args) {
         CmdUtils.saveToHistory(cmd_struct.name+" "+text);
         (cmd_struct.execute.bind(cmd_struct))(directObj);
     } catch (e) {
-        CmdUtils.notify(e.toString(), "execute function error")
+        CmdUtils.lastError = `execute [${cmd_struct.name} [${text}]\n\n${e.stack}`;
+        CmdUtils.notify(e.toString(), "execute function error");
         console.error(e.stack);
         if (CmdUtils.backgroundWindow && typeof CmdUtils.backgroundWindow.error === 'function') {
             CmdUtils.backgroundWindow.error(e.stack);
