@@ -99,7 +99,7 @@ CmdUtils.CreateCommand = function CreateCommand(args) {
 // also {location} will be replaced with current tab address
 CmdUtils.makeSearchCommand = function makeSearchCommand(args) {
     args.execute_org = function(a) {
-        var url = args.url
+        var url = args.url || "";
         url = url.replace(/\{text\}/g, "{QUERY}").replace(/\{QUERY\}/g, encodeURIComponent(a.text));
         url = url.replace(/\{location\}/g, encodeURIComponent(CmdUtils.getLocation()));
         CmdUtils.addTab(url);
@@ -166,7 +166,7 @@ CmdUtils._searchCommandPreview = function _searchCommandPreview( pblock, {text: 
       return;
     }
     if (!this.prevAttrs) this.prevAttrs = {};
-    var url = (this.prevAttrs.url || this.url).replace(/\{text\}/g, "{QUERY}").replace(/\{QUERY\}/g, encodeURIComponent(q));
+    var url = (this.prevAttrs.url || this.url || "").replace(/\{text\}/g, "{QUERY}").replace(/\{QUERY\}/g, encodeURIComponent(q));
     // hash-anchor:
     var hashanch = null;
     if (this.prevAttrs.anchor != null) {
@@ -538,6 +538,33 @@ CmdUtils.getcmdpart = function getcmdpart(cmdname) {
             for (let n of c.names) 
                 if (n.startsWith(cmdname.toLowerCase())) return c;
     return null;
+};
+
+// execute shortcut
+CmdUtils.execute = function execute(command, args) {
+    var c = CmdUtils.getcmdpart(command);
+    if (c == null) return null;
+    if (typeof args === 'undefined') args = {text:''};
+    if (typeof args === 'string') args = {text:args};
+    args._selection = args.text==CmdUtils.selectedText;
+    args._opt_idx = -1;
+    args._opt_val = '';
+    args._cmd = c;
+    return (c.execute.bind(c))(args);
+};
+
+// preview shortcut, first param may be string in that case default pblock is used
+CmdUtils.preview = function preview(command, pblock, args) {
+    var c = CmdUtils.getcmdpart(command);
+    if (c == null) return null;
+    if (typeof pblock === 'string' && typeof args === 'undefined') { args = pblock; pblock = CmdUtils.popupWindow.ubiq_preview_el(); }
+    if (typeof args === 'undefined') args = {text:''};
+    if (typeof args === 'string') args = {text:args};
+    args._selection = args.text==CmdUtils.selectedText;
+    args._opt_idx = -1;
+    args._opt_val = '';
+    args._cmd = c;
+    return (c.preview.bind(c))(pblock,args);
 };
 
 // sets clipboard
