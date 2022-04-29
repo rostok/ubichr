@@ -10,12 +10,14 @@ if (!CmdUtils) var CmdUtils = {
     backgroundWindow: window,
     popupWindow: null,
     lastKeyEvent:null,
-//    log: console.log,
+    lastError:"",       // used for storing last exception
+    loadLastInput:true, // for testing purposes if set to false this will disable preview of last command as this may result with ajax race condition for preview element content loading
+    log: console.log,
     updateHandlers: [], // array of {name,handler} objects, handler functions are executed on CmdUtils.updateActiveTab(), +/- addUpdateHandler() removeUpdateHandler()
     active_tab: null,   // tab that is currently active, updated via background.js 
     selectedText: "",   // currently selected text, update via content script selection.js
     selectedHTML: "",   // currently selected text, update via content script selection.js
-    setPreview: function setPreview(message, prepend) { console.log(message); },
+    setPreview: function setPreview(message, prepend) { console.log(message); }, // warning setPreview shortcut may refer to different preview div when multiple popups are open
     setResult: function setResult(message, prepend) { console.log(message); },
     setTip: function setTip(message, prepend) { console.log(message); },
 };
@@ -36,6 +38,10 @@ CmdUtils.deblog = function (...args) {
     }
 };
 
+// executed after popup is opened, used for testing 
+CmdUtils.onPopup = function () {};
+
+// sets chrome extension badge
 CmdUtils.setBadge = function(text='OK', color='#77c') {
   chrome.browserAction.setBadgeBackgroundColor({color:color});
   setTimeout(function(){
@@ -46,47 +52,41 @@ CmdUtils.setBadge = function(text='OK', color='#77c') {
   }, 0);
 };
 
-// creates command and adds it to command array, name or names must be provided and preview execute functions
-CmdUtils.CreateCommand = function CreateCommand(args) {
-    if (Array.isArray(args.name)) {
-        args.names = args.name;
-        args.name = args.name[0];
+// creates command and adds it to command array, name or names must be provided and preview execute functions, cs is command structure object
+CmdUtils.CreateCommand = function CreateCommand(cs) {
+    if (Array.isArray(cs.name)) {
+        cs.names = cs.name;
+        cs.name = cs.name[0];
     } else {
-        args.name = args.name || args.names[0];
-        args.names = args.names || [args.name];
+        cs.name = cs.name || cs.names[0];
+        cs.names = cs.names || [cs.name];
     }
-    if (CmdUtils.getcmd(args.name)) {
+    if (CmdUtils.getcmd(cs.name)) {
         // remove previously defined command with this name
-        CmdUtils.CommandList = CmdUtils.CommandList.filter( cmd => cmd.name !== args.name );
+        CmdUtils.CommandList = CmdUtils.CommandList.filter( c => c.name !== cs.name );
     }
-    //console.log("command created ", args.name);
-    var to = parseFloat(args.timeout || 0);
+    var to = parseFloat(cs.timeout || 0);
     if (to>0) {
-        if (typeof args.preview == 'function') {
-            args.preview_timeout = args.preview;
-            args.preview = function(b,a) {
-                // CmdUtils.deblog("clear time out ", CmdUtils.lastPrevTimeoutID, ".");
-                clearTimeout(CmdUtils.lastPrevTimeoutID);
-                CmdUtils.lastPrevTimeoutID = setTimeout(function () { 
-                    // CmdUtils.deblog("delated prev ", args.name, ":", to);
-                    (args.preview_timeout.bind(this))(b, a); 
+        if (typeof cs.preview == 'function') {
+            cs.preview_timeout = cs.preview;
+            cs.preview = function(b,a) {
+                clearTimeout(cs.lastPrevTimeoutID); // keep lastPrevTimeoutID in cmd_struct instead of global var
+                cs.lastPrevTimeoutID = setTimeout(function () { 
+                    (cs.preview_timeout.bind(this))(b, a); 
                 }, to);
-                // CmdUtils.deblog("CmdUtils.lastPrevTimeoutID is ", CmdUtils.lastPrevTimeoutID);
             };
         }
-        if (typeof args.execute == 'function') {
-            args.execute_timeout = args.execute;
-            args.execute = function(a) {
-                clearTimeout(CmdUtils.lastExecTimeoutID);
-                CmdUtils.lastExecTimeoutID = setTimeout(function () {
-                    // CmdUtils.deblog("delated exec ", args.name, ":", to);
-                    (args.execute_timeout.bind(this))(a);
+        if (typeof cs.execute == 'function') {
+            cs.execute_timeout = cs.execute;
+            cs.execute = function(a) {
+                clearTimeout(cs.lastExecTimeoutID); // keep lastExecTimeoutID in cmd_struct instead of global var
+                cs.lastExecTimeoutID = setTimeout(function () {
+                    (cs.execute_timeout.bind(this))(a);
                 }, to);
-                // CmdUtils.deblog("CmdUtils.lastExecTimeoutID is ", CmdUtils.lastExecTimeoutID);
             };
         }
     }
-    CmdUtils.CommandList.push(args);
+    CmdUtils.CommandList.push(cs);
 };
 
 // creates a simple search command using url
@@ -250,8 +250,7 @@ CmdUtils.getLocationOrigin = function getLocationOrigin(url="") {
 };
 
 // opens new tab with provided url
-CmdUtils.addTab = function addTab(url) {
-    var active = true;
+CmdUtils.addTab = function addTab(url, active=true) {
     if (CmdUtils.lastKeyEvent && CmdUtils.lastKeyEvent.shiftKey) active = false;
 
     if (typeof browser !== 'undefined') {
@@ -345,8 +344,8 @@ CmdUtils.SimpleUrlBasedCommand = function SimpleUrlBasedCommand(url) {
             var text = directObj.text;
             text = encodeURIComponent(text);
             var finalurl = url;
-            finalurl = finalurl.replace('{text}', text);
-            finalurl = finalurl.replace('{location}', CmdUtils.getLocation());
+            finalurl = finalurl.replaceAll('{text}', text);
+            finalurl = finalurl.replaceAll('{location}', CmdUtils.getLocation());
             CmdUtils.addTab(finalurl);
         }
     };
@@ -392,11 +391,13 @@ CmdUtils.ajaxGet = function ajaxGet(url, callback) {
 };
 
 // performs jQuery get and returns jqXHR that implements Promise 
-CmdUtils.get = function get(url) {
-    return jQuery.ajax({
+CmdUtils.get = function get(url, success) {
+    var o = {
         url: url,
         async: true
-    });
+    };
+    if (typeof success === 'function') o.success = success;
+    return jQuery.ajax(o);
 };
 
 // performs jQuery post and return jsXHR

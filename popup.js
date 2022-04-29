@@ -104,9 +104,10 @@ function ubiq_show_preview(cmd, args) {
                 CmdUtils.popupWindow.jQuery("#ubiq-command-preview").css("overflow-y", "auto"); 
                 try {
                     CmdUtils.deblog("prev [", cmd_struct.name ,"] [", text,"]");
-                    CmdUtils.backgroundWindow.clearTimeout(CmdUtils.lastPrevTimeoutID);
+                    CmdUtils.backgroundWindow.clearTimeout(cmd_struct.lastPrevTimeoutID); // keep lastPrevTimeoutID in cmd_struct instead of global var
                     (preview_func.bind(cmd_struct))(ubiq_preview_el(), directObj);
                 } catch (e) {
+                    CmdUtils.setBadge("!", "red");
                     CmdUtils.lastError = `preview [${cmd_struct.name} [${text}]\n\n${e.stack}`;
                     CmdUtils.notify(e.toString(), "preview function error");
                     console.error(e.stack);
@@ -158,16 +159,18 @@ function ubiq_dispatch_command(line, args) {
         _selection: text==CmdUtils.selectedText,
         _cmd: cmd_struct,
         _opt_idx: ubiq_selected_option,
-        _opt_val: $(ubiq_preview_el()).find("[data-option=selected]").data("option-value")
+        _opt_val: $(ubiq_preview_el()).find("[data-option=selected]").data("option-value"),
+        pblock: ubiq_preview_el()
     };
 
     // Run command's "execute" function
     try {
         CmdUtils.deblog("exec [", cmd_struct.name ,"] [", text,"]");
-        CmdUtils.backgroundWindow.clearTimeout(CmdUtils.lastExecTimeoutID);
+        CmdUtils.backgroundWindow.clearTimeout(cmd_struct.lastExecTimeoutID); // keeping lastExecTimeoutID in cmd_struct instead of single global var
         CmdUtils.saveToHistory(cmd_struct.name+" "+text);
         (cmd_struct.execute.bind(cmd_struct))(directObj);
     } catch (e) {
+        CmdUtils.setBadge("!", "red");
         CmdUtils.lastError = `execute [${cmd_struct.name} [${text}]\n\n${e.stack}`;
         CmdUtils.notify(e.toString(), "execute function error");
         console.error(e.stack);
@@ -461,7 +464,7 @@ function ubiq_update_options()
     }
 }
 
-var lcmd = "";
+var lcmd = null;
 
 function ubiq_keydown_handler(evt) {
     // update the window 
@@ -559,14 +562,14 @@ function ubiq_keydown_handler(evt) {
         // Cursor up
         if (kc == 38) {
             ubiq_selected_command--;
-            lcmd = "";
+            lcmd = null;
             evt.preventDefault();
         }
         // Cursor Down
         else if (kc == 40) {
             ubiq_selected_command++;
             ubiq_selected_command = Math.min(ubiq_selected_command, 14);
-            lcmd = "";
+            lcmd = null;
             evt.preventDefault();
         }
     }
@@ -592,14 +595,21 @@ function ubiq_set_input(v, select=true) {
     if (select) cmd.select();
 }
 
+// loads last command into input element and calls callback, regardless of result of loading last command from local storage 
 function ubiq_load_input(callback) {
     let cmd = document.getElementById('ubiq_input');
-    if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.get('lastCmd', function(result) {
-        lastCmd = result.lastCmd || "";
-        cmd.value = lastCmd;
-        cmd.select();
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+        chrome.storage.local.get('lastCmd', function(result) {
+            lastCmd = result.lastCmd || "";
+            cmd.value = lastCmd;
+            cmd.select();
+            callback();
+        });
+    } 
+    else 
+    {
         callback();
-    });
+    }
 }
 
 
@@ -611,13 +621,20 @@ $(window).on('load', function() {
         CmdUtils.popupWindow = window;
         CmdUtils.updateActiveTab();
         
-        ubiq_load_input(()=>{ubiq_show_matching_commands();});
         
         // Add event handler to window 
         document.addEventListener('keydown', function(e) { ubiq_keydown_handler(e); }, false);
         document.addEventListener('keyup', function(e) { ubiq_keyup_handler(e); }, false);
-
+        
         console.log("hello from UbiChr");
+
+        if (CmdUtils.loadLastInput)
+            ubiq_load_input( ()=>{
+                ubiq_show_matching_commands();
+                CmdUtils.onPopup(window);
+            });
+        else            
+            CmdUtils.onPopup(window);
     } else {
         chrome.tabs.create({ "url": "chrome://extensions" });
         chrome.notifications.create({

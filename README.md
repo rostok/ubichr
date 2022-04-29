@@ -57,6 +57,7 @@ The ```args``` object properties for ```execute``` and ```preview``` are as foll
 * _cmd: current command structure
 * _opt_idx: selected option (optional), -1 by default
 * _opt_val: value of option element set in data-option-value attribute
+* pblock: the preview element in case it will be updated via execute
 
 Also both ```preview``` and ```execute``` functions are bound to command definition object before call allowing access other properties or methods via ```this```.
 
