@@ -1,4 +1,4 @@
-// test.html / test.js provide rudimental framework to test ubichr commands
+// tests.html / tests.js provide rudimental framework to test ubichr commands
 // all cases are defined in `tests` array as objects with properties below
 //     name: string with ubichr command [necessary]
 //     args: command arguments
@@ -8,9 +8,9 @@
 //     includesText: preview block .innerText is expected to include this string
 //     html: expected preview block .innerHTML result
 //     includesHTML: preview block .innerHTML is expected to include this string
-//     url: expected an open tab with this url 
+//     url: expected an open tab with this url, if url is array all urls must be opened, the syntax is compatible with chrome.tabs.query url option parameter with wildcards
 // 
-//     exec: true if should command be executed
+//     exec: true if command should be executed
 // 
 //     timeout: check is perfomed after this delay
 //     init(window): custom function executed when testing is started, before timeout!
@@ -20,12 +20,13 @@
 //     attributes added automatically:
 //     pass(message): called on test sucess
 //     fail(message): called on test failure
+//     result: string with pass/fail
 // 
-// custom commands may include above object inside test property
+// custom commands may include above object inside a 'test' property
 //
 // once testing is started for each command a separate tab is opened and input is entered as defined above
 // CmdUtils.onPopup() handler is executed that handles all the testing
-
+// to prevent race condition of previous command preview asynchronous load the CmdUtils.loadLastInput is set to false so tabs with ubichr wont show last command
 
 // tests will be passed here
 CmdUtils.testing = {};
@@ -464,31 +465,31 @@ var tests = [{
 
 // helper functions
 // https://gist.github.com/BigSully/4468a58848df07736757a73d722d81f5
-let asyncfy = fn => (...args) => {
-    return new Promise((resolve, reject) => {
-        fn(...args, (...results) => {
-            let {
-                lastError
-            } = chrome.runtime
-            if (typeof lastError !== 'undefined') reject(lastError);
-            else results.length == 1 ? resolve(results[0]) : resolve(results);
-        });
-    });
-};
+// let asyncfy = fn => (...args) => {
+//     return new Promise((resolve, reject) => {
+//         fn(...args, (...results) => {
+//             let {
+//                 lastError
+//             } = chrome.runtime
+//             if (typeof lastError !== 'undefined') reject(lastError);
+//             else results.length == 1 ? resolve(results[0]) : resolve(results);
+//         });
+//     });
+// };
 
-function getTab(url) {
-    return new Promise((resolve, reject) => {
-        try {
-            chrome.tabs.query({url:url,currentWindow: true,}, function (tabs) { resolve(tabs); })
-        } catch (e) {
-            reject(e);
-        }
-    })
-}
+// function getTab(url) {
+//     return new Promise((resolve, reject) => {
+//         try {
+//             chrome.tabs.query({url:url,currentWindow: true,}, function (tabs) { resolve(tabs); })
+//         } catch (e) {
+//             reject(e);
+//         }
+//     })
+// }
 
 // return true if current window includes tab with this url
 async function isTabOpen(url) {
-    var t = await asyncfy(chrome.tabs.query)({url: url, currentWindow: true});
+    // var t = await asyncfy(chrome.tabs.query)({url: url, currentWindow: true});
 	var t;
     try{
 		t = await chrome.tabs.query({url: url, currentWindow: true},(tt)=>{});
@@ -679,8 +680,6 @@ $('#rempass').click(() => {
         $(`div.status[name='${t.name}']`).remove();
     });
     tests = tests.filter(t=>t.result!="pass");
-    // $('#tests').empty();
-    // $('#tests').append( tests.map(t=>t.name).map(t=>`<span><a class=runsingle name='${t}' href=#>${t}</a></span>`).join('<br>') );
 });
 
 $('#close').click(() => {
