@@ -1,6 +1,52 @@
 // BuildIn CmdUtils command definitions
 // jshint esversion: 6 
 
+// tinyurl 
+// https://tinyurl.com/api-create.php?url=https://admin.google.com/ac/users/4349123432/profile
+
+// api directory search
+CmdUtils.makeSearchCommand({
+    name: "api-search",
+    description: "searches api directory at programmableweb.com",
+    icon: "https://www.programmableweb.com/sites/default/files/pwfav.png",
+    url: "https://www.programmableweb.com/category/all/apis?keyword={QUERY}",
+    preview: function preview(pblock, args) {
+        $(pblock).loadAbs(this.url.replace("{QUERY}",encodeURIComponent(args.text))+
+                          " div.view-display-id-directory_search > div.view-content > table", ()=>{
+          $("table",pblock).attr("border",1);
+          $('th:nth-child(4)',pblock).html("F");
+        });
+    },
+});
+
+// runs ubichr unit tests
+CmdUtils.CreateCommand({
+    name: "unittests",
+    description: "perform UbiChr unit tests for builtin commands",
+    icon: "res/icon-128.png",
+    execute: function execute(args) {
+        CmdUtils.addTab("tests.html");
+    },
+});
+
+// exceptions are stored in CmdUtils.lastError
+CmdUtils.CreateCommand({
+    name: "lasterror",
+    icon: "res/icon-128.png",
+    description: "show last UbiChr error, clear on execute",
+    execute: function (args) {
+        CmdUtils.lastError = "";
+    },
+    preview: function preview(pblock, args) {
+        CmdUtils.setTip(args._cmd.description);
+        pblock.innerHTML = (CmdUtils.lastError || "").replace("\n", "<br>");
+        if (pblock.innerHTML != "") window.setTimeout(() => {
+            CmdUtils.setResult("");
+            CmdUtils.setTip("");
+        }, 125);
+    },
+});
+  
 // shows command source in preview
 CmdUtils.CreateCommand({
     name: "command-source",
@@ -243,24 +289,9 @@ CmdUtils.CreateCommand({
         CmdUtils.addTab("https://www.dictionary.com/browse/" + escape(text));
     },
     preview: async function define_preview(pblock, {text: text}) {
-        pblock.innerHTML = "Gives the meaning of a word.";
         var doc = await CmdUtils.get("https://www.dictionary.com/browse/"+encodeURIComponent(text));
-        pblock.innerHTML = $("section#top-definitions-section", doc).parent("div").html();
+        $("section#top-definitions-section", doc).parent("div").appendTo(pblock).find("button,div[role='tooltip'],div[data-save-word-tooltip]").remove();
     },
-});
-
-CmdUtils.CreateCommand({
-    name: "dramatic-chipmunk",
-    takes: {},
-    description: "Prepare for a dramatic moment of your life",
-    author: {},
-    icon: "http://www.youtube.com/favicon.ico",
-    homepage: "",
-    license: "",
-    preview: "Prepare for a dramatic moment of your life",
-    execute: CmdUtils.SimpleUrlBasedCommand(
-        "https://www.youtube.com/watch?v=a1Y73sPHKxw"
-    )
 });
 
 CmdUtils.CreateCommand({
@@ -350,7 +381,7 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.makeSearchCommand({
-    name: ["gimages","image-search"],
+    name: ["image-search","gimages"],
     timeout: 1000,
     author: {name: "Federico Parodi", email: "getimages@jimmy2k.it"},
     contributor: "satyr,rostok",
@@ -510,10 +541,10 @@ CmdUtils.CreateCommand({
         email: "andyfilms1@yahoo.com"
     },
     license: "GPL",
-    preview: function (pblock, directObject) {
+    preview: function (pblock, args) {
         //ubiq_show_preview(urlString);
-        //searchText = jQuery.trim(directObject.text);
-        var host = directObject.text;
+        //searchText = jQuery.trim(args.text);
+        var host = args.text;
         if (host.length < 1) {
             pblock.innerHTML = "Checks if URL is down";
             return;
@@ -521,10 +552,10 @@ CmdUtils.CreateCommand({
         var previewTemplate = "Press Enter to check if <b>" + host + "</b> is down.";
         pblock.innerHTML = previewTemplate;
     },
-    execute: async function (directObject) {
-        var url = "https://downforeveryoneorjustme.com/{QUERY}";
-        var query = directObject.text;
-        CmdUtils.setPreview("checking "+query);
+    execute: async function (args) {
+        var url = "https://api-prod.downfor.cloud/httpcheck/{QUERY}";
+        var query = args.text;
+        pblock.innerHTML = "checking "+query;
         // Get the hostname from url
         if (!query) {
             var host = window.location.href;
@@ -532,14 +563,13 @@ CmdUtils.CreateCommand({
             query = url_comp[2];
         }
         var urlString = url.replace("{QUERY}", query);
-        //CmdUtils.addTab(urlString);
         ajax = await CmdUtils.get(urlString);
         {
             if (!ajax) return;
-            if (ajax.match('is up.')) {
-                CmdUtils.setPreview('<br/><p style="font-size: 18px;">It\'s just you. The site is <b>up!</b></p>');
+            if (ajax.isDown) {
+                pblock.innerHTML = `<p style="font-size: 18px;">It\'s <b>not</b> just you. The site <u>${query}</u> is <b>down!</b></p>`;
             } else {
-                CmdUtils.setPreview('<br/><p style="font-size: 18px;">It\'s <b>not</b> just you. The site is <b>down!</b></p>');
+                pblock.innerHTML = `<p style="font-size: 18px;">It\'s just you. The site <u>${query}</u> is <b>up!</b></p>`;
             }
         };
     }
@@ -597,6 +627,15 @@ CmdUtils.CreateCommand({
     preview: async function mapsPreview(previewBlock, args) {
         var GM = CmdUtils.popupWindow.google.maps;
         
+        // brighten the maps and remove prompt
+        var cleanup;
+        cleanup = ()=>{
+            $(".dismissButton",previewBlock).closest("div").remove()
+            $("img",previewBlock).each((i,v)=>{ $(v).attr("src", $(v).attr("src").replace("sstyles!","sstyles!x") ); });
+            setTimeout(cleanup, 100);
+        };
+        cleanup();
+    
         // http://jsfiddle.net/user2314737/u9no8te4/
         var text = args.text.trim();
         if (text=="") {
@@ -736,52 +775,31 @@ CmdUtils.CreateCommand({
     )
 });
 
-
-var bitly_api_user = "ubiquityopera";
-var bitly_api_key = "R_59da9e09c96797371d258f102a690eab";
+// the old command for url shorteing with bit.ly is replaced with tinyurl one
 CmdUtils.CreateCommand({
-    names: ["shorten-url", "bitly"],
-    icon: "https://dl6fh5ptkejqa.cloudfront.net/0482a3c938673192a591f2845b9eb275.png",
+    names: ["shorten-url", "tiny-url"],
+    icon: "https://tinyurl.com/favicon.ico",
     description: "Shorten your URLs with the least possible keystrokes",
-    homepage: "http://bit.ly",
-    author: {
-        name: "Cosimo Streppone",
-        email: "cosimo@cpan.org"
-    },
-    license: "GPL",
     preview: async function (pblock, {text}) {
-        var words = text.split(' ');
-        var host = words[1];
-        pblock.innerHTML = "Shortens an URL (or the current tab) with bit.ly";
+      var words = text.split(/\s+/);
+      if (text.trim()=='') words[0]=CmdUtils.getLocation();
+      pblock.innerHTML = "Shorten URL for:<br>"+words.join("<br>");
     },
-    execute: async function (directObject) {
-        var url = "https://api.bit.ly/shorten?version=2.0.1&longUrl={QUERY}&login=" +
-            bitly_api_user + "&apiKey=" + bitly_api_key;
-        var query = directObject.text;
-        // Get the url from current open tab if none specified
-        if (!query || query == "") query = CmdUtils.getLocation();
-        var urlString = url.replace("{QUERY}", query);
-
-        var url = "https://api.bit.ly/shorten?version=2.0.1&longUrl={QUERY}&login=" + bitly_api_user + "&apiKey=" + bitly_api_key;
-        // Get the url from current open tab if none specified
-        var ajax = await CmdUtils.get(urlString);
-        //ajax = JSON.parse(ajax);
-        //if (!ajax) return;
-        var err_code = ajax.errorCode;
-        var err_msg = ajax.errorMessage;
-        // Received an error from bit.ly API?
-        if (err_code > 0 || err_msg) {
-            CmdUtils.setPreview('<br/><p style="font-size: 18px; color:orange">' + 'Bit.ly API error ' + err_code + ': ' + err_msg + '</p>');
-            return;
-        }
-
-        var short_url = ajax.results[query].shortUrl;
-        CmdUtils.setPreview('<br/><p style="font-size: 24px; font-weight: bold; color: #ddf">' +
-            '<a target=_blank href="' + short_url + '">' + short_url + '</a>' +
-            '</p>');
-        CmdUtils.setClipboard(short_url);
+    execute: function (args) {
+      var pblock = args.pblock;
+      var words = args.text.split(/\s+/);
+      if (args.text.trim()=='') words[0]=CmdUtils.getLocation();
+	  $(pblock).empty();
+      words.forEach(w=>{
+        CmdUtils.get(`https://tinyurl.com/api-create.php?url=${w}`, (r)=>{
+          $(pblock).append(r +"<br>");
+          CmdUtils.setClipboard($(pblock).text());
+          CmdUtils.setTip("copied!");
+        });
+      });
     }
 });
+
 
 CmdUtils.CreateCommand({
     name: "slideshare",
@@ -830,8 +848,8 @@ CmdUtils.CreateCommand({
         var search_string = encodeURIComponent(directObj.text);
         CmdUtils.addTab("https://thepiratebay.org/search.php?q=" + search_string);
         CmdUtils.addTab("https://rarbgmirror.org/torrents.php?search=" + search_string);
-        CmdUtils.addTab("https://1337x.to/search/harakiri/" + search_string+'/');
-        CmdUtils.addTab("https://torrentz2.eu/search?f=" + search_string+'/');
+        CmdUtils.addTab("https://1337x.to/search/" + search_string + '/test/');
+        CmdUtils.addTab("https://isohunt.nz/torrent/?ihq=" + search_string);
     }
 });
 
@@ -931,7 +949,7 @@ CmdUtils.CreateCommand({
                 CmdUtils.closePopup();
             }
         } else {
-            CmdUtils.setPreview("text is too short or too long. try translating <a target=_blank href=https://www.bing.com/translator/>manually</a>");
+            pblock.innerHTML = "text is too short or too long. try translating <a target=_blank href=https://www.bing.com/translator/>manually</a>";
         }
     },
     preview: async function translate_preview(pblock, {text: text}) {
@@ -952,7 +970,7 @@ CmdUtils.CreateCommand({
                 to: dest
             });
             T = JSON.parse(T);
-            CmdUtils.setPreview(T);
+            pblock.innerHTML = T;
         } else {
             pblock.innerHTML = "text is too short or too long<BR><BR>[" + text + "]";
         }
@@ -1000,7 +1018,7 @@ CmdUtils.CreateCommand({
     homepage: "",
     license: "",
     preview: "Show the weather forecast",
-    execute: CmdUtils.SimpleUrlBasedCommand("https://www.wunderground.com/cgi-bin/findweather/getForecast?query={text}")
+    execute: CmdUtils.SimpleUrlBasedCommand("https://www.wunderground.com/weather/pl/{text}")
 });
 
 CmdUtils.CreateCommand({
@@ -1055,19 +1073,6 @@ CmdUtils.CreateCommand({
         }
     },
     old_execute: CmdUtils.SimpleUrlBasedCommand("https://en.wikipedia.org/wiki/Special:Search?search={text}")
-});
-
-CmdUtils.CreateCommand({
-    name: "yahoo-answers",
-    description: "Search Yahoo! Answers for",
-    author: {},
-    icon: "http://l.yimg.com/a/i/us/sch/gr/answers_favicon.ico",
-    homepage: "",
-    license: "",
-    preview: "Search Yahoo! Answers for",
-    execute: CmdUtils.SimpleUrlBasedCommand(
-        "https://answers.yahoo.com/search/search_result;_ylv=3?p={text}"
-    )
 });
 
 CmdUtils.CreateCommand({
@@ -1145,29 +1150,18 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "define",
-    description: "Gives the meaning of a word, using answers.com.",
+    description: "Gives the meaning of a word, using wordnik.com.",
     help: "Try issuing &quot;define aglet&quot;",
-    icon: "http://www.answers.com/favicon.ico",
-//    timeout: 500,
+    icon: "https://wordnik.com/img/favicon.png",
     execute: CmdUtils.SimpleUrlBasedCommand(
-        "https://answers.com/search?q={text}"
+        "https://wordnik.com/words/{text}"
     ),
-    preview: async function define_preview(pblock, {text: text}) {
-        if (text.trim()=="") {
-            pblock.innerHTML = "Gives the definition from answers.com";
-            return;
-        }
+    preview: function define_preview(pblock, {text: text}) {
+        if (text.trim()=="") return pblock.innerHTML = this.description;
         pblock.innerHTML = "Gives the definition of the word "+text;
-        var xml = await CmdUtils.post("https://services.aonaware.com/DictService/DictService.asmx/DefineInDict", { text: text, dictId: "wn" } );
-        pblock.innerHTML = (
-            jQuery(xml)
-            .find("WordDefinition > Definitions > Definition:first-child > WordDefinition")
-            .text()
-            .replace(/^\s*.+/, "<h2>$&</h2>")
-            .replace(/\[[^\]]*\]/g, "")
-            .replace(/\d+:/g, "<br/><strong>$&</strong>")
-            .replace(/1:/g, "<br/>$&"));
-        }
+        $(pblock).loadAbs(`https://wordnik.com/words/${encodeURI(text)} div#define > div.active`, ()=>{
+        });
+    }        
 });
 
 CmdUtils.CreateCommand({
@@ -1520,17 +1514,25 @@ CmdUtils.CreateCommand({
     description: "Searches for different words with the same meaning",
     icon: "http://cdn.sfdict.com/hp/502812f9.ico",
     preview: function preview(pblock, {text}) {
-        pblock.innerHTML = "Searches different words with the same meaning "+text;
-        if (text=="") return;
+      pblock.innerText = this.description;  
+      if (text=="") return;
         var url = "https://www.thesaurus.com/browse/" + encodeURIComponent(text);
-        CmdUtils.ajaxGet(url, function(data) {
-            pblock.innerHTML = jQuery(".MainContentContainer", data).html();
-            jQuery("a", pblock).each(function() {
+        var d = $("<div style='background-color:white; max-width:500px'></div>");
+        $(d).load(url+" section.MainContentContainer", ()=>{
+            $("a", d).each(function() {
                 var href = $(this).attr("href");
                 if (href === undefined) return;
                 $(this).attr("target", "_blank").attr("href", 'https://www.thesaurus.com'+href);
             });
-            if (pblock.innerHTML=="undefined") pblock.innerHTML = "no words";
+          $(pblock).empty();
+          $("div#meanings",d).parent().find("ul:first > li > a").each((i,v)=>{
+            $(pblock).append("<p>");
+            $(pblock).append($(v).html());
+            $(pblock).append("<br>");
+            $("div#meanings",d).parent().find("ul:nth("+(1+i)+") > li > a").each((j,w)=>{
+            	$(pblock).append( " " ).append( $(w).attr("style", "text-decoration:none; line-height: 2em; border-radius:2em; margin: .1em; white-space: nowrap; padding:.25em; background:#666") );
+            });
+          });
         });
     },
     execute: CmdUtils.SimpleUrlBasedCommand("https://www.thesaurus.com/browse/{text}") 
@@ -1756,7 +1758,7 @@ CmdUtils.CreateCommand({
                     s += "<progress style='width:530px' value='"+prc+"' max='100'></progress><br><br>";
                     s += "loaded:"+lt.loaded+" / total:"+lt.total+" ("+prc+"%)<br><br>"
                     s += _cmd.lastFile;
-                    CmdUtils.setPreview(s);
+                    pblock.innerHTML = s;
                 }                    
                 //CmdUtils.popupWindow.console.log("loaded:"+lt.loaded+" / total:"+lt.total+" ("+Math.round(lt.loaded*100/lt.total,1)+"%)");
             };
@@ -1850,10 +1852,10 @@ CmdUtils.CreateCommand({
                 zip.file(f, arrayBuffer);
                 i++;
                 //l+="<pre>"+JSON.stringify(filename)+"</pre>";
-                //CmdUtils.setPreview(l+"<br>"+f+"<br>file:"+i+"/"+(array.length-1)+" <br>type:"+oReq.response.type);//+" <br>resp type:"+oReq.responseType);
+                //pblock.innerHTML = l+"<br>"+f+"<br>file:"+i+"/"+(array.length-1)+" <br>type:"+oReq.response.type);//+" <br>resp type:"+oReq.responseType;
                 _cmd.lastFile = l+"("+oReq.response.type+")";
                 if (i==array.length) {
-                    CmdUtils.setPreview("done!");
+                    pblock.innerHTML = "done!";
                   
                     zip.generateAsync({type:"blob"})
                     .then(function (blob) {
@@ -1861,7 +1863,7 @@ CmdUtils.CreateCommand({
                         var a = document.createElement('a');
                         a.download = 'bulk.zip';
                         a.href = url.createObjectURL(blob);
-                        CmdUtils.setPreview("");
+                        pblock.innerHTML = "";
                         a.textContent = 'save zip';
                         a.dataset.downloadurl = ['zip', a.download, a.href].join(':');
                         _cmd.lastDownload = a;
@@ -1899,7 +1901,7 @@ CmdUtils.CreateCommand({
             }
             `
         }, (r)=>{
-            CmdUtils.setPreview("cookies killed");
+            pblock.innerHTML = "cookies killed";
         });    
     },
     preview: function preview(pblock, args) {
@@ -1909,7 +1911,7 @@ CmdUtils.CreateCommand({
               r=r+"";
               r=r.replace(/;\s*/g,";\n");
               r="<pre>"+r+"</pre>";
-              CmdUtils.setPreview("cookies:"+r);
+              pblock.innerHTML = "cookies:"+r;
           });    
     },
 });
@@ -1949,7 +1951,7 @@ CmdUtils.makeSearchCommand({
             pblock.innerHTML = "enter EMOJI description";
         else {
             pblock.innerHTML = "";
-              jQuery(pblock).loadAbs("https://emojipedia.org/search/?q=" + encodeURIComponent(args.text)+ " div.content", ()=>{
+            jQuery(pblock).loadAbs("https://emojipedia.org/search/?q=" + encodeURIComponent(args.text)+ " div.content", ()=>{
               pblock.innerHTML = "<font size=12>"+jQuery("span.emoji", pblock).map((i,e)=>e.outerHTML).toArray().join("")+"</font>";
               jQuery("span", pblock).each((i,e)=>{
                 jQuery(e).attr("data-option","");
@@ -2105,7 +2107,7 @@ CmdUtils.CreateCommand({
       else
         CmdUtils.addUpdateHandler("markHandler", ()=>{ _cmd.preview(null, {text}); });
       _cmd.highlights = text;
-      CmdUtils.setPreview(_cmd.description+"<hr>highlights: "+_cmd.highlights);
+      pblock.innerHTML = _cmd.description+"<hr>highlights: "+_cmd.highlights;
     },
     preview: function preview(pblock, {text, _cmd}) {   
       CmdUtils.ajaxGet("https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js", (data)=>{
@@ -2116,7 +2118,7 @@ CmdUtils.CreateCommand({
                 `;
           chrome.tabs.executeScript({ code: code });
       });
-      if (_cmd)CmdUtils.setPreview(_cmd.description+"<hr>highlights: "+_cmd.highlights);
+      if (_cmd)pblock.innerHTML = _cmd.description+"<hr>highlights: "+_cmd.highlights;
     }
 });
 
