@@ -6,13 +6,46 @@
 	<link href="help.css" rel="stylesheet"></head>
 </head>
 
+<style>
+    .status {
+        white-space: nowrap; 
+    }
+    .mulcol {
+        column-fill: auto;
+        column-count: 2;
+        height: 90vh;
+    }
+</style>
 <body>
     <button id="start">start tests</button>
+    <button id="startslow">start slow tests</button>
+    <button id="startseq">start tests sequentially</button>
+    <button id="rempass">remove passed</button>
     <button id="close">close test tabs</button>
     <p>
-    <div id="builtin">
+    <!-- <button id="generate">generate test stubs</button> -->
+        <table width=100%>
+            <tr>
+                <td>
+                    <b>tested:</b>
+                    <div class="mulcol" id="tests">
+                    </div>
+                    
+                </td>
+                <td>
+                    <b>untested built-in:</b>
+                    <div class="mulcol" id="untested">
+                    </div>
+                </td>
+                <td>
+                    <b>untested custom:</b>
+                    <div class="mulcol" id="untestedcustom">
+                    </div>
+                </td>
+            </tr>
+        </table>
         
-    </div>
+
 </body>
 
 <script src="lib/jquery-3.6.0.min.js"></script>
