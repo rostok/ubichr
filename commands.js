@@ -167,21 +167,6 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
-    name: "yippy",
-    description: "Perform a clustered search through yippy.com",
-    author: {},
-    icon: "http://cdn2.hubspot.net/hubfs/2571411/YippyInc_Oct2016/favicon.png",
-    homepage: "",
-    license: "",
-    preview: "Perform a clustered search through yippy.com",
-    execute: async function execute({text}) {
-            var xtoken = CmdUtils.get("http://yippy.com/");
-            xtoken = jQuery("#xtoken", xtoken).val();
-            CmdUtils.postNewTab("https://yippy.com/search/?v%3Aproject=clusty-new&query=kakao&xtoken="+xtoken);//, {"v:project":"clusty-new", xtoken:xtoken});
-        }
-});
-
-CmdUtils.CreateCommand({
     name: "code-search",
     description: "Search any source code for the given string",
     icon: "https://searchcode.com/static/favicon.ico",
@@ -536,40 +521,26 @@ CmdUtils.CreateCommand({
     icon: "http://downforeveryoneorjustme.com/favicon.ico",
     description: "Check if selected/typed URL is down",
     homepage: "http://www.andyfilms.net",
+    url : "https://api-prod.downfor.cloud/httpcheck/{QUERY}",
     author: {
         name: "Andy Jarosz",
         email: "andyfilms1@yahoo.com"
     },
     license: "GPL",
-    preview: function (pblock, args) {
-        //ubiq_show_preview(urlString);
-        //searchText = jQuery.trim(args.text);
-        var host = args.text;
-        if (host.length < 1) {
-            pblock.innerHTML = "Checks if URL is down";
-            return;
-        }
-        var previewTemplate = "Press Enter to check if <b>" + host + "</b> is down.";
-        pblock.innerHTML = previewTemplate;
-    },
-    execute: async function (args) {
-        var url = "https://api-prod.downfor.cloud/httpcheck/{QUERY}";
-        var query = args.text;
-        pblock.innerHTML = "checking "+query;
-        // Get the hostname from url
-        if (!query) {
-            var host = window.location.href;
-            var url_comp = host.split('/');
-            query = url_comp[2];
-        }
-        var urlString = url.replace("{QUERY}", query);
+    preview: async function (pblock, {text:text}) {
+        if (text.indexOf("://")<0) text = "https://"+text;
+        if (text=="") text = CmdUtils.getLocation();
+        text = CmdUtils.getLocationOrigin(text.trim())
+        if (text=="") return pblock.innerHTML = "pass argument or run inside tab";
+        pblock.innerHTML = "checking if <b>" + text + "</b> is down...";
+        var urlString = this.url.replace("{QUERY}", text);
         ajax = await CmdUtils.get(urlString);
         {
             if (!ajax) return;
             if (ajax.isDown) {
-                pblock.innerHTML = `<p style="font-size: 18px;">It\'s <b>not</b> just you. The site <u>${query}</u> is <b>down!</b></p>`;
+                pblock.innerHTML = `It\'s <b>not</b> just you.<br><br>The site <u>${text}</u> is <b>down!</b>`;
             } else {
-                pblock.innerHTML = `<p style="font-size: 18px;">It\'s just you. The site <u>${query}</u> is <b>up!</b></p>`;
+                pblock.innerHTML = `It\'s just you.<br><br>The site <u>${text}</u> is <b>up!</b>`;
             }
         };
     }
