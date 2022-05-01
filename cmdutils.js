@@ -65,6 +65,10 @@ CmdUtils.CreateCommand = function CreateCommand(cs) {
         // remove previously defined command with this name
         CmdUtils.CommandList = CmdUtils.CommandList.filter( c => c.name !== cs.name );
     }
+    // insert blank preview/execute functions if none provided
+    if (typeof cs.execute != 'function') cs.execute = function (args) {};
+    if (typeof cs.preview != 'function') cs.preview = function (pblock, args) {};
+    
     var to = parseFloat(cs.timeout || 0);
     if (to>0) {
         if (typeof cs.preview == 'function') {
