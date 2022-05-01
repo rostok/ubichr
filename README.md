@@ -270,6 +270,49 @@ To search for commands shared by others go to https://gist.github.com/search?q=u
 
 In case you just want to share command via other means execute `command-source name` to copy source to clipboard.
 
+# Unit testing
+UbiChr provides unit testing of individual commands. Most tests rely on one of two checks:
+* checking preview contents (ie: including, starting or being exact pattern)
+* checking if additional tabs were opened
+
+Tests page, accessed via `unittests` command, allows to run multiple tests and observe the results. In order to understand test one should review tests.js source. Basically a unit test is defined as object with properties in table below. It is either accessed as `test` property of cmd_struct or element of tests array in tests.js.
+
+| property       | necessary | type                      | info                             
+|----------------|-----------|---------------------------|----------------------------------          
+| name           | yes       | string                    | same as ubichr command name    
+| args           |           | string                    | command arguments                
+| text           |           | string                    | expected preview block .innerText result 
+| starsWithText  |           | string                    | preview block .innerText is expected to start with this string
+| includesText   |           | string                    | preview block .innerText is expected to include this string
+| html           |           | string                    | expected preview block .innerHTML result
+| includesHTML   |           | string                    | preview block .innerHTML is expected to include this string
+| url            |           | string / array of strings | expected open tab(s) with this url(s), syntax is compatible with chrome.tabs.query url option parameter with wildcards
+| exec           |           | boolean                   | true if command should be executed
+| timeout        |           | number / ms               | check is perfomed after this delay
+| init(window)   |           | function                  | custom function executed when testing is started, before timeout!
+| test(window)   |           | function                  | custom test function, should return true if OK
+| exit(window)   |           | function                  | custom function executed after test is complete (ie. for cleanup)
+
+attributes added automatically:
+| property       | necessary | type                      | info                             
+|----------------|-----------|---------------------------|----------------------------------          
+| pass(message)  |           | function                  | called on test sucess
+| fail(message)  |           | function                  | called on test failure
+| result         |           | string                    | will contain 'pass' or 'fail'
+| el             |           | dom node                  | node element with test status (see tests.js)
+
+Lest see some very basic example:
+
+    {
+        name: 'calc',       // this test is for calc command
+        args: '2+2',        // arguments is 2+2
+        text: '4',          // preview should be set to 4
+        timeout: 1000,      // test is performed 1 second after popup is opened
+    }
+
+Once testing is started for each command a separate tab is opened and proper input is entered, if necessary command is executed.
+CmdUtils.onPopup() handler is executed that handles all the testing. Beware that in order to prevent race condition of previous command preview asynchronous load the CmdUtils.loadLastInput is set to false. This results with UbiChr testing tabs no showing last command by default.
+
 # Keyboard shortcuts
 ## Command popup
 - Enter - execute current command

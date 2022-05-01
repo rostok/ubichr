@@ -10,10 +10,20 @@
     .status {
         white-space: nowrap; 
     }
-    .mulcol {
+    .mulcol1 {
         column-fill: auto;
-        column-count: 2;
         height: 90vh;
+        column-count: 2;
+    }
+    .mulcol2 {
+        column-fill: balance-all;
+        column-width: 16rem;
+        height: 90vh;
+    }
+    .colhead {
+        break-before:column;
+        font-weight: 1000;
+        display: block;
     }
 </style>
 <body>
@@ -24,26 +34,34 @@
     <button id="close">close test tabs</button>
     <p>
     <!-- <button id="generate">generate test stubs</button> -->
-        <table width=100%>
+    <div class="mulcol2">
+        <span class="colhead">tested:</span>
+        <span id="tests"></span>
+        <span class="colhead">untested:</span>
+        <span id="untested"></span>
+        <span class="colhead">untested custom:</span>
+        <span id="untestedcustom"></span>
+    </div>
+        <!-- <table width=100%>
             <tr>
                 <td>
                     <b>tested:</b>
-                    <div class="mulcol" id="tests">
+                    <div class="mulcol2" id="tests">
                     </div>
                     
                 </td>
                 <td>
                     <b>untested built-in:</b>
-                    <div class="mulcol" id="untested">
+                    <div class="mulcol1" id="untested">
                     </div>
                 </td>
                 <td>
                     <b>untested custom:</b>
-                    <div class="mulcol" id="untestedcustom">
+                    <div class="mulcol2" id="untestedcustom">
                     </div>
                 </td>
             </tr>
-        </table>
+        </table> -->
         
 
 </body>

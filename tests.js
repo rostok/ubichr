@@ -21,7 +21,14 @@
 //     pass(message): called on test sucess
 //     fail(message): called on test failure
 //     result: string with pass/fail
-// 
+//     el: element with test status with the followin structure
+//
+//              <div class=status name=testname>
+//                  <span class=resulticon></span>
+//                  <a class=runsingle name=>testname</a>
+//                  <span class=resultmsg></span>
+//              </div>
+//
 // custom commands may include above object inside a 'test' property
 //
 // once testing is started for each command a separate tab is opened and input is entered as defined above
@@ -196,7 +203,7 @@ var tests = [{
         timeout: 3000,
         includesText: 'Questions',
         init: function (w) {
-            CmdUtils.addTab(this.url, false);
+            [this.url].flat().forEach(u=>CmdUtils.addTab(u, false));
             w.setTimeout(() => {
                 w.ubiq_show_matching_commands();
             }, this.timeout *.1);
@@ -222,9 +229,10 @@ var tests = [{
     }, {
         name: 'close'
     }, {
-        name: 'yippy'
-    }, {
-        name: 'cpan'
+        name: 'cpan',
+        args: 'ubiquity',
+        exec: true,
+        url:  '*://metacpan.org/search?q=ubiquity'
     }, {
         name: 'reload-ubiquity'
     }, {
@@ -250,12 +258,15 @@ var tests = [{
     }, {
         name: 'oldmaps',
         args: 'warsaw',
-        timeout: 5000,
+        timeout: 8000,
         exec: true,
         includesHTML: 'map-canvas',
         url: '*://www.google.com/maps/place/Wars*'
     }, {
-        name: 'msn-search'
+        name: 'msn-search',
+        args: 'test',
+        exec: true,
+        url: '*://www.bing.com/search?q=test*'
     }, {
         name: 'new-tab',
         args: '3e.pl',
@@ -273,7 +284,10 @@ var tests = [{
         timeout: 2000,
         includesText: 'https://tinyurl.com/y2bvysun'
     }, {
-        name: 'slideshare'
+        name: 'slideshare',
+        args: 'test',
+        exec: true,
+        url: '*://www.slideshare.net/search/slideshow?q=*'
     }, {
         name: 'stackoverflow-search',
         args: 'ubiquity',
@@ -345,7 +359,7 @@ var tests = [{
     }, {
         name: 'mobygames',
         args: 'shadow of the beast',
-        timeout: 2000,
+        timeout: 3000,
         includesText: 'Shadow of the Beast',
         exec: true,
         url: '*://www.mobygames.com/search/quick?q=shadow*beast*'
@@ -362,7 +376,10 @@ var tests = [{
     }, {
         name: 'replace-selection'
     }, {
-        name: 'cookies'
+        name: 'cookies',
+        starsWithText: '# Enter to save',
+        timeout: 500,
+        includesText: 'FALSE'
     }, {
         name: 'translate-en',
         args: 'kakao jest już zimne',
@@ -374,7 +391,9 @@ var tests = [{
         timeout: 1000,
         includesText: 'kakao jest już zimne'
     }, {
-        name: 'pwd-chrome'
+        name: 'pwd-chrome',
+        exec: true,
+        url: 'chrome://settings/passwords'
     }, {
         name: 'site-search',
         'args': 'test',
@@ -394,7 +413,10 @@ var tests = [{
     }, {
         name: 'inject-js'
     }, {
-        name: 'whois'
+        name: 'whois',
+        args: '3e.pl',
+        exec: true,
+        url: '*://who.is/whois/3e.pl*'
     }, {
         name: 'allow-text-selecion'
     }, {
@@ -412,7 +434,10 @@ var tests = [{
     }, {
         name: 'mark'
     }, {
-        name: 'open'
+        name: 'open',
+        args: '3e.pl wired.com',
+        exec: true,
+        url: ["*://3e.pl/*","*://www.wired.com/*"]
     }, {
         name: 'man',
         'args': 'test',
@@ -499,6 +524,22 @@ async function isTabOpen(url) {
     return Array.isArray(t) && t.length > 0;
 }
 
+// function takeShot(wnd, test, callback) {
+//     console.log("takeshot", wnd, test, callback);
+//     chrome.tabs.query({currentWindow: true},(t)=>{
+//         t.filter(f=>f.url==wnd.location.href).forEach(tt=>{
+//             console.log("tt", tt.url, tt.id, tt);
+//             chrome.tabs.update(tt.id, {active: true}, (ttt)=>{
+//                 console.log("ttt", ttt);
+//                 chrome.tabs.captureVisibleTab({format:"png"}, (e)=>{ 
+//                     $(test.el).append(`<img width=128 src='${e}'>`);
+//                     // callback(wnd);
+//                 });
+//             })
+//         })
+//     });
+// }
+
 function initTests() {
     // CmdUtils.DEBUG = true;
     CmdUtils.loadLastInput = false;
@@ -522,13 +563,12 @@ function initTests() {
 
             function assert(cond, msg) {
                 if (!cond) {
-                    t.fail(msg);
-                    if(typeof t.exit === 'function') t.exit(wnd);
-                    throw(t.name+' test failed!');
+                    throw(msg);
                 }
             }
 
             wnd.setTimeout(async () => {
+                var error = "";
                 try {
                     if (typeof t.url === 'string')
                         t.url = [t.url];
@@ -552,20 +592,25 @@ function initTests() {
                     if (typeof t.test === 'function')
                         assert(t.test(wnd), 'test mismatch');
                 } catch (e) {
-                    console.error(e);
-                    t.exit(wnd);
-                    return;
+                    console.error(t.name, 'failed with', e);
+                    error = e;
                 }
-                t.pass('');
-                t.exit(wnd);
 
-                if (wnd.location.href!==`chrome-extension://${window.location.host}/tests.html`) wnd.close();
-                // var urls = [];
-                // if (typeof t.url === 'string') urls.push(t.url)
-                // chrome.tabs.query({url:urls}, (t) => {
-                //     t.filter(b=>!b.url.includes('/tests.html')).map((b) => { chrome.tabs.remove(b.id, () => {}); });
-                // });
-            
+                var aftershot = ()=>{};
+                if (error == "") {
+                    t.pass('');
+                    if (wnd.location.href!==`chrome-extension://${window.location.host}/tests.html`) aftershot = ()=>{ wnd.close() };
+                    // var urls = [];
+                    // if (typeof t.url === 'string') urls.push(t.url)
+                    // chrome.tabs.query({url:urls}, (t) => {
+                    //     t.filter(b=>!b.url.includes('/tests.html')).map((b) => { chrome.tabs.remove(b.id, () => {}); });
+                    // });
+                } else {
+                    t.fail(error);
+                }
+                // takeShot(wnd, t, aftershot);
+                aftershot();
+                t.exit(wnd);
             }, t.timeout);
         }
     };
@@ -576,7 +621,6 @@ function runSingleTest(t, delay=0) {
     if (typeof t==='undefined') return;
     t.timeout = t.timeoutOrg * timeoutMultiplier || timeoutMin;
     t.el = $(`div.status[name='${t.name}']`).toArray().shift();
-	console.log(t.el);
     if (typeof t.el==='undefined') 
         t.el = $(`<a class=runsingle name='${t.name}' href=#>${t.name}</a>`)
                .click(function() { runSingleTest(tests.find(t=>t.name==$(this).attr('name'))); })
@@ -685,7 +729,8 @@ $('#rempass').click(() => {
 $('#close').click(() => {
     CmdUtils.onPopup = function () {};
     var urls = tests.map(t=>t.url).filter(t=>typeof t!=='undefined').flat();
-    chrome.tabs.query({url:urls, active:false}, (t) => {
+    // console.log("closing",urls);
+    chrome.tabs.query({url:urls}, (t) => {
         t.map((b) => { chrome.tabs.remove(b.id, () => {}) });
     });
     chrome.tabs.query({active:false}, (t) => {
