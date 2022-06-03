@@ -1,0 +1,13 @@
+https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/codemirror.min.js
+https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/mode/javascript/javascript.min.js
+https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/addon/edit/matchbrackets.min.js
+https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/addon/search/search.min.js
+https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/addon/comment/comment.min.js
+https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/addon/search/searchcursor.min.js
+https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/addon/lint/lint.min.js
+https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/addon/lint/javascript-lint.min.js
+https://cdnjs.cloudflare.com/ajax/libs/jshint/2.12.0/jshint.min.js
+https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/codemirror.min.css
+https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/theme/lesser-dark.min.css
+https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/theme/ambiance.min.css
+https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/addon/lint/lint.min.css
