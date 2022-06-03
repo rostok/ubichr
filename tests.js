@@ -41,7 +41,8 @@ CmdUtils.loadLastInput = true; // this is set to false in initTests
 
 var timeoutMin = 0;
 var timeoutMultiplier = 1;
-var testurl = `chrome-extension://${window.location.host}/popup.html#test`;
+var extprefix =  navigator.userAgent.indexOf("Firefox") != -1 ? `moz-extension` : `chrome-extension`; 
+var testurl = `${extprefix}://${window.location.host}/popup.html#test`;
 var tests = [{
         name: 'calc',
         args: '2+2',
@@ -104,15 +105,15 @@ var tests = [{
     }, {
         name: 'debug-popup',
         exec: true,
-        url: `chrome-extension://${window.location.host}/popup.html`,
+        url: `${extprefix}://${window.location.host}/popup.html`,
     }, {
         name: 'debug-popup-editor',
         exec: true,
-        url: `chrome-extension://${window.location.host}/debugpopup.html`,
+        url: `${extprefix}://${window.location.host}/debugpopup.html`,
     }, {
         name: 'edit-ubiquity-commands',
         exec: true,
-        url: `chrome-extension://${window.location.host}/options.html`,
+        url: `${extprefix}://${window.location.host}/options.html`,
     }, {
         name: 'discogs',
         args: 'seefeel',
@@ -167,7 +168,7 @@ var tests = [{
         url: '*://genius.com/search?q=Here*'
     }, {
         name: 'get-urls',
-        includesText: 'chrome-extension://',
+        includesText: `${extprefix}://`,
         timeout: 2000,
     }, {
         name: 'image-search',
@@ -186,7 +187,7 @@ var tests = [{
         args: 'help',
         exec: true,
         includesText: 'Congratulations',
-        url: `chrome-extension://${window.location.host}/help.html`,
+        url: `${extprefix}://${window.location.host}/help.html`,
     }, {
         name: 'history',
         includesText: 'help help',
@@ -599,7 +600,7 @@ function initTests() {
                 var aftershot = ()=>{};
                 if (error == "") {
                     t.pass('');
-                    if (wnd.location.href!==`chrome-extension://${window.location.host}/tests.html`) aftershot = ()=>{ wnd.close() };
+                    if (wnd.location.href!==`${extprefix}://${window.location.host}/tests.html`) aftershot = ()=>{ wnd.close() };
                     // var urls = [];
                     // if (typeof t.url === 'string') urls.push(t.url)
                     // chrome.tabs.query({url:urls}, (t) => {
