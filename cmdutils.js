@@ -67,7 +67,7 @@ CmdUtils.CreateCommand = function CreateCommand(cs) {
     }
     // insert blank preview/execute functions if none provided
     if (typeof cs.execute != 'function') cs.execute = function (args) {};
-    if (typeof cs.preview != 'function') cs.preview = function (pblock, args) {};
+    // if (typeof cs.preview != 'function') cs.preview = function (pblock, args) {}; // preview can be function, string or undefined
     
     var to = parseFloat(cs.timeout || 0);
     if (to>0) {

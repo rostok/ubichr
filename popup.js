@@ -68,7 +68,7 @@ var savePreviewCmdTimeoutID = 0;
 function ubiq_show_preview(cmd, args) {
     if (cmd == null) return;
     var cmd_struct = CmdUtils.CommandList[cmd];
-    if (!cmd_struct || !cmd_struct.preview) return;
+    if (!cmd_struct) return;
     var preview_func = cmd_struct.preview;
     ubiq_last_preview_command_index = cmd;
     ubiq_last_preview_cmd = cmd_struct;
@@ -80,7 +80,7 @@ function ubiq_show_preview(cmd, args) {
     case 'string': 
             ubiq_set_preview( preview_func );
             break;
-    default:
+    case 'function':
             var words = ubiq_command().split(' ');
             var command = words.shift();
         
@@ -105,6 +105,18 @@ function ubiq_show_preview(cmd, args) {
                 try {
                     CmdUtils.deblog("prev [", cmd_struct.name ,"] [", text,"]");
                     CmdUtils.backgroundWindow.clearTimeout(cmd_struct.lastPrevTimeoutID); // keep lastPrevTimeoutID in cmd_struct instead of global var
+
+                    // this hack addresses race condition for preview calls executed earlier and modifying pblock area once data is gathered ($.load / $.get)
+                    // solution is to to recreate preview element by removing old one and creating exactly the same one based on its html code
+                    // all custom properties will be lost, though
+                    var preel = ubiq_preview_el();
+                    var preelhtml = $(preel).get().map(function(v){return v.outerHTML}).join('');
+                    var prevprev = $(preel).prev().get(0);
+                    if (typeof prevprev !== "undefined") {
+                        $(preel).remove();
+                        $(prevprev).after(preelhtml);
+                    }
+
                     (preview_func.bind(cmd_struct))(ubiq_preview_el(), directObj);
                 } catch (e) {
                     CmdUtils.setBadge("!", "red");
