@@ -16,6 +16,7 @@
 //     init(window): custom function executed when testing is started, before timeout!
 //     test(window): custom test function, should return true if OK
 //     exit(window): custom function executed after test is complete (ie. for cleanup)
+//     postexit(window): internal function executed after exit
 //
 //     attributes added automatically:
 //     pass(message): called on test sucess
@@ -175,7 +176,7 @@ var tests = [{
         args: 'test',
         exec: true,
         timeout: 3000,
-        includesHTML: '<img',
+        includesHTML: CmdUtils.getcmd("gimages").key ? '<img' : undefined, // images available if command has registered credentials
         url: '*://www.google.com/search?tbm=isch&q=test*'
     }, {
         name: 'giphy',
@@ -195,7 +196,7 @@ var tests = [{
     }, {
         name: 'imdb',
         args: 'Nausicaa of the Valley of the Wind',
-        includesText: 'Kaze no tani',
+        includesHTML: 'tt0087544',
         timeout: 3000
     }, {
         name: 'grep',
@@ -345,10 +346,10 @@ var tests = [{
         name: 'grepInnerHTML'
     }, {
         name: 'links',
-        args: 'stackoverflow questions tagged',
+        args: 'stackoverflow questions',
         url: 'https://stackoverflow.com/',
         timeout: 3000,
-        includesText: 'https://stackoverflow.com/questions/tagged/',
+        includesText: 'https://stackoverflow.com/questions',
         init: function (w) {
             [this.url].flat().forEach(u=>CmdUtils.addTab(u, false));
             // w.setTimeout(() => {
@@ -489,57 +490,17 @@ var tests = [{
     }
 ];
 
-// helper functions
-// https://gist.github.com/BigSully/4468a58848df07736757a73d722d81f5
-// let asyncfy = fn => (...args) => {
-//     return new Promise((resolve, reject) => {
-//         fn(...args, (...results) => {
-//             let {
-//                 lastError
-//             } = chrome.runtime
-//             if (typeof lastError !== 'undefined') reject(lastError);
-//             else results.length == 1 ? resolve(results[0]) : resolve(results);
-//         });
-//     });
-// };
-
-// function getTab(url) {
-//     return new Promise((resolve, reject) => {
-//         try {
-//             chrome.tabs.query({url:url,currentWindow: true,}, function (tabs) { resolve(tabs); })
-//         } catch (e) {
-//             reject(e);
-//         }
-//     })
-// }
-
 // return true if current window includes tab with this url
 async function isTabOpen(url) {
     // var t = await asyncfy(chrome.tabs.query)({url: url, currentWindow: true});
-	var t;
+    var t;
     try{
-		t = await chrome.tabs.query({url: url, currentWindow: true},(tt)=>{});
+        t = await chrome.tabs.query({url: url, currentWindow: true},(tt)=>{});
     } catch(e){
         return false;
     }
     return Array.isArray(t) && t.length > 0;
 }
-
-// function takeShot(wnd, test, callback) {
-//     console.log("takeshot", wnd, test, callback);
-//     chrome.tabs.query({currentWindow: true},(t)=>{
-//         t.filter(f=>f.url==wnd.location.href).forEach(tt=>{
-//             console.log("tt", tt.url, tt.id, tt);
-//             chrome.tabs.update(tt.id, {active: true}, (ttt)=>{
-//                 console.log("ttt", ttt);
-//                 chrome.tabs.captureVisibleTab({format:"png"}, (e)=>{ 
-//                     $(test.el).append(`<img width=128 src='${e}'>`);
-//                     // callback(wnd);
-//                 });
-//             })
-//         })
-//     });
-// }
 
 function initTests() {
     // CmdUtils.DEBUG = true;
@@ -562,11 +523,7 @@ function initTests() {
             if (t.exec) wnd.console.log('executing');
             if (t.exec) wnd.ubiq_execute();
 
-            function assert(cond, msg) {
-                if (!cond) {
-                    throw(msg);
-                }
-            }
+            function assert(cond, msg) { if (!cond) throw(msg); }
 
             wnd.setTimeout(async () => {
                 var error = "";
@@ -574,12 +531,12 @@ function initTests() {
                     if (typeof t.url === 'string')
                         t.url = [t.url];
                     if (Array.isArray(t.url)) {
-						var cond = true;
-						t.url.forEach(async (v)=>{
-							cond = cond && await isTabOpen(v);
-						})
+                        var cond = true;
+                        t.url.forEach(async (v)=>{
+                            cond = cond && await isTabOpen(v);
+                        })
                         assert(cond, 'tabs/urls not found');
-					}
+                    }
                     if (typeof t.text === 'string')
                         assert(wnd.ubiq_preview_el().innerText == t.text, 'text mismatch');
                     if (typeof t.starsWithText === 'string')
@@ -612,6 +569,7 @@ function initTests() {
                 // takeShot(wnd, t, aftershot);
                 aftershot();
                 t.exit(wnd);
+                t.postexit(wnd);
             }, t.timeout);
         }
     };
@@ -626,7 +584,7 @@ function runSingleTest(t, delay=0) {
         t.el = $(`<a class=runsingle name='${t.name}' href=#>${t.name}</a>`)
                .click(function() { runSingleTest(tests.find(t=>t.name==$(this).attr('name'))); })
                .wrap(`<div class=status name='${t.name}'></div>`)
-			   .parent()
+               .parent()
                .appendTo('#tests');
     $("span.resulticon,span.resultmsg",t.el).remove();
     t.result = "";
@@ -676,6 +634,7 @@ tests.forEach(t => {
     t.args = t.args || '';
     t.init = t.init || (()=>{});
     t.exit = t.exit || (()=>{});
+    t.postexit = (()=>{});
     t.timeoutOrg = t.timeout;
     t.timeout = t.timeoutOrg * timeoutMultiplier || timeoutMin;
 });
@@ -695,7 +654,15 @@ $('#tests').append( tests.map(t=>t.name).map(t=>`<div class=status name='${t}'><
 $('#untested').append( CmdUtils.CommandList.filter(c=>c.builtIn).map(c=>c.name).filter(c=>tests.map(t=>t.name).indexOf(c)<0).sort().join('<br>') );
 $('#untestedcustom').append( CmdUtils.CommandList.filter(c=>!c.builtIn).map(c=>c.name).filter(c=>tests.map(t=>t.name).indexOf(c)<0).sort().join('<br>') );
 $('a.runsingle').click(function() { runSingleTest(tests.find(t=>t.name==$(this).attr('name'))); });
-
+$('#autoclose').click( ()=>{
+    tests.forEach(t=>t.postexit=(()=>{}));
+    if ($('#autoclose').is(':checked')) 
+        tests.filter(t=>typeof t.url !== 'undefined').forEach(t=>t.postexit = function(w) {
+            chrome.tabs.query({}, (tb)=>console.log(`AUTOCLOSING ${t.url} FOUND ${tb.map(b=>b.url)}`) ); 
+            chrome.tabs.query({url:this.url}, tb => chrome.tabs.remove( tb.map(b=>b.id) ) ); 
+            w.close();
+        });
+});
 $('#start').click(() => {
     timeoutMin = 0;
     timeoutMultiplier = 1;
@@ -731,14 +698,8 @@ $('#close').click(() => {
     CmdUtils.onPopup = function () {};
     var urls = tests.map(t=>t.url).filter(t=>typeof t!=='undefined').flat();
     // console.log("closing",urls);
-    chrome.tabs.query({url:urls}, (t) => {
-        t.map((b) => { chrome.tabs.remove(b.id, () => {}) });
-    });
-    chrome.tabs.query({active:false}, (t) => {
-        t.map((b) => { 
-            if(b.url.startsWith(testurl)) chrome.tabs.remove(b.id, () => {}); 
-        });
-    });
+    chrome.tabs.query({url:urls}, (t) => chrome.tabs.remove(t.map(b=>b.id), () => {}) );
+    chrome.tabs.query({active:false}, (t) => chrome.tabs.remove(t.filter(b=>b.url.startsWith(testurl)).map(b=>b.id), () => {}) );
 });
 
 $('#generate').click(()=>{

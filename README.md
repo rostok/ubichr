@@ -81,6 +81,7 @@ The command definition object (refered also as cmd_struct) can have these proper
 | timeout        |           | number                    | if set ```preview```/```execute``` functions will be called after this delay, both functions will be saved as ```preview_timeout```/```execute_timeout```|
 | requirePopup   |           | string / array of strings | url(s) of necessary scripts loaded before ```preview``` is called | 
 | require        |           | string / array of strings | as above but for ```execute``` function |
+| test           |           | object                    | see Unit testing below |
 
 ## Command with some action
 ```javascript
@@ -279,7 +280,7 @@ Tests page, accessed via `unittests` command, allows to run multiple tests and o
 
 | property       | necessary | type                      | info                             
 |----------------|-----------|---------------------------|----------------------------------          
-| name           | yes       | string                    | same as ubichr command name    
+| name           | yes / no  | string                    | same as ubichr command name (can be skipped if test is included in command)
 | args           |           | string                    | command arguments                
 | text           |           | string                    | expected preview block .innerText result 
 | starsWithText  |           | string                    | preview block .innerText is expected to start with this string

@@ -1530,7 +1530,7 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "settings-chrome",
-    icon: "https://www.iconsdb.com/icons/download/black/settings-32.png",
+    icon: "⚙️",
     description: "opens chrome settings tab",
     execute: function execute(args) {
       chrome.tabs.query({}, (t)=>{

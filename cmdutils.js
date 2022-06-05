@@ -65,6 +65,8 @@ CmdUtils.CreateCommand = function CreateCommand(cs) {
         // remove previously defined command with this name
         CmdUtils.CommandList = CmdUtils.CommandList.filter( c => c.name !== cs.name );
     }
+    if (typeof cs.test === 'object' && typeof cs.test.name === 'undefined') cs.test.name = cs.name; // if test is included name can be skipped
+
     // insert blank preview/execute functions if none provided
     if (typeof cs.execute != 'function') cs.execute = function (args) {};
     // if (typeof cs.preview != 'function') cs.preview = function (pblock, args) {}; // preview can be function, string or undefined
