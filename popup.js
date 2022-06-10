@@ -78,13 +78,10 @@ function ubiq_clear() {
 
 var savePreviewCmdTimeoutID = 0;
 
-// shows preview for command, cmd is command index
-function ubiq_show_preview(cmd, args) {
-    if (cmd == null) return;
-    var cmd_struct = CmdUtils.CommandList[cmd];
-    if (!cmd_struct) return;
+// shows preview for command, cmd is command struct
+function ubiq_show_preview(cmd_struct) {
+    if (typeof cmd_struct == 'undefined' || !cmd_struct) return;
     var preview_func = cmd_struct.preview;
-    ubiq_last_preview_command_index = cmd;
     ubiq_last_preview_cmd = cmd_struct;
     switch(typeof preview_func)
     {
@@ -152,8 +149,8 @@ function ubiq_execute() {
     return false;
 }
 
-function ubiq_dispatch_command(line, args) {
-    var words = ubiq_command().split(' ');
+function ubiq_dispatch_command(line) {
+    var words = line.split(' ');
     var command = words.shift();
 
     var text = words.join(' ').trim();
@@ -195,8 +192,6 @@ function ubiq_dispatch_command(line, args) {
             CmdUtils.backgroundWindow.error(e.stack);
         }
     }
-
-    return;
 }
 
 function ubiq_help() {
@@ -421,7 +416,8 @@ function ubiq_show_matching_commands(text) {
         var selcmdidx = matches[ubiq_selected_command][0];
         if (selcmdidx!=ubiq_last_preview_command_index) ubiq_clear();
         ubiq_selected_option = -1;
-        ubiq_show_preview(selcmdidx);
+        ubiq_last_preview_command_index = selcmdidx;
+        ubiq_show_preview(CmdUtils.CommandList[selcmdidx]);
 
         for (var c in matches) {
             var is_selected = (c == ubiq_selected_command);
