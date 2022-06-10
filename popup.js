@@ -13,6 +13,7 @@ var ubiq_first_match;
 var ubiq_history_index = 0;
 var ubiq_last_preview_command_index = -1; // index for CommandList, changed from ubiq_last_preview_command
 var ubiq_last_preview_cmd = null; // the last command structure
+var ubiq_preview_org_html = '<div id="ubiq-command-preview"></div>';
 
 // sets the tip field (for time being this is the preview panel)
 function ubiq_set_tip(v) {
@@ -40,6 +41,19 @@ function ubiq_set_preview(v, prepend) {
     var el = ubiq_preview_el();
     if (!el) return;
     el.innerHTML = v + (prepend ? "<hr/>" + el.innerHTML : "");
+}
+
+// recreates end empties preview/pblock element
+// this hack addresses race condition for preview calls executed earlier and modifying pblock area once data is gathered ($.load / $.get)
+// solution is to to recreate preview element by removing old one and creating exactly the same one based on its html code
+// all custom properties will be lost, though
+function ubiq_reset_preview() {
+    var preel = ubiq_preview_el();
+    var prevprev = $( preel ).prev().get(0);
+    if (typeof prevprev !== "undefined") {
+        $(preel).remove();
+        $(prevprev).after( ubiq_preview_org_html );
+    }
 }
 
 function ubiq_result_el() {
@@ -75,9 +89,11 @@ function ubiq_show_preview(cmd, args) {
     switch(typeof preview_func)
     {
     case 'undefined':
+            ubiq_reset_preview();
             ubiq_set_preview( cmd_struct.description );
             break;
     case 'string': 
+            ubiq_reset_preview();
             ubiq_set_preview( preview_func );
             break;
     case 'function':
@@ -105,18 +121,7 @@ function ubiq_show_preview(cmd, args) {
                 try {
                     CmdUtils.deblog("prev [", cmd_struct.name ,"] [", text,"]");
                     CmdUtils.backgroundWindow.clearTimeout(cmd_struct.lastPrevTimeoutID); // keep lastPrevTimeoutID in cmd_struct instead of global var
-
-                    // this hack addresses race condition for preview calls executed earlier and modifying pblock area once data is gathered ($.load / $.get)
-                    // solution is to to recreate preview element by removing old one and creating exactly the same one based on its html code
-                    // all custom properties will be lost, though
-                    var preel = ubiq_preview_el();
-                    var preelhtml = $(preel).get().map(function(v){return v.outerHTML}).join('');
-                    var prevprev = $(preel).prev().get(0);
-                    if (typeof prevprev !== "undefined") {
-                        $(preel).remove();
-                        $(prevprev).after(preelhtml);
-                    }
-
+                    ubiq_reset_preview();
                     (preview_func.bind(cmd_struct))(ubiq_preview_el(), directObj);
                 } catch (e) {
                     CmdUtils.setBadge("!", "red");
@@ -625,14 +630,21 @@ function ubiq_load_input(callback) {
 }
 
 
+// detect ubiq-result-panel resizing and ses width/max-width of ubiq-command-panel, -tip and -preview
+var resultResizeObserver = new ResizeObserver(entries => {
+    var w = 780 - $("#ubiq-result-panel").width() + "px";
+    $("#ubiq-command-panel,#ubiq-command-tip,#ubiq-command-preview").css({"width":w, "max-width":w});
+});
+resultResizeObserver.observe(document.querySelector('#ubiq-result-panel'));
+
 $(window).on('load', function() {
     if (typeof CmdUtils !== 'undefined' && typeof Utils !== 'undefined' && typeof backgroundPage !== 'undefined' ) {
+        ubiq_preview_org_html = ubiq_preview_el().outerHTML;
         CmdUtils.setPreview = ubiq_set_preview;
         CmdUtils.setResult = ubiq_set_result;
         CmdUtils.setTip = ubiq_set_tip;
         CmdUtils.popupWindow = window;
         CmdUtils.updateActiveTab();
-        
         
         // Add event handler to window 
         document.addEventListener('keydown', function(e) { ubiq_keydown_handler(e); }, false);

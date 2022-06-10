@@ -61,7 +61,7 @@ body {
     height: 100%;
 }
 #ubiq-command-panel {
-    width: 540px; 
+    width: 100%; 
     height: 100%;
     vertical-align: top;
 }
@@ -77,14 +77,15 @@ body {
 #ubiq-command-preview {
     color: #ddd;
     /* width: 540px;  */
-    /* max-width: 540px; */
+    max-width: 540px; 
     /* flex-grow: 1; */
     width: 100%; 
     height: 505px;
     position: relative;
-    /* overflow-y: auto; */
+    overflow-y: auto;
     /* zoom overflow dirty fix */
-    overflow-y: hidden;
+    overflow-x: hidden;
+    /* overflow-y: hidden; */
 }
 
 #ubiq-command-preview a {
