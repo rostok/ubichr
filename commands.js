@@ -1106,7 +1106,7 @@ CmdUtils.CreateCommand({
                 CmdUtils.setSelection(text); 
                 CmdUtils.popupWindow.ubiq_set_input("calc "+text, false);
             } catch (e) {
-                previewBlock.innerHTML = "eval error:"+e;
+                CmdUtils.setResult("eval error:"+e);
             }
         }
     }
@@ -2036,7 +2036,7 @@ CmdUtils.CreateCommand({
       var o = "";
       o += "<pre>";
       o += "enter pattern to filter; select with Ctrl+up/down:\n\n";
-      CmdUtils.history.filter(c=>c.indexOf(args.text)>=0 || args.text=="").forEach((c)=>{
+      CmdUtils.history.filter(c=>c.indexOf(args.text)>=0).forEach((c)=>{
           o += `<span data-option${dos} data-option-value='${c}'>${c}</span>\n`;  
           dos = '';
       });
