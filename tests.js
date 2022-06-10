@@ -211,6 +211,14 @@ var tests = [{
             }, this.timeout *.1);
         },
     }, {
+        name: 'lasterror',
+        args: '',
+        timeout: 500,
+        includesText: 'ReferenceError: q is not defined',
+        init: function (w) {
+            try { CmdUtils.popupWindow.ubiq_show_preview({name:'failingcmd',preview:()=>console.log(q)}) } catch(e) { }
+        },
+    }, {
         name: 'indexof',
         args: 'Blade.Runner.1982',
         exec: true,
@@ -659,7 +667,7 @@ $('#autoclose').click( ()=>{
     if ($('#autoclose').is(':checked')) 
         tests.filter(t=>typeof t.url !== 'undefined').forEach(t=>t.postexit = function(w) {
             chrome.tabs.query({}, (tb)=>console.log(`AUTOCLOSING ${t.url} FOUND ${tb.map(b=>b.url)}`) ); 
-            chrome.tabs.query({url:this.url}, tb => chrome.tabs.remove( tb.map(b=>b.id) ) ); 
+            chrome.tabs.query({url:this.url,currentWindow:true}, tb => chrome.tabs.remove( tb.map(b=>b.id) ) ); 
             w.close();
         });
 });
@@ -698,8 +706,8 @@ $('#close').click(() => {
     CmdUtils.onPopup = function () {};
     var urls = tests.map(t=>t.url).filter(t=>typeof t!=='undefined').flat();
     // console.log("closing",urls);
-    chrome.tabs.query({url:urls}, (t) => chrome.tabs.remove(t.map(b=>b.id), () => {}) );
-    chrome.tabs.query({active:false}, (t) => chrome.tabs.remove(t.filter(b=>b.url.startsWith(testurl)).map(b=>b.id), () => {}) );
+    chrome.tabs.query({url:urls,currentWindow:true}, (t) => chrome.tabs.remove(t.map(b=>b.id), () => {}) );
+    chrome.tabs.query({active:false,currentWindow:true}, (t) => chrome.tabs.remove(t.filter(b=>b.url.startsWith(testurl)).map(b=>b.id), () => {}) );
 });
 
 $('#generate').click(()=>{
