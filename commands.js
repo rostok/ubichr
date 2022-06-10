@@ -60,7 +60,8 @@ CmdUtils.CreateCommand({
     preview: (pblock, args) => {
         var d = CmdUtils.dump(args.text);
         d = new Option(d).innerHTML;
-        pblock.innerHTML = "<pre>"+d;
+      	$(pblock).css('font-size','0.7em');
+        pblock.innerHTML = `<pre>${d}</pre>`;
     },
 });
 
@@ -104,6 +105,7 @@ CmdUtils.CreateCommand({
         CmdUtils.setTip("execute to paste this into gist.github.com");
         var d = CmdUtils.dump(args.text);
         d = new Option(d).innerHTML;
+      	$(pblock).css('font-size','0.7em');
         pblock.innerHTML = `<pre>${d}</pre>`;
     },
 });
@@ -1074,7 +1076,7 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "calc",
-    description: desc = "evals math expressions",
+    description: "evals math expressions",
     icon: "➕",
     external: true,
     require: "https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.20.1/math.min.js",
@@ -1091,7 +1093,7 @@ CmdUtils.CreateCommand({
             //CmdUtils.ajaxGet("http://api.mathjs.org/v1/?expr="+encodeURIComponent(args.text), (r)=>{ previewBlock.innerHTML = r; });
         }
         else
-            previewBlock.innerHTML = desc;
+            previewBlock.innerHTML = this.description;
         return previewBlock.innerText;
     },
     execute: function ({text}) { 
@@ -1427,22 +1429,19 @@ CmdUtils.CreateCommand({
 CmdUtils.CreateCommand({
     names: ["get-urls"],
     icon: "https://www.iconsdb.com/icons/download/black/search-13-32.png",
-    description: "gets all open tab urls, add argument to filter",
+    description: "gets all open tab urls, add arguments to filter",
     author: "rostok",
     license: "MIT",
-    execute: ()=> {
-      CmdUtils.addTab("result.html");
+    execute: ({_cmd})=>{
+        CmdUtils.setClipboard(_cmd.arr.join("\n"));
+        CmdUtils.setTip("copied");
     },
-    preview: function preview(pblock, {text}) {
-        text = text.trim()+'';
-        var arr = [];
-        chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
+    preview: function preview(pblock, {text,_cmd}) {
+        _cmd.arr = [];
+        $(pblock).html("");
         chrome.tabs.query({}, (t)=>{
-          t.forEach((a)=>{
-            if (text=='' || a.url.indexOf(text)!=-1) 
-                  pblock.innerHTML += "<a target='_blank' href='"+a.url+"'>"+a.url+"</a><br/>";
-             chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
-          });
+          _cmd.arr = t.map(a => a.url).filter(s => text.split(/\s+/).every(subs => s.toLowerCase().includes(subs)));
+          $(pblock).css('font-size','1em').html( _cmd.arr.join("<br>") );
         });
     },
 });
@@ -1455,12 +1454,23 @@ CmdUtils.CreateCommand({
         name: "rostok"
     },
     execute: function execute(args) {   
-        CmdUtils.addTab("https://www.mobygames.com/search/quick?q=" + encodeURIComponent(args.text));
+        var opt = args._opt_val || "";
+        if(opt.includes("://")) 
+            CmdUtils.addTab(opt);
+        else 
+            CmdUtils.addTab("https://www.mobygames.com/search/quick?q=" + encodeURIComponent(args.text));
     },
     preview: function preview(pblock, {text}) {
-        pblock.innerHTML = "Search MobyGames";
+        pblock.innerHTML = this.description;
         if (text.trim()!="") 
-            jQuery(pblock).loadAbs("https://www.mobygames.com/search/quick?q=" + encodeURIComponent(text)+" #searchResults");
+            $(pblock).loadAbs("https://www.mobygames.com/search/quick?q=" + encodeURIComponent(text)+" #searchResults", ()=>{
+                $(".searchNumber",pblock).remove();
+                $(".searchImage",pblock).css({float:"left",width:"70px"});
+                $(pblock).find(".searchResult").each((i,e)=>{
+                    jQuery(e).attr("data-option","");
+                    jQuery(e).attr("data-option-value", $(e).find("a").first().attr("href"));
+                });
+            }).css("overflow-y","auto");
     },
 });
 
@@ -1653,10 +1663,10 @@ CmdUtils.CreateCommand({
           if (b.url=="chrome://settings/passwords") {
             chrome.tabs.update(b.id, {highlighted: true});
             found = true;
-              return;
+            return;
           }
         });
-        if (!found) CmdUtils.addTab("chrome://settings/passwords");
+        if (!found) CmdUtils.addTab(`chrome://settings/passwords#:~:text=${args.text}`);
       });
     },
 });
