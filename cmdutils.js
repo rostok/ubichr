@@ -682,9 +682,9 @@ CmdUtils.loadHistory = function () {
     }
 };
 
-// dumps command definition along with all functions
+// dumps command definition along with all functions, by partial name
 CmdUtils.dump = (cmd) => {
-    var c = CmdUtils.getcmd(cmd);
+    var c = CmdUtils.getcmdpart(cmd);
     if (c==null) return "";
     var r = "// UbiChr '"+c.name+"' command\n";
     r += "CmdUtils.CreateCommand({\n";
