@@ -196,8 +196,8 @@ function ubiq_dispatch_command(line) {
 
 function ubiq_help() {
     var html = '<div style="position:absolute; top:56px; right:0px; color: #666;">UbiChr v'+CmdUtils.VERSION+'</div>';
-    html += '<p>Type the name of a command and press Enter to execute it, or <b>help</b> for assistance.</p>';
-    html += "<p>commands loaded:<BR>";
+    html += 'Type the name of a command and press Enter to execute it, or <b>help</b> for assistance.</p>';
+    html += "<p>commands loaded: ";
     html += CmdUtils.CommandList.map((c)=>{
         return "<span fakeattr='"+c.name+"' href=# title='"+c.description+"'>"+(c.builtIn ? c.name : "<u>"+c.name+"</u>")+"</span>";
     }).sort().join(", ");
@@ -628,7 +628,7 @@ function ubiq_load_input(callback) {
 
 // detect ubiq-result-panel resizing and ses width/max-width of ubiq-command-panel, -tip and -preview
 var resultResizeObserver = new ResizeObserver(entries => {
-    var w = 780 - $("#ubiq-result-panel").width() + "px";
+    var w = 780 - Math.min($("#ubiq-result-panel").width(),240)+ "px";
     $("#ubiq-command-panel,#ubiq-command-tip,#ubiq-command-preview").css({"width":w, "max-width":w});
 });
 resultResizeObserver.observe(document.querySelector('#ubiq-result-panel'));
