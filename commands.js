@@ -588,105 +588,6 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
-    name: "oldmaps",
-    description: "Shows a location on the map",
-    author: {},
-    icon: "http://www.google.com/favicon.ico",
-    homepage: "",
-    timeout: 600,
-    license: "",
-    external: true,
-    requirePopup: "https://maps.googleapis.com/maps/api/js?sensor=false",
-    preview: async function mapsPreview(previewBlock, args) {
-        var GM = CmdUtils.popupWindow.google.maps;
-        
-        // brighten the maps and remove prompt
-        var cleanup;
-        cleanup = ()=>{
-            $(".dismissButton",previewBlock).closest("div").remove()
-            $("img",previewBlock).each((i,v)=>{ $(v).attr("src", $(v).attr("src").replace("sstyles!","sstyles!x") ); });
-            setTimeout(cleanup, 100);
-        };
-        cleanup();
-    
-        // http://jsfiddle.net/user2314737/u9no8te4/
-        var text = args.text.trim();
-        if (text=="") {
-            previewBlock.innerHTML = "show objects or routes on google maps.<p>syntax: <pre>\tmaps [place] [-l]\n\tmaps [start] to [finish] [-l]\n\n -l narrow search to your location</pre>"; 
-            return;
-        }
-        cc = "";
-        if (text.substr(-2)=="-l") {
-            var geoIP = await CmdUtils.get("https://freegeoip.net/json/"); // search locally
-            var cc = geoIP.country_code || "";
-            cc = cc.toLowerCase();
-            text = text.slice(0,-2);
-        }
-        from = text.split(' to ')[0];
-        dest = text.split(' to ').slice(1).join();
-        var A = await CmdUtils.get("https://nominatim.openstreetmap.org/search.php?q="+encodeURIComponent(from)+"&polygon_geojson=1&viewbox=&format=json&countrycodes="+cc);
-        if (!A[0]) return;
-        CmdUtils.deblog("A",A[0]);
-        previewBlock.innerHTML = '<div id="map-canvas" style="width:540px;height:505px"></div>';
-
-        var pointA = new GM.LatLng(A[0].lat, A[0].lon);
-        var myOptions = {
-            zoom: 10,
-            center: pointA
-        };
-        var map = new GM.Map(previewBlock.ownerDocument.getElementById('map-canvas'), myOptions);
-        var markerA = new GM.Marker({
-            position: pointA,
-            title: from,
-            label: "A",
-            map: map
-        });
-
-        map.data.addGeoJson(geoJson = {"type": "FeatureCollection", "features": [{ "type": "Feature", "geometry": A[0].geojson, "properties": {} }]});
-        if (dest.trim()!='') {
-            var B = await CmdUtils.get("https://nominatim.openstreetmap.org/search.php?q="+encodeURIComponent(dest)+"&polygon_geojson=1&viewbox=&format=json");
-            if (!B[0]) { 
-                map.fitBounds( new GM.LatLngBounds( new GM.LatLng(A[0].boundingbox[0],A[0].boundingbox[2]), new GM.LatLng(A[0].boundingbox[1],A[0].boundingbox[3]) ) );
-                map.setZoom(map.getZoom()-1);
-                return;
-            }
-            CmdUtils.deblog("B", B[0]);
-            var pointB = new GM.LatLng(B[0].lat, B[0].lon);
-            // Instantiate a directions service.
-            directionsService = new GM.DirectionsService();
-            directionsDisplay = new GM.DirectionsRenderer({
-                map: map
-            });
-            this.markerB = new GM.Marker({
-                position: pointB,
-                title: dest,
-                label: "B",
-                map: map
-            });
-
-            // get route from A to B
-            directionsService.route({
-                origin: pointA,
-                destination: pointB,
-                avoidTolls: true,
-                avoidHighways: false,
-                travelMode: GM.TravelMode.DRIVING
-            }, function (response, status) {
-                if (status == GM.DirectionsStatus.OK) {
-                    directionsDisplay.setDirections(response);
-                } else {
-                    window.alert('Directions request failed due to ' + status);
-                }
-            });
-        }
-    },
-    execute: function({text}) {
-        if (text.substr(-2)=="-l") text = text.slice(0,-2);
-        CmdUtils.addTab("https://maps.google.com/maps?q="+encodeURIComponent(text));
-    }
-});
-
-CmdUtils.CreateCommand({
     name: "msn-search",
     description: "Search MSN for the given words",
     author: {},
@@ -1726,133 +1627,133 @@ CmdUtils.CreateCommand({
         var i=0;
         links.forEach((l, idx, array)=>{
             setTimeout( ()=>{
-            var oReq = new XMLHttpRequest();
-            oReq.open("GET", l, true);
-            oReq.responseType = "blob";//"arraybuffer";
-            oReq.onprogress = (e)=>{
-                // CmdUtils.popupWindow.console.log(e);
-                _cmd.progress[e.currentTarget.responseURL] = {loaded:e.loaded, total:e.total};
-                var lt = Object.values(_cmd.progress).reduce( (acc, cur)=>{console.log("a",acc,"c",cur); return {loaded:acc.loaded+cur.loaded,total:acc.total+cur.total}});
-                if (CmdUtils.popupWindow.ubiq_match_first_command()==_cmd.name) {
-                    var prc = Math.round(lt.loaded*100/lt.total,1);
-                    var s = "";
-                    s += "<progress style='width:530px' value='"+prc+"' max='100'></progress><br><br>";
-                    s += "loaded:"+lt.loaded+" / total:"+lt.total+" ("+prc+"%)<br><br>"
-                    s += _cmd.lastFile;
-                    pblock.innerHTML = s;
-                }                    
-                //CmdUtils.popupWindow.console.log("loaded:"+lt.loaded+" / total:"+lt.total+" ("+Math.round(lt.loaded*100/lt.total,1)+"%)");
-            };
-            oReq.onload = function(oEvent) {
-                var arrayBuffer = oReq.response;
-                var byteArray = new Uint8Array(arrayBuffer);
-                var f = l.replace(/[:\/\\&?]/g,"-");
-                var ext = "";
+                var oReq = new XMLHttpRequest();
+                oReq.open("GET", l, true);
+                oReq.responseType = "blob";//"arraybuffer";
+                oReq.onprogress = (e)=>{
+                    // CmdUtils.popupWindow.console.log(e);
+                    this.progress[e.currentTarget.responseURL] = {loaded:e.loaded, total:e.total};
+                    var lt = Object.values(this.progress).reduce( (acc, cur)=>{console.log("a",acc,"c",cur); return {loaded:acc.loaded+cur.loaded,total:acc.total+cur.total}});
+                    if (CmdUtils.popupWindow.ubiq_match_first_command()==this.name) {
+                        var prc = Math.round(lt.loaded*100/lt.total,1);
+                        var s = "";
+                        s += "<progress style='width:530px' value='"+prc+"' max='100'></progress><br><br>";
+                        s += "loaded:"+lt.loaded+" / total:"+lt.total+" ("+prc+"%)<br><br>"
+                        s += this.lastFile;
+                        CmdUtils.popupWindow.ubiq_set_preview(s);
+                    }                    
+                    //CmdUtils.popupWindow.console.log("loaded:"+lt.loaded+" / total:"+lt.total+" ("+Math.round(lt.loaded*100/lt.total,1)+"%)");
+                };
+                oReq.onload = function(oEvent) {
+                    var arrayBuffer = oReq.response;
+                    var byteArray = new Uint8Array(arrayBuffer);
+                    var f = l.replace(/[:\/\\&?]/g,"-");
+                    var ext = "";
 
-                switch (oReq.response.type) {
-                case "audio/aac": ext = ".aac"; break;
-                case "application/x-abiword": ext = ".abw"; break;
-                case "application/octet-stream": ext = ".arc"; break;
-                case "video/x-msvideo": ext = ".avi"; break;
-                case "application/vnd.amazon.ebook": ext = ".azw"; break;
-                case "application/octet-stream": ext = ".bin"; break;
-                case "image/bmp": ext = ".bmp"; break;
-                case "application/x-bzip": ext = ".bz"; break;
-                case "application/x-bzip2": ext = ".bz2"; break;
-                case "application/x-csh": ext = ".csh"; break;
-                case "text/css": ext = ".css"; break;
-                case "text/csv": ext = ".csv"; break;
-                case "application/msword": ext = ".doc"; break;
-                case "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ext = ".docx"; break;
-                case "application/vnd.ms-fontobject": ext = ".eot"; break;
-                case "application/epub+zip": ext = ".epub"; break;
-                case "image/gif": ext = ".gif"; break;
-                case "text/html": ext = ".html"; break;
-                case "image/x-icon": ext = ".ico"; break;
-                case "text/calendar": ext = ".ics"; break;
-                case "application/java-archive": ext = ".jar"; break;
-                case "image/jpeg": ext = ".jpg"; break;
-                case "text/javascript": ext = ".js"; break;
-                case "application/json": ext = ".json"; break;
-                case "audio/midi audio/x-midi": ext = ".midi"; break;
-                case "text/javascript": ext = ".mjs"; break;
-                case "audio/mpeg": ext = ".mp3"; break;
-                case "video/mpeg": ext = ".mpeg"; break;
-                case "application/vnd.apple.installer+xml": ext = ".mpkg"; break;
-                case "application/vnd.oasis.opendocument.presentation": ext = ".odp"; break;
-                case "application/vnd.oasis.opendocument.spreadsheet": ext = ".ods"; break;
-                case "application/vnd.oasis.opendocument.text": ext = ".odt"; break;
-                case "audio/ogg": ext = ".oga"; break;
-                case "video/ogg": ext = ".ogv"; break;
-                case "application/ogg": ext = ".ogx"; break;
-                case "font/otf": ext = ".otf"; break;
-                case "image/png": ext = ".png"; break;
-                case "application/pdf": ext = ".pdf"; break;
-                case "application/vnd.ms-powerpoint": ext = ".ppt"; break;
-                case "application/vnd.openxmlformats-officedocument.presentationml.presentation": ext = ".pptx"; break;
-                case "application/x-rar-compressed": ext = ".rar"; break;
-                case "application/rtf": ext = ".rtf"; break;
-                case "application/x-sh": ext = ".sh"; break;
-                case "image/svg+xml": ext = ".svg"; break;
-                case "application/x-shockwave-flash": ext = ".swf"; break;
-                case "application/x-tar": ext = ".tar"; break;
-                case "image/tiff": ext = ".tiff"; break;
-                case "application/typescript": ext = ".ts"; break;
-                case "font/ttf": ext = ".ttf"; break;
-                case "text/plain": ext = ".txt"; break;
-                case "application/vnd.visio": ext = ".vsd"; break;
-                case "audio/wav": ext = ".wav"; break;
-                case "audio/webm": ext = ".weba"; break;
-                case "video/webm": ext = ".webm"; break;
-                case "image/webp": ext = ".webp"; break;
-                case "font/woff": ext = ".woff"; break;
-                case "font/woff2": ext = ".woff2"; break;
-                case "application/xhtml+xml": ext = ".xhtml"; break;
-                case "application/vnd.ms-excel": ext = ".xls"; break;
-                case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ext = ".xlsx"; break;
-                case "application/xml": ext = ".xml"; break;
-                case "application/vnd.mozilla.xul+xml": ext = ".xul"; break;
-                case "application/zip": ext = ".zip"; break;
-                case "video/3gpp": ext = ".3gp"; break;
-                case "video/3gpp2": ext = ".3g2"; break;
-                case "application/x-7z-compressed": ext = ".7z"; break;
-                }
-              
-                var filename = "";
-                var disposition = oReq.getResponseHeader('Content-Disposition');
-                if (disposition && disposition.indexOf('attachment') !== -1) {
-                    var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-                    var matches = filenameRegex.exec(disposition);
-                    if (matches != null && matches[1]) { 
-                      filename = matches[1].replace(/['"]/g, '');
+                    switch (oReq.response.type) {
+                    case "audio/aac": ext = ".aac"; break;
+                    case "application/x-abiword": ext = ".abw"; break;
+                    case "application/octet-stream": ext = ".arc"; break;
+                    case "video/x-msvideo": ext = ".avi"; break;
+                    case "application/vnd.amazon.ebook": ext = ".azw"; break;
+                    case "application/octet-stream": ext = ".bin"; break;
+                    case "image/bmp": ext = ".bmp"; break;
+                    case "application/x-bzip": ext = ".bz"; break;
+                    case "application/x-bzip2": ext = ".bz2"; break;
+                    case "application/x-csh": ext = ".csh"; break;
+                    case "text/css": ext = ".css"; break;
+                    case "text/csv": ext = ".csv"; break;
+                    case "application/msword": ext = ".doc"; break;
+                    case "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ext = ".docx"; break;
+                    case "application/vnd.ms-fontobject": ext = ".eot"; break;
+                    case "application/epub+zip": ext = ".epub"; break;
+                    case "image/gif": ext = ".gif"; break;
+                    case "text/html": ext = ".html"; break;
+                    case "image/x-icon": ext = ".ico"; break;
+                    case "text/calendar": ext = ".ics"; break;
+                    case "application/java-archive": ext = ".jar"; break;
+                    case "image/jpeg": ext = ".jpg"; break;
+                    case "text/javascript": ext = ".js"; break;
+                    case "application/json": ext = ".json"; break;
+                    case "audio/midi audio/x-midi": ext = ".midi"; break;
+                    case "text/javascript": ext = ".mjs"; break;
+                    case "audio/mpeg": ext = ".mp3"; break;
+                    case "video/mpeg": ext = ".mpeg"; break;
+                    case "application/vnd.apple.installer+xml": ext = ".mpkg"; break;
+                    case "application/vnd.oasis.opendocument.presentation": ext = ".odp"; break;
+                    case "application/vnd.oasis.opendocument.spreadsheet": ext = ".ods"; break;
+                    case "application/vnd.oasis.opendocument.text": ext = ".odt"; break;
+                    case "audio/ogg": ext = ".oga"; break;
+                    case "video/ogg": ext = ".ogv"; break;
+                    case "application/ogg": ext = ".ogx"; break;
+                    case "font/otf": ext = ".otf"; break;
+                    case "image/png": ext = ".png"; break;
+                    case "application/pdf": ext = ".pdf"; break;
+                    case "application/vnd.ms-powerpoint": ext = ".ppt"; break;
+                    case "application/vnd.openxmlformats-officedocument.presentationml.presentation": ext = ".pptx"; break;
+                    case "application/x-rar-compressed": ext = ".rar"; break;
+                    case "application/rtf": ext = ".rtf"; break;
+                    case "application/x-sh": ext = ".sh"; break;
+                    case "image/svg+xml": ext = ".svg"; break;
+                    case "application/x-shockwave-flash": ext = ".swf"; break;
+                    case "application/x-tar": ext = ".tar"; break;
+                    case "image/tiff": ext = ".tiff"; break;
+                    case "application/typescript": ext = ".ts"; break;
+                    case "font/ttf": ext = ".ttf"; break;
+                    case "text/plain": ext = ".txt"; break;
+                    case "application/vnd.visio": ext = ".vsd"; break;
+                    case "audio/wav": ext = ".wav"; break;
+                    case "audio/webm": ext = ".weba"; break;
+                    case "video/webm": ext = ".webm"; break;
+                    case "image/webp": ext = ".webp"; break;
+                    case "font/woff": ext = ".woff"; break;
+                    case "font/woff2": ext = ".woff2"; break;
+                    case "application/xhtml+xml": ext = ".xhtml"; break;
+                    case "application/vnd.ms-excel": ext = ".xls"; break;
+                    case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ext = ".xlsx"; break;
+                    case "application/xml": ext = ".xml"; break;
+                    case "application/vnd.mozilla.xul+xml": ext = ".xul"; break;
+                    case "application/zip": ext = ".zip"; break;
+                    case "video/3gpp": ext = ".3gp"; break;
+                    case "video/3gpp2": ext = ".3g2"; break;
+                    case "application/x-7z-compressed": ext = ".7z"; break;
                     }
-                }
-                if (filename!="") f=filename;
-                   if (!f.endsWith(ext)) f += ext;
+                
+                    var filename = "";
+                    var disposition = oReq.getResponseHeader('Content-Disposition');
+                    if (disposition && disposition.indexOf('attachment') !== -1) {
+                        var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                        var matches = filenameRegex.exec(disposition);
+                        if (matches != null && matches[1]) { 
+                        filename = matches[1].replace(/['"]/g, '');
+                        }
+                    }
+                    if (filename!="") f=filename;
+                    if (!f.endsWith(ext)) f += ext;
 
-                zip.file(f, arrayBuffer);
-                i++;
-                //l+="<pre>"+JSON.stringify(filename)+"</pre>";
-                //pblock.innerHTML = l+"<br>"+f+"<br>file:"+i+"/"+(array.length-1)+" <br>type:"+oReq.response.type);//+" <br>resp type:"+oReq.responseType;
-                _cmd.lastFile = l+"("+oReq.response.type+")";
-                if (i==array.length) {
-                    pblock.innerHTML = "done!";
-                  
-                    zip.generateAsync({type:"blob"})
-                    .then(function (blob) {
-                        var url = window.webkitURL || window.URL || window.mozURL || window.msURL;
-                        var a = document.createElement('a');
-                        a.download = 'bulk.zip';
-                        a.href = url.createObjectURL(blob);
-                        pblock.innerHTML = "";
-                        a.textContent = 'save zip';
-                        a.dataset.downloadurl = ['zip', a.download, a.href].join(':');
-                        _cmd.lastDownload = a;
-                        CmdUtils.popupWindow.jQuery("#ubiq-command-preview").append(a);
-                    });
-                }
-            };
-            oReq.send();
+                    zip.file(f, arrayBuffer);
+                    i++;
+                    //l+="<pre>"+JSON.stringify(filename)+"</pre>";
+                    //pblock.innerHTML = l+"<br>"+f+"<br>file:"+i+"/"+(array.length-1)+" <br>type:"+oReq.response.type);//+" <br>resp type:"+oReq.responseType;
+                    this.lastFile = l+"("+oReq.response.type+")";
+                    if (i==array.length) {
+                        CmdUtils.popupWindow.ubiq_set_preview("done!");
+                    
+                        zip.generateAsync({type:"blob"})
+                        .then(function (blob) {
+                            var url = window.webkitURL || window.URL || window.mozURL || window.msURL;
+                            var a = document.createElement('a');
+                            a.download = 'bulk.zip';
+                            a.href = url.createObjectURL(blob);
+                            CmdUtils.popupWindow.ubiq_set_preview("");
+                            a.textContent = 'save zip';
+                            a.dataset.downloadurl = ['zip', a.download, a.href].join(':');
+                            this.lastDownload = a;
+                            CmdUtils.popupWindow.jQuery("#ubiq-command-preview").append(a);
+                        });
+                    }
+                };
+                oReq.send();
             }, time+=delay);
         });
     },
@@ -1860,8 +1761,8 @@ CmdUtils.CreateCommand({
         if (text.trim()=="") text = CmdUtils.getClipboard();
         text = text.trim().split(/\s+/).map( (s,a) => { return "<br><a target=_blank href='"+s+"'>"+s+"</a>"; } ).join("");
         pblock.innerHTML = "download & zip:" + text;
-        if(_cmd.lastDownload !== undefined) {
-            jQuery(pblock).append("<hr>last download: ").append(_cmd.lastDownload);
+        if(this.lastDownload !== undefined) {
+            jQuery(pblock).append("<hr>last download: ").append(this.lastDownload);
         }
     },
 });
