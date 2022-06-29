@@ -266,13 +266,6 @@ var tests = [{
         includesHTML: '<iframe',
         url: '*://www.google.com/maps/place/Wars*'
     }, {
-        name: 'oldmaps',
-        args: 'warsaw',
-        timeout: 8000,
-        exec: true,
-        includesHTML: 'map-canvas',
-        url: '*://www.google.com/maps/place/Wars*'
-    }, {
         name: 'msn-search',
         args: 'test',
         exec: true,
@@ -308,6 +301,18 @@ var tests = [{
         args: 'kakao jest już zimne',
         timeout: 1000,
         includesText: 'cocoa is already cold'
+    }, {
+        name: 'translate-google',
+        args: 'weltschmerz',
+        exec: true,
+        timeout: 1000,
+        url: '*://translate.google.com/?sl=auto&*text=weltschmerz'
+    }, {
+        name: 'save',
+        args: 'https://code.jquery.com/jquery-3.6.0.slim.min.js',
+        exec: true,
+        timeout: 4000,
+        includesHTML: 'download="bulk.zip"'
     }, {
         name: 'validate'
     }, {
