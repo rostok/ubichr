@@ -269,12 +269,13 @@ CmdUtils.addTab = function addTab(url, active=true) {
     }
 };
 
-// this helper wraps chrome.tabs.create() function however properties object can have additional input, value, submit, form, delay keys set
+// this helper wraps chrome.tabs.create() function however properties object can have additional input, value, submit, form, delay, complete keys set
 // in this case DOM element with input selector will be assigned value, and bubbled change event dispatched
 // and DOM element with submit selector will be clicked
 // then DOM element with form selector will be submitted
 // finally callback is called after tab is created
 // all parameters are optional
+// if complete is passed and set to true the all values and bubble events will be executed when document.readystate == "complete"
 // use this to immediately fill in and submit form after delay (default is 0ms)
 // selectors should be strings for document.querySelector() query
 CmdUtils.createTab = (props, callback=undefined) => {
@@ -285,6 +286,7 @@ CmdUtils.createTab = (props, callback=undefined) => {
     var sub = props.submit || ""; delete props.submit;
     var frm = props.form || ""; delete props.form;
     var del = parseInt(props.delay) || 0;  delete props.delay;
+    var cmp = props.complete; delete props.complete;
     if ( (inp != "" && val !== undefined) || sub != "" ) cb = (tab) => {
       var code = `
       try {
@@ -303,6 +305,11 @@ CmdUtils.createTab = (props, callback=undefined) => {
       catch(e) {
         console.error("CmdUtils.createTab() failed", e);
       }`;
+      if (props.complete) {
+              code = `function start() { ${code} }
+              document.onreadystatechange = ()=>{ if (document.readyState == "complete") start() };
+              document.onreadystatechange();`;
+      }
       CmdUtils.log(tab);
       chrome.tabs.executeScript(tab.id, {code:code}, (ret)=>{
         // script was injected, nothing to do here

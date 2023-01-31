@@ -1807,9 +1807,8 @@ CmdUtils.CreateCommand({
             pblock.innerHTML = this.description;
         } else {
             pblock.innerHTML = "";
-            var res = await CmdUtils.get( "https://unicode-search.net/unicode-namesearch.pl?print=1&.submit=Search&term=" + encodeURIComponent(text) );   
-            var div = jQuery("td.character,td.onecharacter", res).map((a,e)=>{return "<span>"+e.innerHTML+"</span>";}).get().join(" ");
-//            pblock.innerHTML = "<div style='font-face:\"FreeSans, Adobe Notdef\"; url(https://www.gnu.org/software/freefont/tt/full/FreeSans.woff) format(truetype); url(//db.onlinewebfonts.com/t/759da426cfd9b68abfd48a04230d2184.ttf) format(truetype); font-size:2em'>"+div+"</font>";
+            var res = await CmdUtils.get("https://www.fileformat.info/info/unicode/char/search.htm?preview=entity&q=" + encodeURIComponent(text) );   
+            var div = jQuery("table.table-list.table-striped", res).find("td:last-child").map((a,e)=>{return "<span>"+e.innerHTML+"</span>";}).get().join(" ");
             pblock.innerHTML = "<div style='font-face:Segoe Symbol; font-size:2em'>"+div+"</font>";
             jQuery("span", pblock).each((i,e)=>{
                 jQuery(e).attr("data-option","");
@@ -1818,7 +1817,7 @@ CmdUtils.CreateCommand({
             });
         }
     },
-    execute: CmdUtils.SimpleUrlBasedCommand("https://unicode-search.net/unicode-namesearch.pl?.submit=Search&term={text}")
+    execute: CmdUtils.SimpleUrlBasedCommand("https://www.fileformat.info/info/unicode/char/search.htm?preview=entity&q={text}")
 });
              
 CmdUtils.makeSearchCommand({
