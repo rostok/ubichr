@@ -142,7 +142,7 @@ editor = CodeMirror.fromTextArea( document.getElementById("code"), {
     autofocus:true,
     extraKeys: {
        'Ctrl-/': 'toggleComment',
-       "Ctrl-S": function(instance) { saveScripts(null, {origin:'setValue'}); document.getElementById("download").click(); },       
+       'Ctrl-S': function(instance) { saveScripts(null, {origin:'setValue'}); document.getElementById("download").click(); },       
     }
 });
 
