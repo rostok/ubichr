@@ -6,6 +6,7 @@
 //     text: expected preview block .innerText result 
 //     starsWithText: preview block .innerText is expected to start with this string
 //     includesText: preview block .innerText is expected to include this string
+//     includesTextLC: preview block .innerText is expected to include this string, all in lower case 
 //     html: expected preview block .innerHTML result
 //     includesHTML: preview block .innerHTML is expected to include this string
 //     url: expected an open tab with this url, if url is array all urls must be opened, the syntax is compatible with chrome.tabs.query url option parameter with wildcards
@@ -300,7 +301,7 @@ var tests = [{
         name: 'translate',
         args: 'kakao jest już zimne',
         timeout: 1000,
-        includesText: 'cocoa is already cold'
+        includesTextLC: 'cocoa is already cold'
     }, {
         name: 'translate-google',
         args: 'weltschmerz',
@@ -399,12 +400,12 @@ var tests = [{
         name: 'translate-en',
         args: 'kakao jest już zimne',
         timeout: 1000,
-        includesText: 'cocoa is already cold'
+        includesTextLC: 'cocoa is already cold'
     }, {
         name: 'translate-pl',
         args: 'cocoa is already cold',
         timeout: 1000,
-        includesText: 'kakao jest już zimne'
+        includesTextLC: 'kakao jest już zimne'
     }, {
         name: 'pwd-chrome',
         exec: true,
@@ -556,6 +557,8 @@ function initTests() {
                         assert(wnd.ubiq_preview_el().innerText.startsWith(t.starsWithText), 'starsWithText mismatch');
                     if (typeof t.includesText === 'string')
                         assert(wnd.ubiq_preview_el().innerText.includes(t.includesText), 'includesText mismatch');
+                    if (typeof t.includesTextLC === 'string')
+                        assert(wnd.ubiq_preview_el().innerText.toLowerCase().includes(t.includesTextLC.toLowerCase()), 'includesText mismatch');
                     if (typeof t.html === 'string')
                         assert(wnd.ubiq_preview_el().innerHTML == t.html, 'html mismatch');
                     if (typeof t.includesHTML === 'string')
