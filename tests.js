@@ -421,7 +421,7 @@ var tests = [{
     }, {
         name: 'unicode',
         args: 'maltese cross',
-        timeout: 1000,
+        timeout: 2000,
         includesText: '✠',
         url: '*://unicode-search.net/*maltese*'
     }, {
@@ -485,12 +485,6 @@ var tests = [{
     }, {
         name: '12ft',
     },{
-        name: 'api-search',
-        args: 'bit.ly',
-        timeout: 1000,
-        includesText: 'bit.ly allows users to shorten',
-        url: '*://www.programmableweb.com/category/all/apis?keyword=bit.ly*'
-    },{
         name: 'torrent-search',
         args: 'harakiri',
         exec: true,
@@ -534,8 +528,8 @@ function initTests() {
             wnd.ubiq_set_input(t.name + ' ' + t.args);
             wnd.console.log('sending keydown');
             wnd.ubiq_keydown_handler({keyCode: null,shiftKey: true}); // force new tabs to open in background
-            if (t.exec) wnd.console.log('executing');
-            if (t.exec) wnd.ubiq_execute();
+            if (t.exec) wnd.console.log('executing',wnd.loadedScripts);
+            if (t.exec) wnd.ubiq_execute.apply(wnd);
 
             function assert(cond, msg) { if (!cond) throw(msg); }
 
@@ -681,7 +675,7 @@ $('#autoclose').click( ()=>{
 });
 $('#start').click(() => {
     timeoutMin = 0;
-    timeoutMultiplier = 1;
+    timeoutMultiplier = 10;
     initTests();
     runAllTests();
 });
@@ -708,6 +702,11 @@ $('#rempass').click(() => {
         $(`div.status[name='${t.name}']`).remove();
     });
     tests = tests.filter(t=>t.result!="pass");
+});
+
+$('#retry').click(() => {
+    var i = 0;
+    tests.filter(t=>t.result=="fail").forEach(t=>runSingleTest(t, (++i)*500));
 });
 
 $('#close').click(() => {

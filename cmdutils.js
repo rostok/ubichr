@@ -5,6 +5,7 @@ if (!CmdUtils) var CmdUtils = {
     VERSION: typeof chrome !== 'undefined' && typeof chrome.runtime!== 'undefined' ? chrome.runtime.getManifest().version : "N/A",
     DEBUG: false,
     CommandList: [],
+    expandOnExecute: false, // for user to decide if partial command should be expanded, as this may prevent easy cycling through other similar commands after execution 
     history: [],        // array of cmdline strings, first element is the most recent (like stack)
     jQuery: jQuery,
     backgroundWindow: window,
@@ -24,12 +25,22 @@ if (!CmdUtils) var CmdUtils = {
 
 // normal log, should popup everywhere
 CmdUtils.log = function (...args) {
-  if (CmdUtils.backgroundWindow) CmdUtils.backgroundWindow.console.log.apply(CmdUtils.backgroundWindow.console, args);
-  if (CmdUtils.popupWindow) CmdUtils.popupWindow.console.log.apply(CmdUtils.popupWindow.console, args);
-  console.log.apply(console, args);
+    if (CmdUtils.backgroundWindow) CmdUtils.backgroundWindow.console.log.apply(CmdUtils.backgroundWindow.console, args);
+    if (CmdUtils.popupWindow) CmdUtils.popupWindow.console.log.apply(CmdUtils.popupWindow.console, args);
+    console.log.apply(console, args);
 };
-
-// debug log
+CmdUtils.error = function (...args) {
+    if (CmdUtils.backgroundWindow) CmdUtils.backgroundWindow.console.error.apply(CmdUtils.backgroundWindow.console, args);
+    if (CmdUtils.popupWindow) CmdUtils.popupWindow.console.error.apply(CmdUtils.popupWindow.console, args);
+    console.error.apply(console, args);
+};
+CmdUtils.trace = function (...args) {
+    if (CmdUtils.backgroundWindow) CmdUtils.backgroundWindow.console.trace.apply(CmdUtils.backgroundWindow.console, args);
+    if (CmdUtils.popupWindow) CmdUtils.popupWindow.console.trace.apply(CmdUtils.popupWindow.console, args);
+    console.trace.apply(console, args);
+};
+  
+  // debug log
 CmdUtils.deblog = function (...args) {
     if(CmdUtils.DEBUG) {
         if (CmdUtils.backgroundWindow) CmdUtils.backgroundWindow.console.log.apply(CmdUtils.backgroundWindow.console, args)
@@ -297,8 +308,8 @@ CmdUtils.createTab = (props, callback=undefined) => {
             i.value = ${JSON.stringify(val)};
             i.dispatchEvent(new Event('change', { 'bubbles': true }))
           }
-          if ("${sub}"!="") document.querySelector("${sub}").click(); 
-          if ("${frm}"!="") document.querySelector("${frm}").submit(); 
+          if ("${sub}"!="") document.querySelectorAll("${sub}").forEach(i=>i.click()); 
+          if ("${frm}"!="") document.querySelectorAll("${frm}").forEach(i=>i.submit()); 
           console.log("CmdUtils.createTab() ends");
         },${del});
       } 
@@ -365,12 +376,12 @@ CmdUtils.SimpleUrlBasedCommand = function SimpleUrlBasedCommand(url) {
     return search_func;
 };
 
-// hackish refresh preview
+// hackish refresh preview; as alternative command can call this.preview(args.pblock, args);
 CmdUtils.refreshPreview = ()=>{
     if (CmdUtils.popupWindow) {
-    CmdUtils.popupWindow.lcmd="";
-    CmdUtils.popupWindow.ubiq_show_matching_commands();
-  }
+        CmdUtils.popupWindow.lcmd="";
+        CmdUtils.popupWindow.ubiq_show_matching_commands();
+    }
 };
 
 // closes ubiquity popup
@@ -424,8 +435,7 @@ CmdUtils.post = function post(url, data) {
 
 // loads remote scripts into specified window (or backround if not specified)
 CmdUtils.loadScripts = function loadScripts(url, callback, wnd=window) {
-    // this array will hold all loaded scripts into this window
-    wnd.loadedScripts = wnd.loadedScripts || [];
+    wnd.loadedScripts = wnd.loadedScripts || []; // this array will hold all loaded scripts into this window
     url = url || [];
     if (url.constructor === String) url = [url];
 
@@ -433,27 +443,22 @@ CmdUtils.loadScripts = function loadScripts(url, callback, wnd=window) {
         console.error("there's no jQuery at "+wnd+".");
         return false;
     }
-    if (url.length == 0) 
-        return callback();
+    if (url.length == 0) return callback();
+        
+    CmdUtils.log("loadingScripts >>> ", url.join(), wnd.loadedScripts.join());
 
-    var thisurl = url.shift();
-    tempfunc = function(data, textStatus, jqXHR) {
-        wnd.loadedScripts.push(thisurl);
-        return loadScripts(url, callback, wnd);
-    };
-    if (wnd.loadedScripts.indexOf(thisurl)==-1) {
-        console.log("loading :::: ", thisurl);
-        return wnd.jQuery.ajax({
-            url: thisurl,
-            dataType: 'script',
-            success: tempfunc,
-            async: true
-        });
-    }
-    else {
-        return loadScripts(url, callback, wnd);
-    }
+    url = url.filter(script => !wnd.loadedScripts.includes(script));
+
+    wnd.jQuery.when.apply(wnd.jQuery, wnd.jQuery.map(url, (u) => {
+        return wnd.jQuery.getScript(u);
+    })).done(() => { // All scripts have finished loading
+        wnd.loadedScripts = [...new Set([...wnd.loadedScripts ,...url])];
+        return callback();
+    }).fail((jqxhr, settings, exception) => {
+        CmdUtils.error("failed loading scripts",urls.join(),exception);
+    });
 };
+
 
 // updates selectedText variable
 CmdUtils.updateSelection = function (tab_id) {

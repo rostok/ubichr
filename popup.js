@@ -130,14 +130,14 @@ function ubiq_show_preview(cmd_struct) {
                     }
                 }
             }
-
-            if (typeof cmd_struct.require !== 'undefined')
-                CmdUtils.loadScripts( cmd_struct.require, ()=>{ pfunc(); } );
-            else
-                if (typeof cmd_struct.requirePopup !== 'undefined')
-                    CmdUtils.loadScripts( cmd_struct.requirePopup, ()=>{ pfunc(); }, window );
-                else
-                    pfunc();
+            // if (typeof cmd_struct.require !== 'undefined')
+            //     CmdUtils.loadScripts( cmd_struct.require, ()=>{ pfunc(); } );
+            // else
+            //     if (typeof cmd_struct.requirePopup !== 'undefined')
+            //         CmdUtils.loadScripts( cmd_struct.requirePopup, ()=>{ pfunc(); }, window );
+            //     else
+            //         pfunc();
+            CmdUtils.loadScripts( cmd_struct.require, ()=>CmdUtils.loadScripts( cmd_struct.requirePopup, pfunc, window ) );
     }
     return;
 }
@@ -156,9 +156,9 @@ function ubiq_dispatch_command(line) {
     var text = words.join(' ').trim();
     if (text=="") text = CmdUtils.selectedText;
 
-    // Expand match (typing 'go' will expand to 'google')
     var cmd = ubiq_match_first_command(cmd);
-    ubiq_replace_first_word(cmd);
+    // Expand match (typing 'go' will expand to 'google')
+    if (CmdUtils.expandOnExecute) ubiq_replace_first_word(cmd);
 
     // Find command element
     var cmd_struct = CmdUtils.getcmd( cmd );
@@ -178,20 +178,23 @@ function ubiq_dispatch_command(line) {
     };
 
     // Run command's "execute" function
-    try {
-        CmdUtils.deblog("exec [", cmd_struct.name ,"] [", text,"]");
-        CmdUtils.backgroundWindow.clearTimeout(cmd_struct.lastExecTimeoutID); // keeping lastExecTimeoutID in cmd_struct instead of single global var
-        CmdUtils.saveToHistory(cmd_struct.name+" "+text);
-        (cmd_struct.execute.bind(cmd_struct))(directObj);
-    } catch (e) {
-        CmdUtils.setBadge("!", "red");
-        CmdUtils.lastError = `execute [${cmd_struct.name} [${text}]\n\n${e.stack}`;
-        CmdUtils.notify(e.toString(), "execute function error");
-        console.error(e.stack);
-        if (CmdUtils.backgroundWindow && typeof CmdUtils.backgroundWindow.error === 'function') {
-            CmdUtils.backgroundWindow.error(e.stack);
+    var pfunc = ()=>{
+        try {
+            CmdUtils.deblog("exec [", cmd_struct.name ,"] [", text,"]");
+            CmdUtils.backgroundWindow.clearTimeout(cmd_struct.lastExecTimeoutID); // keeping lastExecTimeoutID in cmd_struct instead of single global var
+            CmdUtils.saveToHistory(cmd_struct.name+" "+text);
+            (cmd_struct.execute.bind(cmd_struct))(directObj);
+        } catch (e) {
+            CmdUtils.setBadge("!", "red");
+            CmdUtils.lastError = `execute [${cmd_struct.name} [${text}]\n\n${e.stack}`;
+            CmdUtils.notify(e.toString(), "execute function error");
+            console.error(e.stack);
+            if (CmdUtils.backgroundWindow && typeof CmdUtils.backgroundWindow.error === 'function') {
+                CmdUtils.backgroundWindow.error(e.stack);
+            }
         }
     }
+    CmdUtils.loadScripts( cmd_struct.require, ()=>CmdUtils.loadScripts( cmd_struct.requirePopup, pfunc, window ) );
 }
 
 function ubiq_help() {

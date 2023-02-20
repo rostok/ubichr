@@ -7,15 +7,31 @@
 // api directory search
 CmdUtils.makeSearchCommand({
     name: "api-search",
-    description: "searches api directory at programmableweb.com",
-    icon: "https://www.programmableweb.com/sites/default/files/pwfav.png",
-    url: "https://www.programmableweb.com/category/all/apis?keyword={QUERY}",
+    description: "searches api directory at apilist.fun",
+    icon: "https://free-apis.github.io/favicon.ico",
+    execute: function execute(args) {
+        var opt = args._opt_val || "";
+        if(opt.includes("://")) CmdUtils.addTab(opt);
+    },
     preview: function preview(pblock, args) {
-        $(pblock).loadAbs(this.url.replace("{QUERY}",encodeURIComponent(args.text))+
-                          " div.view-display-id-directory_search > div.view-content > table", ()=>{
-          $("table",pblock).attr("border",1);
-          $('th:nth-child(4)',pblock).html("F");
-        });
+        if (args.text.length > 2) $.ajax({
+            url: "https://api.publicapis.org/entries?description="+encodeURIComponent(args.text),
+            method: "GET",
+            dataType: "json",
+            success: function(data) {
+              if(data.entries) data.entries.forEach(a=>{
+                pblock.innerHTML += `<div data-option data-option-value='${a.Link}'><a href='${a.Link}'>${a.API}</a> - ${a.Description}</div>`;
+              });
+            },
+            error: function(xhr, textStatus, errorThrown) {
+              pblock.innerHTML = "failed getting APIs";
+            }
+          });
+    },
+    test:{
+        args: 'URL shortener and',
+        timeout: 1000,
+        includesText: 'Bitly',
     },
 });
 
@@ -1614,7 +1630,7 @@ CmdUtils.CreateCommand({
     author: "rostok",
     icon: "res/icon-128.png",
     external: true,
-    require: ["https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js", "https://fastcdn.org/FileSaver.js/1.1.20151003/FileSaver.js"],
+    require: ["https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js", "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js"],
     execute: function execute({text, _cmd}) {
         if (text.trim()=="") text = CmdUtils.getClipboard();
         this.lastDownload = undefined;
