@@ -88,8 +88,8 @@ CmdUtils.CreateCommand({
     description: "prefill gist form with a command source without submitting",
     icon: "res/icon-128.png",
     execute: (args) => {
-        var c = CmdUtils.getcmd(args.text);
-        if (c === undefined) return;
+        var c = CmdUtils.getcmdpart(args.text);
+        if (!c) return;
         var d = CmdUtils.dump(args.text);
         d = JSON.stringify(d);
         d = JSON.stringify(`
@@ -495,39 +495,6 @@ CmdUtils.CreateCommand({
     }
 });
 
-CmdUtils.CreateCommand({
-    name: "imdb-old",
-    description: "Searches for movies on IMDb",
-    author: {},
-    icon: "http://www.imdb.com/favicon.ico",
-    homepage: "",
-    license: "",
-    preview: async function define_preview(pblock, {text: text}) {
-        pblock.innerHTML = "Searches for movies on IMDb";
-        text = text.replace(/[\.\\\/\s]+/g," ").trim();
-        if (text.trim()!="") 
-        jQuery(pblock).loadAbs("https://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr table.findList", ()=>{
-            jQuery(pblock).find(".findResult").each((i,e)=>{
-                jQuery(e).attr("data-option","");
-                jQuery(e).attr("data-option-value", jQuery(e).find("a").first().attr("href"));
-            });
-        });
-    },
-    execute: function execute(args) {
-        args.text = args.text.replace(/[\.\\\/\s]+/g," ").trim();
-        var opt = args._opt_val || "";
-        if(opt.includes("://")) 
-            CmdUtils.addTab(opt);
-        else {
-            var old = CmdUtils.SimpleUrlBasedCommand("https://www.imdb.com/find?s=tt&ref_=fn_al_tt_mr&q={text}");
-            old(args);
-        }
-    },
-    old_execute: CmdUtils.SimpleUrlBasedCommand(
-        "https://www.imdb.com/find?s=tt&ref_=fn_al_tt_mr&q={text}"
-    )
-});
-
 //
 // From Ubiquity feed:
 // https://ubiquity.mozilla.com/herd/all-feeds/9b0b1de981e80b6fcfee0659ffdbb478d9abc317-4742/
@@ -538,13 +505,7 @@ CmdUtils.CreateCommand({
     name: "isdown",
     icon: "http://downforeveryoneorjustme.com/favicon.ico",
     description: "Check if selected/typed URL is down",
-    homepage: "http://www.andyfilms.net",
-    url : "https://api-prod.downfor.cloud/httpcheck/{QUERY}",
-    author: {
-        name: "Andy Jarosz",
-        email: "andyfilms1@yahoo.com"
-    },
-    license: "GPL",
+    url : "https://downforeveryoneorjustme.com/api/httpcheck/{QUERY}",
     preview: async function (pblock, {text:text}) {
         if (text.indexOf("://")<0) text = "https://"+text;
         if (text=="") text = CmdUtils.getLocation();
@@ -556,9 +517,9 @@ CmdUtils.CreateCommand({
         {
             if (!ajax) return;
             if (ajax.isDown) {
-                pblock.innerHTML = `It\'s <b>not</b> just you.<br><br>The site <u>${text}</u> is <b>down!</b>`;
+                pblock.innerHTML = `It\'s <b>not</b> just you.<br><br><span style=background-color:red>The site <u>${text}</u> is <b>down!</b></span>`;
             } else {
-                pblock.innerHTML = `It\'s just you.<br><br>The site <u>${text}</u> is <b>up!</b>`;
+                pblock.innerHTML = `It\'s just you.<br><br><span style=background-color:green>The site <u>${text}</u> is <b>up!</b></span>`;
             }
         };
     }
@@ -992,16 +953,16 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
-    name: "calc",
-    description: "evals math expressions",
+    name: ["calc","sum"],
+    description: "evals math expressions, white-space separated expressions are added",
     icon: "➕",
     external: true,
     require: "https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.20.1/math.min.js",
     preview: pr = function preview(previewBlock, {text}) {
         if (text.trim()!='') {
             var m = new math.parser();
-            text = text.replace(/,/g,".");
-            text = text.replace(/ /g,"");
+            text = text.trim().replace(/,/g,"."); // commas are dots
+            text = text.replace(/(\d)(\s+)(\d)/g,"$1+$3");  // blanks are replaced with sum
             try {
                 previewBlock.innerHTML = m.eval(text);
             } catch (e) {
@@ -1016,8 +977,8 @@ CmdUtils.CreateCommand({
     execute: function ({text}) { 
         if (text.trim()!='') {
             var m = new math.parser();
-            text = text.replace(",",".");
-            text = text.replace(" ","");
+            text = text.trim().replace(/,/g,"."); // commas are dots
+            text = text.replace(/(\d)(\s+)(\d)/g,"$1+$3");  // blanks are replaced with sum
             try {
                 text = m.eval(text);
                 CmdUtils.setSelection(text); 
@@ -1149,6 +1110,7 @@ CmdUtils.CreateCommand({
             var css = 'html {-webkit-filter: invert(100%);' +
                 '-moz-filter: invert(100%);' + 
                 '-o-filter: invert(100%);' + 
+                'filter: invert(1);' + 
                 '-ms-filter: invert(100%); }',
             
             head = document.getElementsByTagName('head')[0],
@@ -1367,28 +1329,45 @@ CmdUtils.CreateCommand({
     name: "mobygames",
     description: "search MobyGames database.",
     icon: "http://www.mobygames.com/favicon.ico",
-    author: {
-        name: "rostok"
-    },
+    author: { name: "rostok" },
     execute: function execute(args) {   
         var opt = args._opt_val || "";
         if(opt.includes("://")) 
             CmdUtils.addTab(opt);
         else 
-            CmdUtils.addTab("https://www.mobygames.com/search/quick?q=" + encodeURIComponent(args.text));
+            CmdUtils.addTab("https://www.mobygames.com/search/?q=" + encodeURIComponent(args.text));
     },
     preview: function preview(pblock, {text}) {
         pblock.innerHTML = this.description;
-        if (text.trim()!="") 
-            $(pblock).loadAbs("https://www.mobygames.com/search/quick?q=" + encodeURIComponent(text)+" #searchResults", ()=>{
-                $(".searchNumber",pblock).remove();
-                $(".searchImage",pblock).css({float:"left",width:"70px"});
-                $(pblock).find(".searchResult").each((i,e)=>{
-                    jQuery(e).attr("data-option","");
-                    jQuery(e).attr("data-option-value", $(e).find("a").first().attr("href"));
-                });
-            }).css("overflow-y","auto");
+		$.ajax({url: "https://www.mobygames.com/game/?format=json",method: "POST",dataType: "json",
+			headers: {"content-type": "application/json"},
+			data: JSON.stringify({title:text,"platform":[],"genres":[],"company":null,"groups":[],"year":null,"endyear":null,"sort":"moby_score","perpage":24}),
+            success: function(data) {
+              pblock.innerHTML = '';
+              data.data.games.forEach(g=>{
+                pblock.innerHTML += `
+                <div style='display:inline-block;max-width:540px' data-option data-option-value='${g.internal_url}'>
+                <img style='margin:4px;float:left;height:48px;width:48px;object-fit:cover;' src=${g.cover.tiny_url}>
+                ${g.title} (${g.release_date})<br>
+                <font color=grey>${g.platforms.map(p=>p.name).join(" ")}</font>
+                </div><br>
+                `;
+                CmdUtils.log(g);
+              });
+            },
+            error: function(e,d,r) {
+              pblock.innerHTML = d;
+            },
+		});
     },
+    test: {
+        name: 'mobygames',
+        args: 'shadow of the beast',
+        timeout: 3000,
+        includesText: 'Shadow of the Beast',
+        exec: true,
+        url: '*://www.mobygames.com/search/?q=shadow*beast*'
+    }
 });
 
 CmdUtils.CreateCommand({
@@ -1416,21 +1395,17 @@ CmdUtils.CreateCommand({
       if (text=="") return;
         var url = "https://www.thesaurus.com/browse/" + encodeURIComponent(text);
         var d = $("<div style='background-color:white; max-width:500px'></div>");
-        $(d).load(url+" section.MainContentContainer", ()=>{
-            $("a", d).each(function() {
-                var href = $(this).attr("href");
-                if (href === undefined) return;
-                $(this).attr("target", "_blank").attr("href", 'https://www.thesaurus.com'+href);
-            });
-          $(pblock).empty();
-          $("div#meanings",d).parent().find("ul:first > li > a").each((i,v)=>{
-            $(pblock).append("<p>");
-            $(pblock).append($(v).html());
-            $(pblock).append("<br>");
-            $("div#meanings",d).parent().find("ul:nth("+(1+i)+") > li > a").each((j,w)=>{
-            	$(pblock).append( " " ).append( $(w).attr("style", "text-decoration:none; line-height: 2em; border-radius:2em; margin: .1em; white-space: nowrap; padding:.25em; background:#666") );
-            });
+        $(d).load(url+" section[data-type=thesaurus-entry-module]", ()=>{
+          var dd = $("<div style='max-width:540px'></div>");
+          $(dd).append( $(d).find("button[data-type=tab]:first").text() + "<p>");
+          $(dd).append( "<style>.syno { display:inline-block; text-decoration:none; line-height: 2em; border-radius:1em; margin: .1em; white-space: nowrap; padding:.5em; background:#666 } </style>");
+          $("section[data-type=thesaurus-synonyms-card]",d).find("button[data-type=pill-button]").each((i,v)=>{
+            var w = $(v).text();
+            w = $("<span class=syno>"+w+" </span> ");
+            w = $(w).attr("style", "");
+            $(dd).append(w);
           });
+          $(pblock).empty().append(dd);
         });
     },
     execute: CmdUtils.SimpleUrlBasedCommand("https://www.thesaurus.com/browse/{text}") 
@@ -1577,13 +1552,15 @@ CmdUtils.CreateCommand({
       chrome.tabs.query({}, (t)=>{
         var found = false;
         t.map((b)=>{
-          if (b.url=="chrome://settings/passwords") {
+          if (b.url=="chrome://password-manager/passwords") {
             chrome.tabs.update(b.id, {highlighted: true});
             found = true;
             return;
           }
         });
-        if (!found) CmdUtils.addTab(`chrome://settings/passwords#:~:text=${args.text}`);
+        //if (!found) CmdUtils.addTab(`chrome://settings/passwords?q=${args.text}#:~:text=${args.text}`);
+        if (!found) CmdUtils.addTab(`chrome://password-manager/passwords?q=${args.text}`);
+        
       });
     },
 });
@@ -1621,7 +1598,7 @@ CmdUtils.makeSearchCommand({
     description: "Giphy search.",
     icon: "https://giphy.com/static/img/favicon.png",
     url: "https://giphy.com/search/{QUERY}",
-    prevAttrs: {zoom: 0.5, scroll: [0, 128]},
+    prevAttrs: {zoom: 0.5, scroll: [240, 128]},
 });
 
 CmdUtils.CreateCommand({
@@ -1824,7 +1801,26 @@ CmdUtils.CreateCommand({
         } else {
             pblock.innerHTML = "";
             var res = await CmdUtils.get("https://www.fileformat.info/info/unicode/char/search.htm?preview=entity&q=" + encodeURIComponent(text) );   
-            var div = jQuery("table.table-list.table-striped", res).find("td:last-child").map((a,e)=>{return "<span>"+e.innerHTML+"</span>";}).get().join(" ");
+//            var div = jQuery("table.table-list.table-striped", res).find("td:last-child").map((a,e)=>{return "<span>"+e.innerHTML+"</span>";}).get().join(" ");
+           var uniqueElements = new Set(); // Declare the Set outside the arrow function
+
+           var div = jQuery("table.table-list.table-striped", res)
+             .find("td:last-child")
+             .map((a, e) => {
+               // Iterate through each td:last-child element
+               var innerHTML = e.innerHTML;
+               
+               // Check if the element has already been inserted
+               if (uniqueElements.has(innerHTML)) {
+                 return null; // Skip duplicate elements
+               } else {
+                 uniqueElements.add(innerHTML); // Add unique elements to the Set
+                 return "<span>" + innerHTML + "</span>";
+               }
+             })
+             .get()
+             .join(" ");
+
             pblock.innerHTML = "<div style='font-face:Segoe Symbol; font-size:2em'>"+div+"</font>";
             jQuery("span", pblock).each((i,e)=>{
                 jQuery(e).attr("data-option","");
@@ -2108,24 +2104,6 @@ CmdUtils.CreateCommand({
         },
 });
 
-CmdUtils.CreateCommand({
-    name: "sum",
-    description: "sums selected numbers",
-    icon: "https://www.greeksymbols.net/img/sigma-symbol-capital.png",
-    author: { name: "rostok" },
-    license: "MIT",
-    main: function main(args) {
-        return args.text.replace(/,/g, ".").split(/[ +;\n\t\r]+/).reduce(function(a, b) { return (parseFloat(a) || 0) + (parseFloat(b) || 0); }, 0);
-    },
-    execute: function execute(args) {
-        if (args.text.trim()=="") args.text = CmdUtils.getClipboard();
-        CmdUtils.setSelection(this.main(args));
-    },
-    preview: function preview(pblock, args) {
-    	if (args.text.trim()=="") args.text = CmdUtils.getClipboard();
-        pblock.innerHTML = "" + this.main(args);
-    },
-});
 
 CmdUtils.CreateCommand({
     name: "alarm-clear",
@@ -2441,6 +2419,26 @@ CmdUtils.makeSearchCommand({
     description: "skips paywalls with help of 12ft.io",
     author: "rostok",
 });
+
+CmdUtils.makeSearchCommand({
+    name: "perplexity",
+    description: "Perplexity - AI Search",
+    icon: "https://www.perplexity.ai/static/icons/favicon.ico",
+    url: "https://www.perplexity.ai/search?q={QUERY}",
+    execute: function execute(args) {   
+        CmdUtils.addTab("https://www.perplexity.ai/search?q=" + encodeURIComponent(args.text));
+    },
+    prevAttrs: {zoom: 1, scroll: [0, 120]},
+});
+
+CmdUtils.makeSearchCommand({
+    name: "correct-english",
+    description: "Perplexity AI correct english prompt",
+    icon: "https://www.perplexity.ai/static/icons/favicon.ico",
+    url: "https://www.perplexity.ai/search?q="+encodeURIComponent("correct the following English text, be brief and provide no other output as the result: ")+"{QUERY}",
+    prevAttrs: {zoom: 1, scroll: [0, 0]},
+});
+
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 

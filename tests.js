@@ -373,13 +373,6 @@ var tests = [{
     }, {
         name: 'links-open'
     }, {
-        name: 'mobygames',
-        args: 'shadow of the beast',
-        timeout: 3000,
-        includesText: 'Shadow of the Beast',
-        exec: true,
-        url: '*://www.mobygames.com/search/quick?q=shadow*beast*'
-    }, {
         name: 'thesaurus',
         args: 'ubiquity',
         timeout: 2000,
