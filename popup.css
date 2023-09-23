@@ -112,10 +112,12 @@ body {
 #ubiq-preview-div #ubiq-preview-frm {
     --scrollX: 0px;
     --scrollY: 0px;
+    --zoom: 1;
     width: calc(100%  + var(--scrollX)) !important; 
     height: calc(100% + var(--scrollY)) !important;
     background-color: transparent;
     border: 0px;
+    max-width: calc(540px * var(--zoom)) !important; 
 }
 
 #ubiq-result-panel {
