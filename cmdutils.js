@@ -117,7 +117,7 @@ CmdUtils.CreateCommand = function CreateCommand(cs) {
 CmdUtils.makeSearchCommand = function makeSearchCommand(args) {
     args.execute_org = function(a) {
         var url = args.url || "";
-        url = url.replace(/\{text\}/g, "{QUERY}").replace(/\{QUERY\}/g, encodeURIComponent(a.text));
+        url = url.replace(/\{text\}|\{QUERY\}/g, encodeURIComponent(a.text));
         url = url.replace(/\{location\}/g, encodeURIComponent(CmdUtils.getLocation()));
         CmdUtils.addTab(url);
     }
@@ -183,7 +183,7 @@ CmdUtils._searchCommandPreview = function _searchCommandPreview( pblock, {text: 
       return;
     }
     if (!this.prevAttrs) this.prevAttrs = {};
-    var url = (this.prevAttrs.url || this.url || "").replace(/\{text\}/g, "{QUERY}").replace(/\{QUERY\}/g, encodeURIComponent(q));
+    var url = (this.prevAttrs.url || this.url || "").replace(/\{text\}|\{QUERY\}/g, encodeURIComponent(q));
     // hash-anchor:
     var hashanch = null;
     if (this.prevAttrs.anchor != null) {
@@ -280,15 +280,23 @@ CmdUtils.addTab = function addTab(url, active=true) {
     }
 };
 
-// this helper wraps chrome.tabs.create() function however properties object can have additional input, value, submit, form, delay, complete keys set
-// in this case DOM element with input selector will be assigned value, and bubbled change event dispatched
-// and DOM element with submit selector will be clicked
-// then DOM element with form selector will be submitted
-// finally callback is called after tab is created
-// all parameters are optional
-// if complete is passed and set to true the all values and bubble events will be executed when document.readystate == "complete"
+// this helper wraps chrome.tabs.create() function however properties object 
+// can have additional and optional keys set:
+//  input - DOM element with input selector...
+//  value - ...will be assigned value, and bubbled change event dispatched
+//  submit - then DOM element with submit selector will be clicked 
+//  form - then DOM element with form selector will be submitted
+//  delay
+//  complete - if set to true the all values and bubble events will be 
+//             executed when document.readystate == "complete"
+//  initcode - executed immediately, before complete event
+//  begincode - before timeout, after complete event
+//  endcode - after form is submitted
+// 
 // use this to immediately fill in and submit form after delay (default is 0ms)
 // selectors should be strings for document.querySelector() query
+//
+// finally callback is called after tab is created
 CmdUtils.createTab = (props, callback=undefined) => {
     callback = callback || (()=>{});
     var cb = callback;
@@ -296,10 +304,14 @@ CmdUtils.createTab = (props, callback=undefined) => {
     var val = props.value; delete props.value;
     var sub = props.submit || ""; delete props.submit;
     var frm = props.form || ""; delete props.form;
+    var inc = props.initcode || ""; delete props.initcode;
+    var bgc = props.begincode || ""; delete props.begincode;
+    var enc = props.endcode || ""; delete props.endcode;
     var del = parseInt(props.delay) || 0;  delete props.delay;
     var cmp = props.complete; delete props.complete;
     if ( (inp != "" && val !== undefined) || sub != "" ) cb = (tab) => {
       var code = `
+      ${bgc}
       try {
         window.setTimeout(()=>{
           console.log("CmdUtils.createTab() starts i:${inp} v:${val} s:${sub} d:${del} ");
@@ -310,6 +322,7 @@ CmdUtils.createTab = (props, callback=undefined) => {
           }
           if ("${sub}"!="") document.querySelectorAll("${sub}").forEach(i=>i.click()); 
           if ("${frm}"!="") document.querySelectorAll("${frm}").forEach(i=>i.submit()); 
+          ${enc}
           console.log("CmdUtils.createTab() ends");
         },${del});
       } 
@@ -321,6 +334,7 @@ CmdUtils.createTab = (props, callback=undefined) => {
               document.onreadystatechange = ()=>{ if (document.readyState == "complete") start() };
               document.onreadystatechange();`;
       }
+      code = `${inc}${code}`;
       CmdUtils.log(tab);
       chrome.tabs.executeScript(tab.id, {code:code}, (ret)=>{
         // script was injected, nothing to do here
@@ -353,7 +367,7 @@ CmdUtils.postNewTab = function postNewTab(url, data) {
     document.body.removeChild(form);
 }
 
-// returns a function that opens new tab with substituted {text} and {location}
+// returns a function that opens new tab with substituted {text}/{QUERY} and {location}
 // in case data-option-value attribute is link and _opt_val is passed function will open that url istead
 CmdUtils.SimpleUrlBasedCommand = function SimpleUrlBasedCommand(url) {
     if (!url) return;
@@ -368,8 +382,8 @@ CmdUtils.SimpleUrlBasedCommand = function SimpleUrlBasedCommand(url) {
             var text = directObj.text;
             text = encodeURIComponent(text);
             var finalurl = url;
-            finalurl = finalurl.replaceAll('{text}', text);
-            finalurl = finalurl.replaceAll('{location}', CmdUtils.getLocation());
+            finalurl = finalurl.replace(/\{text}|\{QUERY\}/g, text);
+            finalurl = finalurl.replace(/\{location\}/g, CmdUtils.getLocation());
             CmdUtils.addTab(finalurl);
         }
     };
