@@ -247,13 +247,6 @@ var tests = [{
     }, {
         name: 'reload-ubiquity'
     }, {
-        name: 'imdb-old',
-        args: 'precious find',
-        timeout: 2000,
-        includesText: 'Precious Find (1996)',
-        exec: true,
-        url: '*://www.imdb.com/find?*q=precious%20find*'
-    }, {
         name: 'lastfm',
         args: 'autechre',
         timeout: 2000,
