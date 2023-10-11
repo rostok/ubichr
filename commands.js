@@ -293,7 +293,7 @@ CmdUtils.CreateCommand({
     },
     preview: async function define_preview(pblock, {text: text}) {
         var doc = await CmdUtils.get("https://www.dictionary.com/browse/"+encodeURIComponent(text));
-        $("section#top-definitions-section", doc).parent("div").appendTo(pblock).find("button,div[role='tooltip'],div[data-save-word-tooltip]").remove();
+        $("section[data-type=word-definition-card]", doc).appendTo(pblock).find("a[href*=thesaurus],button").remove();
     },
 });
 
@@ -1844,8 +1844,12 @@ CmdUtils.makeSearchCommand({
             pblock.innerHTML = "enter EMOJI description";
         else {
             pblock.innerHTML = "";
-            jQuery(pblock).loadAbs("https://emojipedia.org/search/?q=" + encodeURIComponent(args.text)+ " div.content", ()=>{
-              pblock.innerHTML = "<font size=12>"+jQuery("span.emoji", pblock).map((i,e)=>e.outerHTML).toArray().join("")+"</font>";
+            jQuery(pblock).loadAbs("https://emojipedia.org/search/?q=" + encodeURIComponent(args.text)+ " div.text-left.mb-6", ()=>{
+              pblock.innerHTML = "<font size=12>"+
+                $("a[class*=Emoji]", pblock).map((i,e)=>e.outerHTML).toArray().join("")+"</font>";
+                $("span", pblock).remove();
+                $("a", pblock).wrapInner("<span/>").children(0).unwrap();
+                
               jQuery("span", pblock).each((i,e)=>{
                 jQuery(e).attr("data-option","");
                 jQuery(e).on("data-option-selected", e=>CmdUtils.setClipboard($(e.target).html()) );
