@@ -629,11 +629,12 @@ function ubiq_load_input(callback) {
 }
 
 
-// detect ubiq-result-panel resizing and ses width/max-width of ubiq-command-panel, -tip and -preview
-var resultResizeObserver = new ResizeObserver(entries => {
+// detect ubiq-result-panel resizing and set width/max-width of ubiq-command-panel, -tip and -preview
+function ubiq_result_autoresize(entries, observer) {
     var w = 780 - Math.min($("#ubiq-result-panel").width(),240)+ "px";
     $("#ubiq-command-panel,#ubiq-command-tip,#ubiq-command-preview").css({"width":w, "max-width":w});
-});
+}
+var resultResizeObserver = new ResizeObserver(ubiq_result_autoresize);
 resultResizeObserver.observe(document.querySelector('#ubiq-result-panel'));
 
 $(window).on('load', function() {

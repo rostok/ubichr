@@ -86,13 +86,32 @@ body {
     /* zoom overflow dirty fix */
     overflow-x: hidden;
     /* overflow-y: hidden; */
+    /* scrollbar-width: thin; */
 }
+#ubiq-command-preview::-webkit-scrollbar
+{
+    width: 8px;
+    background-color: #999;
+}
+#ubiq-command-preview::-webkit-scrollbar-thumb
+{
+    background-color: #555;
+    border: 2px solid #999;
+}
+
 
 #ubiq-command-preview a {
     color:white;
     text-decoration: bold;
     font-size: 11.5pt;
 }
+
+#ubiq-command-preview table {
+	border-collapse: collapse;
+	border-spacing: 1px;
+	border:1px solid #666;
+}
+
 #ubiq-command-preview #ubiq-preview-div {
     --zoom: 1.0;
     transform: scale(var(--zoom)); transform-origin: 0px 0px;
@@ -104,11 +123,7 @@ body {
     overflow: hidden; 
     position: relative; border:0px;
 }
-#ubiq-command-preview table {
-	border-collapse: collapse;
-	border-spacing: 1px;
-	border:1px solid #666;
-}
+
 #ubiq-preview-div #ubiq-preview-frm {
     --scrollX: 0px;
     --scrollY: 0px;
@@ -117,7 +132,7 @@ body {
     height: calc(100% + var(--scrollY)) !important;
     background-color: transparent;
     border: 0px;
-    max-width: calc(540px * var(--zoom)) !important; 
+    /* max-width: calc(540px * var(--zoom)) !important;  */
 }
 
 #ubiq-result-panel {

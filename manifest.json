@@ -3,7 +3,7 @@
     "short_name": "UbiChr",
     "homepage_url": "https://github.com/rostok/ubichr",
     "author": "rostok",
-    "version": "0.1.0.54",
+    "version": "0.1.0.55",
     "description": "Revived Ubiquity for Chrome",
     "content_security_policy": "script-src 'self' 'unsafe-eval' https://maps.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com https://cdnjs.com; object-src 'self'",
     "manifest_version": 2,
