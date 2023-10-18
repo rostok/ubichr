@@ -47,6 +47,9 @@ function ubiq_set_preview(v, prepend) {
 // this hack addresses race condition for preview calls executed earlier and modifying pblock area once data is gathered ($.load / $.get)
 // solution is to to recreate preview element by removing old one and creating exactly the same one based on its html code
 // all custom properties will be lost, though
+// additional sanity check can be like this:
+//          if (!CmdUtils.popupWindow.document.contains(pblock)) return; // well, user refreshed preview
+// but proper way would be to keep track of all callbacks or requests and kill them
 function ubiq_reset_preview() {
     var preel = ubiq_preview_el();
     var prevprev = $( preel ).prev().get(0);
@@ -81,6 +84,8 @@ var savePreviewCmdTimeoutID = 0;
 // shows preview for command, cmd is command struct
 function ubiq_show_preview(cmd_struct) {
     if (typeof cmd_struct == 'undefined' || !cmd_struct) return;
+    ubiq_result_autoresize();
+    ubiq_reset_preview();
     var preview_func = cmd_struct.preview;
     ubiq_last_preview_cmd = cmd_struct;
     switch(typeof preview_func)
