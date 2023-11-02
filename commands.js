@@ -457,24 +457,18 @@ CmdUtils.CreateCommand({
           release_date = "&release_date="+year;
         }
         if (args.text.trim()!="") {
-          jQuery(pblock).loadAbs("https://www.imdb.com/search/title?title="+encodeURIComponent(args.text)+release_date+" div.lister-list", ()=>{
-            jQuery(pblock).find("div.ratings-user-rating").remove();
-            jQuery(pblock).find("p.sort-num_votes-visible").hide();
-            jQuery(pblock).find("span.lister-item-index.unbold.text-primary").remove();
-            jQuery(pblock).find("div.ratings-metascore").remove();
-            jQuery(pblock).find(".lister-top-right").remove();
-            jQuery(pblock).find("div.lister-item").each((i,e)=>{
-                jQuery(e).attr("data-option","");
-                jQuery(e).attr("data-option-value", jQuery(e).find("a").first().attr("href"));
-              
-                var img = "<img style='float:left' aling=bottom src='"+jQuery(e).find("img.loadlate").first().attr("loadlate")+"'>";
-                var title = "<a href='"+jQuery(e).find("a").first().attr("href")+"'>"+jQuery(e).find("h3").text().trim()+"</a> ";
-                var info = "<span>"    +jQuery(e).find(".runtime").text()+" | "
-                                    +jQuery(e).find(".genre").text()+" | "
-                                    +"<span style='color:yellow'>"+jQuery(e).find(".ratings-imdb-rating").text()+"</span>"
-                                    +"</span>";
-                var syno = "<br><span>"+jQuery(e).find(".ratings-bar").next("p").text()+"</span>";
-                jQuery(e).html("<div style='clear:both;overflow-y:auto;'>"+img+"<div style=''>"+ title + info + syno + "</div></div><p>");
+          jQuery(pblock).loadAbs("https://www.imdb.com/search/title?title="+encodeURIComponent(args.text)+release_date+" ul.ipc-metadata-list > *", ()=>{
+            jQuery(pblock).find("li").each((i,e)=>{
+              var link = jQuery(e).find("a").first().attr("href");
+              var img = "<img style='margin:0 10px 10px 0; float:left' height=96 width=65 aling=bottom src='"+jQuery(e).find(".ipc-image").first().attr("src")+"'>";
+              var title = "<a href='"+jQuery(e).find("a").first().attr("href")+"'>"+jQuery(e).find("h3").text().trim()+"</a> ";
+              var info = "<span>"    
+                       + jQuery(e).find(".dli-title-metadata").find("span:nth(0)").text()+" | "
+                       + jQuery(e).find(".dli-title-metadata").find("span:nth(1)").text()+" | "
+                       + "<span style='color:yellow'>"+jQuery(e).find(".ipc-rating-star").text().split(/\s+/).shift()+"</span>"
+                       + "</span>";
+              var syno = "<br><span>"+jQuery(e).find(".ipc-html-content-inner-div").text()+"</span>";
+              jQuery(e).replaceWith("<div data-option='' data-option-value='"+link+"'><div style='clear:both;overflow-y:auto;'>"+img+"<div style=''>"+ title + info + syno + "</div></div></div>");
             });
           });
         }
@@ -1598,7 +1592,7 @@ CmdUtils.makeSearchCommand({
     description: "Giphy search.",
     icon: "https://giphy.com/static/img/favicon.png",
     url: "https://giphy.com/search/{QUERY}",
-    prevAttrs: {zoom: 0.5, scroll: [240, 128]},
+    prevAttrs: {zoom: 0.5, scroll: [0, 0]},
 });
 
 CmdUtils.CreateCommand({

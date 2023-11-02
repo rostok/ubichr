@@ -211,12 +211,11 @@ function ubiq_help() {
     }).sort().join(", ");
     html += "<p>";
     html += "<div style='position: absolute; bottom: 0;'>";
-    html += "<u>Keys:</u><br>";
     html += "<div style='column-count:3'>";
+    html += "<u>Keys:</u><br>";
     html += "Enter - execute<br>";
     html += "Shift+Enter - execute to inactive tab<br>";
     html += "Ctrl+C - copy preview to clipboard<br>";
-    html += "F5 - reload the extension<br>";
     html += "↑ / ↓ - select suggestion<br>";
     html += "Tab - expand suggestion<br>";
     html += "Space (selected input) - hide params<br>";
@@ -224,6 +223,7 @@ function ubiq_help() {
     html += "Ctrl+R / Alt+F8 - command history<br>";
     html += "Ctrl+P / Ctrl+E - previous command<br>";
     html += "Ctrl+N / Ctrl+X - next command<br>";
+    html += "F5 - reload the extension<br>";
     html += "</div>";
     html += "</div>";
     return html;
