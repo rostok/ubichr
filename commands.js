@@ -956,7 +956,7 @@ CmdUtils.CreateCommand({
         if (text.trim()!='') {
             var m = new math.parser();
             text = text.trim().replace(/,/g,"."); // commas are dots
-            text = text.replace(/(\d)(\s+)(\d)/g,"$1+$3");  // blanks are replaced with sum
+            text = text.replaceAll(/\s+/g,"+");  // blanks are replaced with sum
             try {
                 previewBlock.innerHTML = m.eval(text);
             } catch (e) {
