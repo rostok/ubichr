@@ -623,6 +623,69 @@ CmdUtils.getClipboard = function getClipboard () {
     return r || "";
 };
 
+// sets clipboard
+CmdUtils.setClipboardHTML = function setClipboard (t) {
+    var input = document.createElement('div');
+    document.body.appendChild(input);
+    input.contentEditable = true;
+    var range = document.createRange();
+    range.selectNode(input);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    input.innerHTML = t;
+    input.focus();
+    input.select();
+    document.execCommand('Copy');
+    input.remove();
+};
+
+CmdUtils.setClipboardHTML = async function setClipboardHTML(htmlContent) {
+    // Create a temporary content-editable element to hold the HTML
+    const tempEl = document.createElement('div');
+    tempEl.contentEditable = 'true';
+    tempEl.style.position = 'absolute';
+    tempEl.style.left = '-9999px'; // Hide the element off-screen
+
+    document.body.appendChild(tempEl);
+    tempEl.innerHTML = htmlContent; // Insert the HTML content to copy
+    tempEl.unselectable = "off";
+    tempEl.focus();
+
+    // Select the content
+    document.getSelection().selectAllChildren(tempEl);
+
+    // Use the Clipboard API to write the selected content as text
+    try {
+        const successful = document.execCommand('copy');
+        const msg = successful ? 'successful' : 'unsuccessful';
+        console.log('Copying text command was ' + msg);
+    } catch (err) {
+        console.error('Failed to copy', err);
+    }
+
+    // Clean up
+    document.body.removeChild(tempEl);
+};
+
+// Usage example:
+// CmdUtils.setClipboardHTML('<p style="color: red;">This is some text!</p>');
+
+// gets clipboard as HTML https://stackoverflow.com/a/43375402/2451546
+CmdUtils.getClipboardHTML = function getClipboard () {
+    var input = document.createElement('div');
+    document.body.appendChild(input);
+    input.contentEditable = true;
+    var range = document.createRange();
+    range.selectNode(input);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    input.focus();    
+    document.execCommand("Paste");
+    var r = input.innerHTML;
+    input.remove();
+    return r || "";
+};
+
 CmdUtils.unloadCustomScripts = function unloadCustomScripts() {
     CmdUtils.CommandList = CmdUtils.CommandList.filter((c)=>{
         return c['builtIn']==true;
