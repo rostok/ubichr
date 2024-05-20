@@ -288,12 +288,15 @@ CmdUtils.CreateCommand({
     help: "Try issuing &quot;dictionary ubiquity&quot;",
     license: "MPL",
     icon: "https://www.dictionary.com/assets/favicon-d73532382d3943b0fef5b78554e2ee9a.png",
+    timeout: 250,
     execute: function ({text: text}) {
         CmdUtils.addTab("https://www.dictionary.com/browse/" + escape(text));
     },
     preview: async function define_preview(pblock, {text: text}) {
         var doc = await CmdUtils.get("https://www.dictionary.com/browse/"+encodeURIComponent(text));
-        $("section[data-type=word-definition-card]", doc).appendTo(pblock).find("a[href*=thesaurus],button").remove();
+        CmdUtils.setPreview("");
+        $("section[data-type*=-dictionary-]", doc).appendTo(pblock).find("a[href*=thesaurus],button").remove();
+        $("div[data-type=pronunciation-toggle]",pblock).remove() 
     },
 });
 
@@ -953,10 +956,11 @@ CmdUtils.CreateCommand({
     external: true,
     require: "https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.20.1/math.min.js",
     preview: pr = function preview(previewBlock, {text}) {
+        if (text.trim()=="") text = CmdUtils.getClipboard();
         if (text.trim()!='') {
             var m = new math.parser();
             text = text.trim().replace(/,/g,"."); // commas are dots
-            text = text.replaceAll(/\s+/g,"+");  // blanks are replaced with sum
+            text = text.replace(/(\d)(\s+)(\d)/g,"$1+$3");  // blanks are replaced with sum
             try {
                 previewBlock.innerHTML = m.eval(text);
             } catch (e) {
@@ -1164,8 +1168,7 @@ CmdUtils.CreateCommand({
                                         {code:"document.body.innerText.toString();"}, 
                                         (ret)=>{
                                           if (typeof ret === 'undefined') return;
-                                          //console.log("ret",ret);
-                                          arr = arr.concat( ret[0].split(/\s/).filter(s=>s.indexOf(text)>=0) );
+                                          arr = arr.concat( ret[0].split(/\n/).filter(s=>s.indexOf(text)>=0) );
                                           pblock.innerHTML = arr.filter((v, i, a) => a.indexOf(v) === i).join("<br/>");
                                           chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
                                         });
@@ -1794,22 +1797,17 @@ CmdUtils.CreateCommand({
             pblock.innerHTML = this.description;
         } else {
             pblock.innerHTML = "";
-            var res = await CmdUtils.get("https://www.fileformat.info/info/unicode/char/search.htm?preview=entity&q=" + encodeURIComponent(text) );   
-//            var div = jQuery("table.table-list.table-striped", res).find("td:last-child").map((a,e)=>{return "<span>"+e.innerHTML+"</span>";}).get().join(" ");
-           var uniqueElements = new Set(); // Declare the Set outside the arrow function
+            var res = await CmdUtils.get("https://www.compart.com/en/unicode/search?q=" + encodeURIComponent(text) );   
+            var uniqueElements = new Set(); // Declare the Set outside the arrow function
 
-           var div = jQuery("table.table-list.table-striped", res)
-             .find("td:last-child")
+            var div = jQuery("div.list-table",res).find("div.table-cell.char")
              .map((a, e) => {
-               // Iterate through each td:last-child element
                var innerHTML = e.innerHTML;
-               
-               // Check if the element has already been inserted
                if (uniqueElements.has(innerHTML)) {
                  return null; // Skip duplicate elements
                } else {
                  uniqueElements.add(innerHTML); // Add unique elements to the Set
-                 return "<span>" + innerHTML + "</span>";
+                 return "<span style='direction: ltr; unicode-bidi: bidi-override;'>" + innerHTML + "</span>";
                }
              })
              .get()
@@ -1823,7 +1821,7 @@ CmdUtils.CreateCommand({
             });
         }
     },
-    execute: CmdUtils.SimpleUrlBasedCommand("https://www.fileformat.info/info/unicode/char/search.htm?preview=entity&q={text}")
+    execute: CmdUtils.SimpleUrlBasedCommand("https://www.compart.com/en/unicode/search?q={text}")
 });
              
 CmdUtils.makeSearchCommand({
@@ -1906,7 +1904,7 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
-    name: "allow-text-selecion",
+    name: "allow-text-selection",
     author: "Alan Hogan",
     icon: "Ꮖ",
     external: true,
@@ -2435,6 +2433,119 @@ CmdUtils.makeSearchCommand({
     icon: "https://www.perplexity.ai/static/icons/favicon.ico",
     url: "https://www.perplexity.ai/search?q="+encodeURIComponent("correct the following English text, be brief and provide no other output as the result: ")+"{QUERY}",
     prevAttrs: {zoom: 1, scroll: [0, 0]},
+});
+
+CmdUtils.CreateCommand({
+    name: "clip-sanitize",
+    description: "remove styling from clipboard but retain formatting",
+    icon: "🧼",
+    sanitize: t => {
+      var $html = $(`<div>${t}</div>`);
+      $html.find('*').each((i,e)=>{
+//          $(e).css({'color':'', 'background-color':'', 'font-family':'', 'border':'', 'box-sizing':'' });
+         $(e).removeAttr( 'style' );
+      });    
+      return $html.html();
+    }, 
+    execute: function execute(args) {   
+        CmdUtils.setClipboardHTML( this.sanitize( CmdUtils.getClipboardHTML() ) );
+        CmdUtils.refreshPreview()
+    },
+    preview: async function preview(pblock, args) {
+        pblock.innerHTML = "";      
+        var t = CmdUtils.getClipboardHTML();
+        t = this.sanitize(t);
+        pblock.innerHTML += t;
+    },
+});
+
+CmdUtils.CreateCommand({
+    icon: "❌",
+    name: "close",
+    description: "Close tabs with urls matching arguments",
+    preview: function(pblock, {text}) {
+      if (text.trim() == "") text = CmdUtils.getClipboard();
+      pblock.innerHTML = "closing:<br>"+text.split(/\s+/).map(u=>decodeURIComponent(u)).join("<br>");
+    },
+    execute: function ({text}) {
+      if (text.trim() == "") text = CmdUtils.getClipboard();
+      chrome.tabs.query({url:text.split(/\s+/).map(u=>decodeURIComponent(u))}, (t) => {
+          t.map((b) => { chrome.tabs.remove(b.id, () => {}); });
+      });
+    }
+});
+
+CmdUtils.CreateCommand({
+    icon: "❌",
+    name: "close-containing",
+    description: "find and close tabs containing | delimited patterns",
+    author: "rostok",
+    process: async function(text, callback) {
+      var arr = [];
+      var texts = text.trim().toLowerCase().split('|');
+      chrome.tabs.query({}, (t)=>{
+        t.map((b)=>{
+          if (b.url.match('^https?://'))
+            chrome.tabs.executeScript(b.id, {code:"document.body.innerText.toString();"}, (ret)=>{
+              if (typeof ret === 'undefined') return;
+              if (texts.some(t=>ret[0].toLowerCase().includes(t))) arr.push( b.url );
+              callback(arr.filter((v, i, a) => a.indexOf(v) === i).join("\n"));
+            });
+        });
+      });
+    },
+    preview: function(pblock, {text,_cmd}) {
+        text = text.trim();
+        if (text.length <= 2) {
+            pblock.innerHTML = this.description+"<br><br>make the argument longer ("+text.length+"/3)";
+        } else {
+          this.process(text, (arr)=>{ pblock.innerHTML = arr.replaceAll("\n","<br>"); });
+        }
+    },
+    execute: function(a) {
+        if (a.text.length <= 2) return;
+        this.process(a.text, (arr)=>
+          chrome.tabs.query({url:arr.split(/\s+/).map(u=>decodeURIComponent(u))}, (t) => {
+            t.map((b) => { chrome.tabs.remove(b.id, () => {}); });
+          })
+        );
+    },
+});
+
+CmdUtils.CreateCommand({
+    name: "clipuniq",
+    icon: "📋",
+    description: "make unique; enter sets the clipboard",
+    process: function (text) { return [...new Set((text||"").split("\n"))].sort().join("\n"); },
+    execute: function execute(args) { CmdUtils.setClipboard(this.process(args.text.trim() || CmdUtils.getClipboard())); },
+    preview: function preview(pblock, {text}) { 
+     $(pblock).css('font-size','.7em').html(`<pre>${this.process(text.trim()||CmdUtils.getClipboard())}</pre>`); 
+    },
+});
+
+CmdUtils.CreateCommand({
+    name: "clipuniqc",
+    icon: "📋",
+    description: "make unique and count; enter sets the clipboard",
+    process: function (text) { 
+      var a = (text||"").split("\n");
+      return [...new Set(a)].map(e=>a.filter(v=>v==e).length.toString().padStart(4)+" "+e).join("\n"); 
+    },
+    execute: function execute(args) { CmdUtils.setClipboard(this.process(args.text.trim() || CmdUtils.getClipboard())); },
+    preview: function preview(pblock, {text}) { 
+     $(pblock).css('font-size','.7em').html(`<pre>${this.process(text.trim()||CmdUtils.getClipboard())}</pre>`); 
+    },
+});
+
+CmdUtils.CreateCommand({
+    name: "clipsort",
+    icon: "📋",
+    description: "sort clipboard lines; enter sets the clipboard",
+    process: function (text) { return (text||"").split("\n").sort().join("\n"); },
+    execute: function execute(args) { CmdUtils.setClipboard(this.process(args.text.trim() || CmdUtils.getClipboard())); },
+    preview: function preview(pblock, {text}) { 
+     $(pblock).css('font-size','.7em').html(`<pre>${this.process(text.trim()||CmdUtils.getClipboard())}</pre>`); 
+    },
 });
 
 
