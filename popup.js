@@ -92,7 +92,7 @@ function ubiq_show_preview(cmd_struct) {
     {
     case 'undefined':
             ubiq_reset_preview();
-            ubiq_set_preview( cmd_struct.description );
+            ubiq_set_preview( cmd_struct.description | cmd_struct.help );
             break;
     case 'string': 
             ubiq_reset_preview();
@@ -205,11 +205,12 @@ function ubiq_dispatch_command(line) {
 function ubiq_help() {
     var html = '<div style="position:absolute; top:56px; right:0px; color: #666;">UbiChr v'+CmdUtils.VERSION+'</div>';
     html += 'Type the name of a command and press Enter to execute it, or <b>help</b> for assistance.</p>';
-    html += "<p>commands loaded: ";
+    html += "<div id='ubiq-help' style='width:780px;max-height:390px; overflow-y: auto;'>";
+    html += "commands loaded: ";
     html += CmdUtils.CommandList.map((c)=>{
         return "<span fakeattr='"+c.name+"' href=# title='"+c.description+"'>"+(c.builtIn ? c.name : "<u>"+c.name+"</u>")+"</span>";
     }).sort().join(", ");
-    html += "<p>";
+    html += "</div>";
     html += "<div style='position: absolute; bottom: 0;'>";
     html += "<div style='column-count:3'>";
     html += "<u>Keys:</u><br>";
@@ -636,7 +637,9 @@ function ubiq_load_input(callback) {
 
 // detect ubiq-result-panel resizing and set width/max-width of ubiq-command-panel, -tip and -preview
 function ubiq_result_autoresize(entries, observer) {
-    var w = 780 - Math.min($("#ubiq-result-panel").width(),240)+ "px";
+    //var w = 780 - Math.min($("#ubiq-result-panel").width(),240)+ "px";
+    //var w = 780 - Math.min(ubiq_result_el().offsetWidth,240)+ "px";
+    var w = ubiq_result_el().checkVisibility() ? 540 : 780;
     $("#ubiq-command-panel,#ubiq-command-tip,#ubiq-command-preview").css({"width":w, "max-width":w});
 }
 var resultResizeObserver = new ResizeObserver(ubiq_result_autoresize);
