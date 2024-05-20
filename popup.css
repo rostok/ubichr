@@ -88,6 +88,7 @@ body {
     /* overflow-y: hidden; */
     /* scrollbar-width: thin; */
 }
+
 #ubiq-command-preview::-webkit-scrollbar
 {
     width: 8px;
@@ -99,6 +100,16 @@ body {
     border: 2px solid #999;
 }
 
+#ubiq-help::-webkit-scrollbar
+{
+    width: 8px;
+    background-color: #999;
+}
+#ubiq-help::-webkit-scrollbar-thumb
+{
+    background-color: #555;
+    border: 2px solid #999;
+}
 
 #ubiq-command-preview a {
     color:white;
