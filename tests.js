@@ -367,9 +367,9 @@ var tests = [{
         name: 'links-open'
     }, {
         name: 'thesaurus',
-        args: 'ubiquity',
+        args: 'ubiquitous',
         timeout: 2000,
-        includesText: 'omnipresence'
+        includesText: 'omnipresent'
     }, {
         name: 'settings-chrome',
         timeout: 1000,

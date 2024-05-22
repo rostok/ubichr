@@ -4,37 +4,6 @@
 // tinyurl 
 // https://tinyurl.com/api-create.php?url=https://admin.google.com/ac/users/4349123432/profile
 
-// api directory search
-CmdUtils.makeSearchCommand({
-    name: "api-search",
-    description: "searches api directory at apilist.fun",
-    icon: "https://free-apis.github.io/favicon.ico",
-    execute: function execute(args) {
-        var opt = args._opt_val || "";
-        if(opt.includes("://")) CmdUtils.addTab(opt);
-    },
-    preview: function preview(pblock, args) {
-        if (args.text.length > 2) $.ajax({
-            url: "https://api.publicapis.org/entries?description="+encodeURIComponent(args.text),
-            method: "GET",
-            dataType: "json",
-            success: function(data) {
-              if(data.entries) data.entries.forEach(a=>{
-                pblock.innerHTML += `<div data-option data-option-value='${a.Link}'><a href='${a.Link}'>${a.API}</a> - ${a.Description}</div>`;
-              });
-            },
-            error: function(xhr, textStatus, errorThrown) {
-              pblock.innerHTML = "failed getting APIs";
-            }
-          });
-    },
-    test:{
-        args: 'URL shortener and',
-        timeout: 1000,
-        includesText: 'Bitly',
-    },
-});
-
 // runs ubichr unit tests
 CmdUtils.CreateCommand({
     name: "unittests",
@@ -960,8 +929,9 @@ CmdUtils.CreateCommand({
         if (text.trim()!='') {
             var m = new math.parser();
             text = text.trim().replace(/,/g,"."); // commas are dots
-            text = text.replace(/(\d)(\s+)(\d)/g,"$1+$3");  // blanks are replaced with sum
+            text = text.replace(/(\d)(\s+)/g,"$1+");  // blanks are replaced with sum
             try {
+            console.log(text);
                 previewBlock.innerHTML = m.eval(text);
             } catch (e) {
                 previewBlock.innerHTML = "eval error:"+e; // catching all errors as mathjs likes to throw them around
@@ -1387,25 +1357,19 @@ CmdUtils.CreateCommand({
     names: ["thesaurus", "english-thesaurus"],
     description: "Searches for different words with the same meaning",
     icon: "http://cdn.sfdict.com/hp/502812f9.ico",
+    timeout: 250,
     preview: function preview(pblock, {text}) {
       pblock.innerText = this.description;  
       if (text=="") return;
-        var url = "https://www.thesaurus.com/browse/" + encodeURIComponent(text);
-        var d = $("<div style='background-color:white; max-width:500px'></div>");
-        $(d).load(url+" section[data-type=thesaurus-entry-module]", ()=>{
-          var dd = $("<div style='max-width:540px'></div>");
-          $(dd).append( $(d).find("button[data-type=tab]:first").text() + "<p>");
-          $(dd).append( "<style>.syno { display:inline-block; text-decoration:none; line-height: 2em; border-radius:1em; margin: .1em; white-space: nowrap; padding:.5em; background:#666 } </style>");
-          $("section[data-type=thesaurus-synonyms-card]",d).find("button[data-type=pill-button]").each((i,v)=>{
-            var w = $(v).text();
-            w = $("<span class=syno>"+w+" </span> ");
-            w = $(w).attr("style", "");
-            $(dd).append(w);
-          });
-          $(pblock).empty().append(dd);
+        var url = "https://dictionary.cambridge.org/thesaurus/" + encodeURIComponent(text);
+        $(pblock).load(url+" div.ddef_block", ()=>{
+          $(pblock).append("<style>div.item { display:inline-block; margin:0.5em; border-radius:1em; background:#555; padding:0.5em;  } </style>");
+          $("a",pblock).contents().unwrap();
+          $("span",pblock).contents().unwrap();
+          $("div.dexamp",pblock).css("font-style","italic");
         });
     },
-    execute: CmdUtils.SimpleUrlBasedCommand("https://www.thesaurus.com/browse/{text}") 
+    execute: CmdUtils.SimpleUrlBasedCommand("https://dictionary.cambridge.org/thesaurus/{text}"),
 });
 
 CmdUtils.CreateCommand({
@@ -2157,32 +2121,41 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
-    name: "urban",
-    description: "neural language adapter for boomers",
-    author: "rostok",
-    icon: "https://www.urbandictionary.com/favicon.ico",
-    execute: function execute({text}) {
+	name:"urban",
+	description:"neural language adapter for boomers",
+	author:"rostok + mingyee2",
+	icon:"https://www.urbandictionary.com/favicon.ico",
+    timeout: 250,
+	execute:function execute({text}) {
         CmdUtils.addTab(`https://www.urbandictionary.com/define.php?term=${text}`);
     },
-    preview: async function preview(pblock, {text}) {
-        if (text != '') {
-            var u = await CmdUtils.get("https://www.urbandictionary.com/define.php?term=" + encodeURIComponent(text));
-            // content
-            $(pblock)
-                .append($("div#content", u))
-                .find("a,img")
-                .absolutize("https://www.urbandictionary.com").prop("target", "_blank");
-            // style, if anything should change contnet looks allright w/o styling as well
-            var s = await CmdUtils.get(u.split(".css").shift().split("href=\"").pop() + ".css");
-            s = s.replace(/body/g, "b");
-            s = s.replace(/html/g, "h");
-            $("a", pblock).css("color", "blue");
-            $(pblock).append(`<style> a.autolink {text-color:blue !important;}${s}</style>`);
-            // cleanup
-            $("a.mug-ad,a.social-interaction addthis_button_twitter,img,i,svg,.contributor,a.circle-link,.thumbs,.ad-panel", pblock).remove();
-        } else {
-            pblock.innerHTML = this.description;
-        }
+	preview:async function preview(pblock, {text}) {
+      if (text.trim() == '') return pblock.innerHTML = this.description;;
+
+      pblock.innerHTML = `<style>
+      h2 {
+        margin-top: 0.5em;
+        margin-bottom: 0;
+        padding: 0;
+      }
+      p { margin: 0 }
+      blockquote {
+        margin: 0.5em 0 1.5em;
+        font-style: italic;
+      }
+      </style>`;
+      $(pblock).append(`Urban Dictionary entries for “${text}”:<br />`);
+      CmdUtils.get(`https://www.urbandictionary.com/define.php?term=${text.replace(" ","+")}`, r => {
+        $(r).find('div.definition > div').each((_,e) => {
+          var term = $(e).find('h1, h2').text(),
+              def  = $(e).find('.meaning').text(),
+              ex   = $(e).find('.example').text(),
+              date = $(e).find('.contributor').text().split(' ').slice(-3).join(' ');
+          $(pblock).append(`<h2>${term}</h2>`);
+          $(pblock).append(`<p data-option>(${date}) ${def}</p>`);
+          $(pblock).append(`<blockquote>${ex}</blockquote>`);
+        });
+      });    
     },
 });
 
