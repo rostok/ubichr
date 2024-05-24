@@ -566,10 +566,14 @@ CmdUtils.getcmd = function getcmd(cmdname) {
 
 // returns command that name starts with arg
 CmdUtils.getcmdpart = function getcmdpart(cmdname) {
-    if (cmdname !== null && cmdname !== '')
-        for (let [ci,c] of Object.entries(CmdUtils.CommandList)) 
-            for (let n of c.names) 
-                if (n.startsWith(cmdname.toLowerCase())) return c;
+    if (cmdname == null || cmdname == '') return null;
+
+    cmdname = cmdname.trim().toLowerCase()
+
+    for (let [ci,c] of Object.entries(CmdUtils.CommandList)) for (let n of c.names) if (n.toLowerCase()==cmdname) return c;
+
+    for (let [ci,c] of Object.entries(CmdUtils.CommandList)) for (let n of c.names) if (n.toLowerCase().startsWith(cmdname)) return c;
+
     return null;
 };
 
