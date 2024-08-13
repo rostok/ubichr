@@ -473,8 +473,8 @@ CmdUtils.CreateCommand({
     description: "Check if selected/typed URL is down",
     url : "https://downforeveryoneorjustme.com/api/httpcheck/{QUERY}",
     preview: async function (pblock, {text:text}) {
-        if (text.indexOf("://")<0) text = "https://"+text;
         if (text=="") text = CmdUtils.getLocation();
+        if (text.indexOf("://")<0) text = "https://"+text;
         text = CmdUtils.getLocationOrigin(text.trim())
         if (text=="") return pblock.innerHTML = "pass argument or run inside tab";
         pblock.innerHTML = "checking if <b>" + text + "</b> is down...";

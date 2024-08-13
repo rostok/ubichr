@@ -335,7 +335,9 @@ CmdUtils.createTab = (props, callback=undefined) => {
               document.onreadystatechange();`;
       }
       code = `${inc}${code}`;
-      CmdUtils.log(tab);
+    //   CmdUtils.log(tab);
+    //   CmdUtils.log(code);
+    //   console.log(code);
       chrome.tabs.executeScript(tab.id, {code:code}, (ret)=>{
         // script was injected, nothing to do here
       });
