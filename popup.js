@@ -495,7 +495,6 @@ function ubiq_keydown_handler(evt) {
     // measure the input 
     CmdUtils.lastKeyEvent = evt;
     CmdUtils.inputUpdateTime = performance.now();
-    ubiq_save_input();
 
     if (!evt) return;
     var kc = evt.keyCode;
@@ -639,7 +638,7 @@ function ubiq_load_input(callback) {
 function ubiq_result_autoresize(entries, observer) {
     //var w = 780 - Math.min($("#ubiq-result-panel").width(),240)+ "px";
     //var w = 780 - Math.min(ubiq_result_el().offsetWidth,240)+ "px";
-    var w = ubiq_result_el().checkVisibility() ? 540 : 780;
+    var w = !ubiq_result_el().checkVisibility() || $(ubiq_result_el()).width()<=0 ? 780 : 540;
     $("#ubiq-command-panel,#ubiq-command-tip,#ubiq-command-preview").css({"width":w, "max-width":w});
 }
 var resultResizeObserver = new ResizeObserver(ubiq_result_autoresize);
@@ -657,6 +656,7 @@ $(window).on('load', function() {
         // Add event handler to window 
         document.addEventListener('keydown', function(e) { ubiq_keydown_handler(e); }, false);
         document.addEventListener('keyup', function(e) { ubiq_keyup_handler(e); }, false);
+        document.getElementById('ubiq_input').addEventListener('input', ubiq_save_input, false); // keydown fires before input is updated
         
         console.log("hello from UbiChr");
 
