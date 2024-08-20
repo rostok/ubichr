@@ -1244,7 +1244,7 @@ CmdUtils.CreateCommand({
         _cmd.arr = [];
         chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
         chrome.tabs.query({lastFocusedWindow:true}, (t)=>{
-        t = t.filter(t=>!t.url.startsWith("chrome:"));
+        t = t.filter(t=>!t.url.startsWith("chrome:")).filter(t=>!t.url.startsWith("about:"));
         t.map(b=>{
               chrome.tabs.executeScript(b.id, 
                 {code:"[...document.querySelectorAll('a')].map(a=>a.href).filter(a=>a!='');"}, 
@@ -1511,16 +1511,18 @@ CmdUtils.CreateCommand({
     description: "opens chrome passwords tab",
     execute: function execute(args) {
       chrome.tabs.query({}, (t)=>{
+        var url = "chrome://password-manager/passwords";
+        if (typeof browser!=='undefined') url = "about:logins";
         var found = false;
         t.map((b)=>{
-          if (b.url=="chrome://password-manager/passwords") {
+          if (b.url==url) {
             chrome.tabs.update(b.id, {highlighted: true});
             found = true;
             return;
           }
         });
-        //if (!found) CmdUtils.addTab(`chrome://settings/passwords?q=${args.text}#:~:text=${args.text}`);
-        if (!found) CmdUtils.addTab(`chrome://password-manager/passwords?q=${args.text}`);
+        //if (!found) CmdUtils.addTab(`{url}?q=${args.text}#:~:text=${args.text}`);
+        if (!found) CmdUtils.addTab(`{url}?q=${args.text}`);
         
       });
     },

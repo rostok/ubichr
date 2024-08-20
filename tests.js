@@ -45,7 +45,162 @@ var timeoutMin = 0;
 var timeoutMultiplier = 1;
 var extprefix =  navigator.userAgent.indexOf("Firefox") != -1 ? `moz-extension` : `chrome-extension`; 
 var testurl = `${extprefix}://${window.location.host}/popup.html#test`;
-var tests = [{
+var tests = [
+    // internal methods tests
+    { 
+        internal:true,
+        name: 'CmdUtils.addTab',
+        exec: true,
+        init: function (window) {
+            CmdUtils.addTab('https://www.example.com');
+        },
+        test: async function (window) {
+            const tabs = await chrome.tabs.query({ url: 'https://www.example.com/*' });
+            return tabs.length > 0;
+        },
+        exit: function (window) {
+            // Cleanup: Close the opened tab
+            chrome.tabs.query({ url: 'https://www.example.com/*' }, (tabs) => {
+                chrome.tabs.remove(tabs.map(tab => tab.id));
+            });
+        },
+        timeout: 1000
+    },{ 
+        internal:true,
+        name: 'CmdUtils.createCommand',
+        exec: false,
+        init: function (window) {
+            CmdUtils.CreateCommand({
+                name: "testCommand",
+                description: "This is a test command",
+                execute: function () {
+                    console.log("Test Command Executed");
+                }
+            });
+        },
+        test: function (window) {
+            return CmdUtils.CommandList.some(cmd => cmd.name === "testCommand");
+        },
+        exit: function (window) {
+            // Cleanup: Remove the test command from the list
+            CmdUtils.CommandList = CmdUtils.CommandList.filter(cmd => cmd.name !== "testCommand");
+        },
+        timeout: 1000
+    },{ 
+        internal:true,
+        name: 'CmdUtils.setBadge',
+        exec: false,
+        init: function (window) {
+            CmdUtils.setBadge('Test', '#FF0000');
+        },
+        test: function (window) {
+            return new Promise((resolve) => {
+                chrome.browserAction.getBadgeText({}, function(text) {
+                    resolve(text === 'Test');
+                });
+            });
+        },
+        exit: function (window) {
+            // Reset the badge to empty
+            CmdUtils.setBadge('');
+        },
+        timeout: 1000
+    },{ 
+        internal:true,
+        name: 'CmdUtils.ajaxGetJSON',
+        exec: false,
+        init: function (window) {
+            CmdUtils.ajaxGetJSON('https://raw.githubusercontent.com/rostok/ubichr/master/manifest.json', (resp) => {
+                this.response = resp;
+            });
+        },
+        test: function () {
+            return this.response && this.response.short_name == "UbiChr";
+        },
+        timeout: 1000
+    },{ 
+        internal:true,
+        name: 'CmdUtils.ajaxGet',
+        exec: false,
+        init: function (window) {
+            CmdUtils.ajaxGet('https://raw.githubusercontent.com/rostok/ubichr/master/manifest.json', (resp) => {
+                this.response = JSON.parse(resp);
+            });
+        },
+        test: function () {
+            return this.response && this.response.short_name == "UbiChr";
+        },
+        timeout: 1000
+    },{ 
+        internal:true,
+        name: 'CmdUtils.loadScripts',
+        exec: false,
+        init: function (window) {
+            window.loadedScripts = window.loadedScripts || []
+            var url = 'https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js';
+            window.loadedScripts = window.loadedScripts.filter(u => u !== url);
+            CmdUtils.loadScripts(url, () => {
+                this.loadScripts_scriptLoaded = window._.VERSION == '4.17.21'; // Lodash exposes a global `_` object
+            },window);
+        },
+        test: function () {
+            return this.loadScripts_scriptLoaded === true;
+        },
+        exit: function () {
+            delete window._; // Cleanup Lodash after the test
+        },
+        timeout: 1000
+    },{ 
+        internal:true,
+        name: 'CmdUtils.setClipboard',
+        exec: false,
+        init: function (window) {
+            CmdUtils.setClipboard('Clipboard Text');
+            this.clipboardSet = CmdUtils.getClipboard() === 'Clipboard Text';
+        },
+        test: function () {
+            return this.clipboardSet === true;
+        },
+        timeout: 500
+    },{ 
+        internal:true,
+        name: 'CmdUtils.getClipboard',
+        exec: false,
+        init: function (window) {
+            CmdUtils.setClipboard('Clipboard Text');
+            this.clipboardText = CmdUtils.getClipboard();
+        },
+        test: function () {
+            return this.clipboardText === 'Clipboard Text';
+        },
+        timeout: 500
+    },{ 
+        internal:true,
+        name: 'CmdUtils.setClipboardHTML',
+        exec: false,
+        init: function (window) {
+            CmdUtils.setClipboardHTML('<b>Bold Text</b>');
+            this.clipboardHTMLSet = CmdUtils.getClipboardHTML() === '<b>Bold Text</b>';
+        },
+        test: function () {
+            return this.clipboardHTMLSet === true;
+        },
+        timeout: 500
+    },{ 
+        internal:true,
+        name: 'CmdUtils.getClipboardHTML',
+        exec: false,
+        init: function (window) {
+            CmdUtils.setClipboardHTML('<b>Bold Text</b>');
+            this.clipboardHTML = CmdUtils.getClipboardHTML();
+        },
+        test: function () {
+            return this.clipboardHTML === '<b>Bold Text</b>';
+        },
+        timeout: 500
+    },    
+    // commands tests
+    {
         name: 'calc',
         args: '2+2',
         text: '4',
@@ -224,8 +379,7 @@ var tests = [{
         args: 'Blade.Runner.1982',
         exec: true,
         url: `*://www.google.com/search?*q=intitle*`,
-    },
-    {
+    }, {
         name: 'isdown',
         args: '3e.pl',
         exec: true,
@@ -483,7 +637,7 @@ var tests = [{
         ]
     }
 ];
-
+tests.map(t=>t.name)
 // return true if current window includes tab with this url
 async function isTabOpen(url) {
     // var t = await asyncfy(chrome.tabs.query)({url: url, currentWindow: true});
@@ -595,16 +749,37 @@ function runSingleTest(t, delay=0) {
         t.result = "fail";
     };
     CmdUtils.testing[t.name] = t;
-    setTimeout(()=>{
-        CmdUtils.addTab(testurl + t.name, false);
+    if (t.internal) {
+        // Run internal test directly with timeout
+        setTimeout(() => {
+            try {
+                t.init(window);
+                setTimeout(() => {
+                    if (t.test(window)) {
+                        t.pass();
+                    } else {
+                        t.fail("Test failed");
+                    }
+                    t.exit(window);
+                }, t.timeout);
+            } catch (e) {
+                t.fail(e.message || "Test exception");
+                t.exit(window);
+            }
+        }, delay);
+    } else {
+        // Open new tab and run test as before
+        setTimeout(() => {
+            CmdUtils.addTab(testurl + t.name, false);
 
-        // wait a while and get back to this tab
-        chrome.tabs.query({currentWindow: true, active: true}, function(tabs){
-            setTimeout(()=>{
-                chrome.tabs.update(tabs[0].id, {selected:true, active:true});
-            },2000*timeoutMultiplier);
-        });
-    }, delay);
+            // wait a while and get back to this tab
+            chrome.tabs.query({ currentWindow: true, active: true }, function (tabs) {
+                setTimeout(() => {
+                    chrome.tabs.update(tabs[0].id, { selected: true, active: true });
+                }, 2000 * timeoutMultiplier);
+            });
+        }, delay);
+    }
 }
 
 function runAllTests() {
@@ -619,8 +794,6 @@ function runAllTests() {
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 tests = tests.filter(t=>true)
-            //  .filter(t=>'isdown'.split(',').indexOf(t.name)>-1)
-            //  .filter(t=>'define,dictionary'.split(',').indexOf(t.name)>-1)
              .filter(t=>Object.getOwnPropertyNames(t).length>1) // only full tests should be run
              .concat( CmdUtils.CommandList.filter(t=>typeof t.test !== 'undefined').map(c=>{return {...c.test, name:c.name}}) )
              .sort((a, b) => a.name.localeCompare(b.name));
@@ -646,6 +819,7 @@ if (tests.map(a => a.name).length !== [...new Set(tests.map(a => a.name))].lengt
 // front-end - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
+$("#ubiversion").html("UbiChr v"+CmdUtils.VERSION);
 $('#tests').append( tests.map(t=>t.name).map(t=>`<div class=status name='${t}'><a class=runsingle name='${t}' href=#>${t}</a></div>`).join('') );
 $('#untested').append( CmdUtils.CommandList.filter(c=>c.builtIn).map(c=>c.name).filter(c=>tests.map(t=>t.name).indexOf(c)<0).sort().join('<br>') );
 $('#untestedcustom').append( CmdUtils.CommandList.filter(c=>!c.builtIn).map(c=>c.name).filter(c=>tests.map(t=>t.name).indexOf(c)<0).sort().join('<br>') );

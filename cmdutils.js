@@ -272,6 +272,7 @@ CmdUtils.addTab = function addTab(url, active=true) {
 
     if (typeof browser !== 'undefined') {
         browser.tabs.create({ "url": url, "active": active });
+        if (browser) CmdUtils.closePopup(); // FF keeps popup open, so we close it
     } else 
     if (typeof chrome !== 'undefined' && typeof chrome.tabs !== 'undefined') {
         chrome.tabs.create({ "url": url, "active": active });
@@ -733,7 +734,7 @@ CmdUtils.notify = function (message, title) {
     if (CmdUtils.lastNotification == title+"/"+message) return;
     chrome.notifications.create({
         "type": "basic",
-        "iconUrl": chrome.extension.getURL("res/icon-128.png"),
+        "iconUrl": typeof browser!=='undefined' ? browser.runtime.getURL("res/icon-128.png") : chrome.extension.getURL("res/icon-128.png"),
         "title": title || "UbiChr",
         "message": message
     });

@@ -660,6 +660,7 @@ $(window).on('load', function() {
         
         console.log("hello from UbiChr");
 
+        ubiq_focus(); 
         if (CmdUtils.loadLastInput)
             ubiq_load_input( ()=>{
                 ubiq_show_matching_commands();
