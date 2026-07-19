@@ -1,27 +1,28 @@
 {
-    "name": "UbiChr - Ubiquity for Chrome",
-    "short_name": "UbiChr",
+    "name": "UbiChrV3 - Ubiquity for Chrome",
+    "short_name": "UbiChrV3",
     "homepage_url": "https://github.com/rostok/ubichr",
     "author": "rostok",
-    "version": "0.1.0.62",
+    "version": "3.0.0.4",
     "description": "Revived Ubiquity for Chrome",
-    "content_security_policy": "script-src 'self' 'unsafe-eval' https://maps.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com https://cdnjs.com; object-src 'self'",
-    "manifest_version": 2,
+    "manifest_version": 3,
     "background": {
-        "scripts": ["lib/jquery-3.6.0.min.js", "utils.js", "cmdutils.js", "commands.js", "background.js"],
-        "persistent":true
+        "service_worker": "service_worker.js"
     },
-    "browser_action": {
+    "action": {
         "default_title": "UbiChr",
         "default_popup": "popup.html",
         "default_icon": "res/icon-128.png"
+    },
+    "sandbox": {
+        "pages": ["sandbox.html"]
     },
     "options_ui": {
         "page": "options.html",
         "open_in_tab": true
     },
     "commands": {
-        "_execute_browser_action": {
+        "_execute_action": {
             "suggested_key": {
                 "chromeos": "Ctrl+Space",
                 "linux": "Ctrl+Space",
@@ -30,21 +31,29 @@
             }
         }
     },
-  	"content_scripts": [{
+    "content_scripts": [{
         "matches": ["<all_urls>"],
-    	"js": ["selection.js"]
+        "js": ["selection.js"]
     }],
     "icons": { "128" : "res/icon-128.png" },
     "permissions": [
-        "http://*/",
-        "https://*/",
-        "activeTab", 
-        "tabs", 
-        "clipboardRead", 
-        "clipboardWrite", 
-        "notifications", 
+        "activeTab",
+        "tabs",
+        "scripting",
+        "clipboardRead",
+        "clipboardWrite",
+        "notifications",
         "storage",
         "alarms",
-        "cookies"
-    ]
+        "cookies",
+        "userScripts"
+    ],
+    "host_permissions": [
+        "http://*/*",
+        "https://*/*"
+    ],
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'self'",
+        "sandbox": "sandbox allow-scripts; script-src 'self' 'unsafe-eval' https://cdnjs.cloudflare.com; object-src 'self'"
+    }
 }

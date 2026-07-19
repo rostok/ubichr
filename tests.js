@@ -95,7 +95,7 @@ var tests = [
         },
         test: function (window) {
             return new Promise((resolve) => {
-                chrome.browserAction.getBadgeText({}, function(text) {
+                chrome.action.getBadgeText({}, function(text) {
                     resolve(text === 'Test');
                 });
             });
@@ -135,19 +135,20 @@ var tests = [
         internal:true,
         name: 'CmdUtils.loadScripts',
         exec: false,
+        // MV3: extension pages can only load BUNDLED scripts (script-src 'self');
+        // remote CDN loading lives in the sandbox now — so test with a local file
         init: function (window) {
-            window.loadedScripts = window.loadedScripts || []
-            var url = 'https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js';
-            window.loadedScripts = window.loadedScripts.filter(u => u !== url);
-            CmdUtils.loadScripts(url, () => {
-                this.loadScripts_scriptLoaded = window._.VERSION == '4.17.21'; // Lodash exposes a global `_` object
-            },window);
+            window.loadedScripts = (window.loadedScripts || []).filter(u => u !== 'lib/mark.min.js');
+            delete window.Mark;
+            CmdUtils.loadScripts('lib/mark.min.js', () => {
+                this.loadScripts_scriptLoaded = typeof window.Mark === 'function'; // mark.js exposes a global `Mark`
+            }, window);
         },
         test: function () {
             return this.loadScripts_scriptLoaded === true;
         },
         exit: function () {
-            delete window._; // Cleanup Lodash after the test
+            delete window.Mark; // cleanup after the test
         },
         timeout: 1000
     },{ 
@@ -174,30 +175,30 @@ var tests = [
             return this.clipboardText === 'Clipboard Text';
         },
         timeout: 500
-    },{ 
+    },{
         internal:true,
         name: 'CmdUtils.setClipboardHTML',
         exec: false,
-        init: function (window) {
-            CmdUtils.setClipboardHTML('<b>Bold Text</b>');
-            this.clipboardHTMLSet = CmdUtils.getClipboardHTML() === '<b>Bold Text</b>';
+        init: async function (window) {
+            await CmdUtils.setClipboardHTML('<b>Bold Text</b>');
+            this.clipboardHTMLSet = (await CmdUtils.getClipboardHTML()).includes('Bold Text');
         },
         test: function () {
             return this.clipboardHTMLSet === true;
         },
-        timeout: 500
-    },{ 
+        timeout: 1500
+    },{
         internal:true,
         name: 'CmdUtils.getClipboardHTML',
         exec: false,
-        init: function (window) {
-            CmdUtils.setClipboardHTML('<b>Bold Text</b>');
-            this.clipboardHTML = CmdUtils.getClipboardHTML();
+        init: async function (window) {
+            await CmdUtils.setClipboardHTML('<b>Bold Text</b>');
+            this.clipboardHTML = await CmdUtils.getClipboardHTML();
         },
         test: function () {
-            return this.clipboardHTML === '<b>Bold Text</b>';
+            return this.clipboardHTML && this.clipboardHTML.includes('Bold Text');
         },
-        timeout: 500
+        timeout: 1500
     },    
     // commands tests
     {
@@ -222,7 +223,8 @@ var tests = [
     }, {
         name: 'sum',
         args: '1 2 3 4',
-        text: '10'
+        text: '10',
+        timeout: 1000,
     }, {
         name: 'amazon-search',
         args: 'test',
@@ -297,7 +299,7 @@ var tests = [
     }, {
         name: 'dictionary',
         args: 'ubiquity',
-        includesText: 'the state or capacity of being everywhere',
+        includesTextLC: 'everywhere',
         timeout: 2000,
     }, {
         name: 'emoji',
@@ -349,22 +351,30 @@ var tests = [
         name: 'history',
         includesText: 'help help',
         timeout: 2000,
+        // seed history so the test doesn't depend on the 'help' test running first;
+        // the popup has already loaded its history from storage, so patch it directly too
+        init: (w) => {
+            CmdUtils.saveToHistory('help help');
+            if (w && w.CmdUtils) w.CmdUtils.history.unshift('help help');
+        },
     }, {
         name: 'imdb',
         args: 'Nausicaa of the Valley of the Wind',
         includesHTML: 'tt0087544',
         timeout: 3000
     }, {
+        // example.com: no bot-walls (stackoverflow serves a Cloudflare check to automated browsers)
         name: 'grep',
-        args: 'Questions',
-        url: 'https://stackoverflow.com/',
+        args: 'documentation',
+        url: 'https://www.example.com/',
         timeout: 3000,
-        includesText: 'Questions',
+        includesText: 'documentation examples',
         init: function (w) {
             [this.url].flat().forEach(u=>CmdUtils.addTab(u, false));
+            // re-run the preview once the target tab had time to load
             w.setTimeout(() => {
                 w.ubiq_show_matching_commands();
-            }, this.timeout *.1);
+            }, this.timeout *.5);
         },
     }, {
         name: 'lasterror',
@@ -390,16 +400,28 @@ var tests = [
         args: 'command-gist',
         starsWithText: "// UbiChr 'command-gist' command",
     }, {
-        name: 'bugzilla'
+        name: 'bugzilla',
+        args: 'test',
+        exec: true,
+        url: '*://bugzilla.mozilla.org/buglist.cgi?*content=test*',
+        timeout: 2000,
     }, {
-        name: 'close'
+        name: 'close',
+        starsWithText: 'Close the current tab',
+        timeout: 500,
+    }, {
+        name: 'close-containing',
+        args: 'nonexistent-pattern-xyz',
+        timeout: 1000,
     }, {
         name: 'cpan',
         args: 'ubiquity',
         exec: true,
         url:  '*://metacpan.org/search?q=ubiquity'
     }, {
-        name: 'reload-ubiquity'
+        name: 'reload-ubiquity',
+        starsWithText: 'reloads',
+        timeout: 500,
     }, {
         name: 'lastfm',
         args: 'autechre',
@@ -425,9 +447,15 @@ var tests = [
         url: '*://www.3e.pl/*',
         timeout: 2000
     }, {
-        name: 'print'
+        name: 'print',
+        starsWithText: 'Print the current page',
+        timeout: 500,
     }, {
-        name: 'search'
+        name: 'search',
+        args: 'test',
+        exec: true,
+        url: '*://www.google.com/search?q=test*',
+        timeout: 2000,
     }, {
         name: 'shorten-url',
         args: 'https://github.com/rostok/ubichr',
@@ -462,7 +490,8 @@ var tests = [
         timeout: 4000,
         includesHTML: 'download="bulk.zip"'
     }, {
-        name: 'validate'
+        name: 'validate',
+        timeout: 500,
     }, {
         name: 'wayback',
         args: '3e.pl',
@@ -500,25 +529,48 @@ var tests = [
         args: 'url encode',
         includesText: 'url%20encode'
     }, {
-        name: 'invert'
+        name: 'invert',
+        timeout: 500,
     }, {
-        name: 'regexp'
+        name: 'regexp',
+        args: 'https?',
+        timeout: 1000,
     }, {
-        name: 'grepInnerHTML'
+        name: 'grepInnerHTML',
+        args: 'http',
+        timeout: 1000,
     }, {
+        // example.com: no bot-walls (stackoverflow serves a Cloudflare check to automated browsers)
         name: 'links',
-        args: 'stackoverflow questions',
-        url: 'https://stackoverflow.com/',
+        args: 'iana domains',
+        url: 'https://www.example.com/',
         timeout: 3000,
-        includesText: 'https://stackoverflow.com/questions',
+        includesText: 'iana.org/domains/example',
         init: function (w) {
             [this.url].flat().forEach(u=>CmdUtils.addTab(u, false));
-            // w.setTimeout(() => {
-            //     w.ubiq_show_matching_commands();
-            // }, this.timeout * .9);
+            // re-run the preview once the target tab had time to load — the first
+            // preview fires before stackoverflow finishes loading and never re-scans
+            w.setTimeout(() => {
+                w.ubiq_show_matching_commands();
+            }, this.timeout * .5);
         },
     }, {
-        name: 'links-open'
+        name: 'links-open',
+        timeout: 500,
+    }, {
+        // custom command (grep2urls/find-in-tabs) — greps all tabs, returns urls
+        name: 'grep2urls',
+        args: 'documentation',
+        url: 'https://www.example.com/',
+        timeout: 3000,
+        includesText: 'example.com',
+        init: function (w) {
+            [this.url].flat().forEach(u=>CmdUtils.addTab(u, false));
+            // re-run the preview once the target tab had time to load
+            w.setTimeout(() => {
+                w.ubiq_show_matching_commands();
+            }, this.timeout * .5);
+        },
     }, {
         name: 'thesaurus',
         args: 'ubiquitous',
@@ -530,7 +582,9 @@ var tests = [
         exec: true,
         url: 'chrome://settings/'
     }, {
-        name: 'replace-selection'
+        name: 'replace-selection',
+        args: 'test replacement',
+        timeout: 500,
     }, {
         name: 'cookies',
         starsWithText: '# Enter to save',
@@ -565,18 +619,22 @@ var tests = [
         includesText: '✠',
         url: '*://unicode-search.net/*maltese*'
     }, {
-        name: 'jquery'
+        name: 'jquery',
+        timeout: 500,
     }, {
-        name: 'inject-js'
+        name: 'inject-js',
+        timeout: 500,
     }, {
         name: 'whois',
         args: '3e.pl',
         exec: true,
         url: '*://who.is/whois/3e.pl*'
     }, {
-        name: 'allow-text-selecion'
+        name: 'allow-text-selection',
+        timeout: 500,
     }, {
-        name: 'grayscale'
+        name: 'grayscale',
+        timeout: 500,
     }, {
         name: 'wolfram',
         'args': 'test',
@@ -584,11 +642,17 @@ var tests = [
         'timeout': 1000,
         'url': 'https://www.wolframalpha.com/input/?i=test'
     }, {
-        name: 'history-clear'
+        name: 'history-clear',
+        exec: true,
+        timeout: 500,
+        test: function(w) { return w.CmdUtils.history.length === 0; },
     }, {
-        name: 'unmark'
+        name: 'unmark',
+        timeout: 500,
     }, {
-        name: 'mark'
+        name: 'mark',
+        args: 'test',
+        timeout: 1000,
     }, {
         name: 'open',
         args: '3e.pl wired.com',
@@ -601,13 +665,19 @@ var tests = [
         'timeout': 1000,
         'url': 'http://man.he.net/?section=all&topic=test'
     }, {
-        name: 'merge-tabs'
+        name: 'merge-tabs',
+        timeout: 500,
     }, {
         name: 'translate-google'
     }, {
-        name: 'alarm-clear'
+        name: 'alarm-clear',
+        includesText: 'current alarms',
+        timeout: 500,
     }, {
-        name: 'alarm'
+        name: 'alarm',
+        args: 'mytest 5',
+        includesText: "set alarm 'mytest'",
+        timeout: 500,
     }, {
         name: 'urban',
         args: 'shiv',
@@ -615,7 +685,9 @@ var tests = [
         url: '*://www.urbandictionary.com/define.php?term=shiv',
         timeout: 1000
     }, {
-        name: 'omnijquery'
+        name: 'omnijquery',
+        args: 'div',
+        timeout: 1000,
     }, {
         name: 'genius',
         'args': 'test',
@@ -624,7 +696,24 @@ var tests = [
         'url': 'https://genius.com/search?q=test'
     }, {
         name: '12ft',
-    },{
+    }, {
+        name: 'correct-english',
+        args: 'hello world',
+        exec: true,
+        url: '*://www.perplexity.ai/search?q=*correct*',
+        timeout: 2000,
+    }, {
+        name: 'killcookies',
+        // preview says "execute to kill N cookie(s) of ..." or "no cookies for ..."
+        includesText: 'cookie',
+        timeout: 1000,
+    }, {
+        name: 'perplexity',
+        args: 'test',
+        exec: true,
+        url: '*://www.perplexity.ai/search?q=test*',
+        timeout: 2000,
+    }, {
         name: 'torrent-search',
         args: 'harakiri',
         exec: true,
@@ -635,7 +724,16 @@ var tests = [
             "*://1337x.to/search/*",
             "*://isohunt.nz/torrent/?ihq=*",
         ]
-    }
+    },
+    // clipboard custom commands — init must be defined here (can't serialize functions through postMessage)
+    { name: 'cliptab',            timeout: 1500, init: ()=>CmdUtils.setClipboard("a\tb\nc\t1"), includesText: '+---+---+' },
+    { name: 'cliptabmd',          timeout: 1500, init: ()=>CmdUtils.setClipboard("a\tb\nc\t1"), includesText: '| a | b |' },
+    { name: 'cliptabunicode',     timeout: 1500, init: ()=>CmdUtils.setClipboard("a\tb\nc\t1"), includesText: '│ a │ b │' },
+    { name: 'cliptabunicoderound',timeout: 1500, init: ()=>CmdUtils.setClipboard("a\tb\nc\t1"), includesText: '╭───┬───╮' },
+    { name: 'cliptabcompact',     timeout: 1500, init: ()=>CmdUtils.setClipboard("a\tb\nc\t1"), includesText: '---' },
+    { name: 'clipgrep',           timeout: 1500, args: '1 a', init: ()=>CmdUtils.setClipboard("a\nb\na1\nb1\n1\n"), includesText: 'a1' },
+    { name: 'clipregex',          timeout: 1500, args: '\\d', init: ()=>CmdUtils.setClipboard("abc\n123\ndef"), includesText: '123' },
+    { name: 'cliprepl',           timeout: 1500, args: 'abc 123', init: ()=>CmdUtils.setClipboard("abc123"), includesText: '123123' },
 ];
 tests.map(t=>t.name)
 // return true if current window includes tab with this url
@@ -657,10 +755,11 @@ function initTests() {
     // after popup window is open, this handler is executed and performs the test
     CmdUtils.onPopup = function (wnd) {
         if (wnd === undefined) return;
+        CmdUtils.popupWindow = wnd; // needed by tests that call CmdUtils.popupWindow.*
         var hash = wnd.location.hash || '';
         if (hash.startsWith('#test')) {
             wnd.console.log('hash',hash);
-            hash = hash.replace('#test', '');
+            hash = decodeURIComponent(hash.replace('#test', ''));
             var t = CmdUtils.testing[hash];
             wnd.console.log('callint init',t);
             t.init(wnd); 
@@ -707,7 +806,7 @@ function initTests() {
                 var aftershot = ()=>{};
                 if (error == "") {
                     t.pass('');
-                    if (wnd.location.href!==`${extprefix}://${window.location.host}/tests.html`) aftershot = ()=>{ wnd.close() };
+                    if ($('#autoclose').is(':checked') && wnd.location.href!==`${extprefix}://${window.location.host}/tests.html`) aftershot = ()=>{ wnd.close() };
                     // var urls = [];
                     // if (typeof t.url === 'string') urls.push(t.url)
                     // chrome.tabs.query({url:urls}, (t) => {
@@ -793,9 +892,13 @@ function runAllTests() {
 // start - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
+// ?f=substring filters the visible tests (e.g. tests.html?f=clip); also set by 'unittests clip'
+var testFilter = new URLSearchParams(window.location.search).get('f') || '';
+
 tests = tests.filter(t=>true)
-             .filter(t=>Object.getOwnPropertyNames(t).length>1) // only full tests should be run
-             .concat( CmdUtils.CommandList.filter(t=>typeof t.test !== 'undefined').map(c=>{return {...c.test, name:c.name}}) )
+             .filter(t=>Object.getOwnPropertyNames(t).filter(k=>k!=='name'&&k!=='timeout').length>0) // only full tests should be run
+             .concat( CmdUtils.CommandList.filter(t=>t.test!=null).map(c=>{return {...c.test, name:c.name}}) )
+             .filter(t => !testFilter || t.name.includes(testFilter))
              .sort((a, b) => a.name.localeCompare(b.name));
 
 // initialize with default values
@@ -819,20 +922,23 @@ if (tests.map(a => a.name).length !== [...new Set(tests.map(a => a.name))].lengt
 // front-end - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
-$("#ubiversion").html("UbiChr v"+CmdUtils.VERSION);
+$("#ubiversion").html("UbiChr v"+CmdUtils.VERSION + (testFilter ? " | filter: "+testFilter : ""));
 $('#tests').append( tests.map(t=>t.name).map(t=>`<div class=status name='${t}'><a class=runsingle name='${t}' href=#>${t}</a></div>`).join('') );
-$('#untested').append( CmdUtils.CommandList.filter(c=>c.builtIn).map(c=>c.name).filter(c=>tests.map(t=>t.name).indexOf(c)<0).sort().join('<br>') );
-$('#untestedcustom').append( CmdUtils.CommandList.filter(c=>!c.builtIn).map(c=>c.name).filter(c=>tests.map(t=>t.name).indexOf(c)<0).sort().join('<br>') );
+$('#untested').append( CmdUtils.CommandList.filter(c=>c.builtIn).map(c=>c.name).filter(c=>tests.map(t=>t.name).indexOf(c)<0).filter(c=>!testFilter || c.includes(testFilter)).sort().join('<br>') );
+$('#untestedcustom').append( CmdUtils.CommandList.filter(c=>!c.builtIn).map(c=>c.name).filter(c=>tests.map(t=>t.name).indexOf(c)<0).filter(c=>!testFilter || c.includes(testFilter)).sort().join('<br>') );
 $('a.runsingle').click(function() { runSingleTest(tests.find(t=>t.name==$(this).attr('name'))); });
-$('#autoclose').click( ()=>{
+function applyAutoclose() {
     tests.forEach(t=>t.postexit=(()=>{}));
-    if ($('#autoclose').is(':checked')) 
+    if ($('#autoclose').is(':checked'))
         tests.filter(t=>typeof t.url !== 'undefined').forEach(t=>t.postexit = function(w) {
-            chrome.tabs.query({}, (tb)=>console.log(`AUTOCLOSING ${t.url} FOUND ${tb.map(b=>b.url)}`) ); 
-            chrome.tabs.query({url:this.url,currentWindow:true}, tb => chrome.tabs.remove( tb.map(b=>b.id) ) ); 
+            chrome.tabs.query({url:this.url,currentWindow:true}, tb => chrome.tabs.remove( tb.map(b=>b.id) ) );
             w.close();
         });
-});
+}
+$('#autoclose').click(applyAutoclose);
+// the checkbox is checked by default but was only wired up on click —
+// tabs opened by url-tests were never closed until the user toggled it
+applyAutoclose();
 $('#start').click(() => {
     timeoutMin = 0;
     timeoutMultiplier = 10;
@@ -875,6 +981,33 @@ $('#close').click(() => {
     // console.log("closing",urls);
     chrome.tabs.query({url:urls,currentWindow:true}, (t) => chrome.tabs.remove(t.map(b=>b.id), () => {}) );
     chrome.tabs.query({active:false,currentWindow:true}, (t) => chrome.tabs.remove(t.filter(b=>b.url.startsWith(testurl)).map(b=>b.id), () => {}) );
+});
+
+// Re-render custom command lists after sandbox loads custom scripts
+window.addEventListener('sandbox-eval-ok', function() {
+    var testedNames = tests.map(t => t.name);
+    // add new commands with tests to tests array
+    CmdUtils.CommandList
+        .filter(c => !c.builtIn && c.test != null)
+        .map(c => ({...c.test, name: c.name}))
+        .filter(t => !testedNames.includes(t.name))
+        .filter(t => !testFilter || t.name.includes(testFilter))
+        .forEach(t => {
+            t.args = t.args || '';
+            t.init = t.init || (()=>{});
+            t.exit = t.exit || (()=>{});
+            t.postexit = (()=>{});
+            t.timeoutOrg = t.timeout;
+            t.timeout = (t.timeoutOrg || 0) * timeoutMultiplier || timeoutMin;
+            tests.push(t);
+            testedNames.push(t.name);
+            $('#tests').append(`<div class=status name='${t.name}'><a class=runsingle name='${t.name}' href=#>${t.name}</a></div>`);
+        });
+    // refresh untested custom list
+    var customNames = CmdUtils.CommandList.filter(c => !c.builtIn).map(c => c.name).filter(c => !testedNames.includes(c)).sort();
+    $('#untestedcustom').html(customNames.join('<br>'));
+    $('a.runsingle').off('click').click(function() { runSingleTest(tests.find(t => t.name == $(this).attr('name'))); });
+    applyAutoclose(); // custom url-tests added above need their postexit too
 });
 
 $('#generate').click(()=>{

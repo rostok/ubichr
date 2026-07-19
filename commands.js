@@ -7,10 +7,11 @@
 // runs ubichr unit tests
 CmdUtils.CreateCommand({
     name: "unittests",
-    description: "perform UbiChr unit tests for builtin commands",
+    description: "perform UbiChr unit tests; optional argument filters tests by name substring (e.g. <pre>unittests clip</pre>)",
     icon: "res/icon-128.png",
     execute: function execute(args) {
-        CmdUtils.addTab("tests.html");
+        var f = (args.text || "").trim();
+        CmdUtils.addTab("tests.html" + (f ? "?f=" + encodeURIComponent(f) : ""));
     },
 });
 
@@ -76,12 +77,16 @@ CmdUtils.CreateCommand({
             if (tab.pendingUrl!='https://gist.github.com/') return;
             chrome.tabs.onCreated.removeListener( CmdUtils.gist_command_callback );
             CmdUtils.gist_command_callback = null;
-            chrome.tabs.executeScript( tab.id, { code: `
-                  var script = document.createElement('script');
-                  script.textContent = ${d};
-                   (document.head || document.documentElement).append(script);
-                  script.remove();
-           `});
+            chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                func: function(src) {
+                    var script = document.createElement('script');
+                    script.textContent = src;
+                    (document.head || document.documentElement).append(script);
+                    script.remove();
+                },
+                args: [d]
+            });
        };
        chrome.tabs.onCreated.addListener( CmdUtils.gist_command_callback );
        CmdUtils.addTab("https://gist.github.com/");
@@ -106,48 +111,16 @@ CmdUtils.CreateCommand({
     execute: CmdUtils.SimpleUrlBasedCommand('https://www.amazon.com/s/ref=nb_ss_gw?url=search-alias%3Dstripbooks&field-keywords={text}')
 });
 
-CmdUtils.CreateCommand({
-    name: "answers-search",
-    description: "Search Answers.com for:",
-    author: {},
-    icon: "http://www.answers.com/favicon.ico",
-    homepage: "",
-    license: "",
-    preview: "Search Answers.com for:",
-    execute: CmdUtils.SimpleUrlBasedCommand('https://www.answers.com/search?q={text}')
-});
-
-CmdUtils.CreateCommand({
-    name: "ask-search",
-    description: "Search Ask.com for the given words",
-    author: {},
-    icon: "http://www.ask.com/favicon.ico",
-    homepage: "",
-    license: "",
-    preview: "Search Ask.com for the given words:",
-    execute: CmdUtils.SimpleUrlBasedCommand('https://www.ask.com/web?q={text}')
-});
-
-CmdUtils.CreateCommand({
-    name: "bugzilla",
-    description: "Perform a bugzilla search for",
-    author: {},
-    icon: "http://www.mozilla.org/favicon.ico",
-    homepage: "",
-    license: "",
-    preview: "Perform a bugzilla search for",
-    execute: CmdUtils.SimpleUrlBasedCommand("https://bugzilla.mozilla.org/buglist.cgi?query_format=specific&order=relevance+desc&bug_status=__open__&content={text}")
-});
 
 CmdUtils.CreateCommand({
     icon: "⮽",
     name: "close",
     takes: {},
-    description: "Close the current tab",
+    description: "Close the current tab (to close tabs by URL pattern use <b>close-tabs</b>)",
     author: {},
     homepage: "",
     license: "",
-    preview: "Close the current tab",
+    preview: "Close the current tab (to close tabs by URL pattern use <b>close-tabs</b>)",
     execute: function (directObj) {
         CmdUtils.closeTab();
     }
@@ -165,21 +138,6 @@ CmdUtils.CreateCommand({
     )
 });
 
-CmdUtils.CreateCommand({
-    name: "cpan",
-    icon: "https://metacpan.org/favicon.ico",
-    description: "Search for a CPAN package information",
-    homepage: "",
-    author: {
-        name: "Cosimo Streppone",
-        email: "cosimo@cpan.org"
-    },
-    license: "",
-    preview: "Search for a CPAN package information",
-    execute: CmdUtils.SimpleUrlBasedCommand(
-        "https://metacpan.org/search?q={text}"
-    )
-});
 
 CmdUtils.CreateCommand({
     name: "currency-converter",
@@ -212,9 +170,9 @@ CmdUtils.CreateCommand({
             }
         }
         try {
-          amount = eval(amount);
-        } catch (e) {
           amount = parseFloat(amount) || 0;
+        } catch (e) {
+          amount = 0;
         }
         jQuery(pblock).loadAbs(`https://www.x-rates.com/calculator/?from=${curr_from}&to=${curr_to}&amount=${amount} `+" span.ccOutputRslt", ()=>{
             jQuery(pblock).html(amount+" "+curr_from+" = " + jQuery(pblock).text());
@@ -261,11 +219,30 @@ CmdUtils.CreateCommand({
     execute: function ({text: text}) {
         CmdUtils.addTab("https://www.dictionary.com/browse/" + escape(text));
     },
-    preview: async function define_preview(pblock, {text: text}) {
-        var doc = await CmdUtils.get("https://www.dictionary.com/browse/"+encodeURIComponent(text));
-        CmdUtils.setPreview("");
-        $("section[data-type*=-dictionary-]", doc).appendTo(pblock).find("a[href*=thesaurus],button").remove();
-        $("div[data-type=pronunciation-toggle]",pblock).remove() 
+    preview: async function define_preview(pblock, {text}) {
+        if (!text) return;
+        pblock.innerHTML = '...';
+        try {
+            var resp = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(text)}`);
+            var data = await resp.json();
+            if (!data || !data[0]) { pblock.innerHTML = 'not found'; return; }
+            var entry = data[0];
+            var html = `<b>${entry.word}</b>`;
+            if (entry.phonetic) html += ` <i>${entry.phonetic}</i>`;
+            html += '<br>';
+            entry.meanings.forEach(m => {
+                html += `<b>${m.partOfSpeech}</b><ol>`;
+                m.definitions.slice(0, 3).forEach(d => {
+                    html += `<li>${d.definition}`;
+                    if (d.example) html += ` <i>"${d.example}"</i>`;
+                    html += '</li>';
+                });
+                html += '</ol>';
+            });
+            pblock.innerHTML = html;
+        } catch(e) {
+            pblock.innerHTML = 'not found';
+        }
     },
 });
 
@@ -423,26 +400,26 @@ CmdUtils.CreateCommand({
         pblock.innerHTML = "Searches for movies on IMDB";
         args.text = args.text.replace(/[\.\\\/\s]+/g," ").trim();
         year = parseInt(args.text.replace(/[(\s)]/g," ").trim().split(/\s+/).slice(-1));
-        var release_date = "";
         if(year>1900 && year<2050) {
           args.text = args.text.split(/[(\s]+/).slice(0,-1).join(" ");
-          release_date = "&release_date="+year;
         }
-        if (args.text.trim()!="") {
-          jQuery(pblock).loadAbs("https://www.imdb.com/search/title?title="+encodeURIComponent(args.text)+release_date+" ul.ipc-metadata-list > *", ()=>{
-            jQuery(pblock).find("li").each((i,e)=>{
-              var link = jQuery(e).find("a").first().attr("href");
-              var img = "<img style='margin:0 10px 10px 0; float:left' height=96 width=65 aling=bottom src='"+jQuery(e).find(".ipc-image").first().attr("src")+"'>";
-              var title = "<a href='"+jQuery(e).find("a").first().attr("href")+"'>"+jQuery(e).find("h3").text().trim()+"</a> ";
-              var info = "<span>"    
-                       + jQuery(e).find(".dli-title-metadata").find("span:nth(0)").text()+" | "
-                       + jQuery(e).find(".dli-title-metadata").find("span:nth(1)").text()+" | "
-                       + "<span style='color:yellow'>"+jQuery(e).find(".ipc-rating-star").text().split(/\s+/).shift()+"</span>"
-                       + "</span>";
-              var syno = "<br><span>"+jQuery(e).find(".ipc-html-content-inner-div").text()+"</span>";
-              jQuery(e).replaceWith("<div data-option='' data-option-value='"+link+"'><div style='clear:both;overflow-y:auto;'>"+img+"<div style=''>"+ title + info + syno + "</div></div></div>");
-            });
-          });
+        if (args.text.trim()=="") return;
+        // IMDb search-page markup changes constantly and blocks scrapers;
+        // the public suggestion API is stable and returns JSON
+        try {
+          var data = await CmdUtils.get("https://v3.sg.media-imdb.com/suggestion/x/"+encodeURIComponent(args.text.trim().toLowerCase())+".json");
+          var items = ((data && data.d) || []).filter(m=>m.id && m.id.match(/^tt/));
+          if (year>1900 && year<2050) items = items.filter(m=>!m.y || Math.abs(m.y-year)<=1);
+          if (!items.length) { pblock.innerHTML = "no results for "+escapeHTML(args.text); return; }
+          pblock.innerHTML = items.map(m=>{
+            var link = "https://www.imdb.com/title/"+m.id+"/";
+            var img = (m.i && m.i.imageUrl) ? "<img style='margin:0 10px 10px 0; float:left' height=96 width=65 src='"+m.i.imageUrl+"'>" : "";
+            var info = [m.y, m.q, m.s].filter(Boolean).join(" | ");
+            return "<div data-option='' data-option-value='"+link+"'><div style='clear:both;overflow-y:auto;'>"+img+
+                   "<div><a target=_blank href='"+link+"'>"+escapeHTML(m.l||"")+"</a><br><span>"+escapeHTML(info)+"</span></div></div></div>";
+          }).join("");
+        } catch (e) {
+          pblock.innerHTML = "imdb lookup failed: "+e;
         }
     },
     execute: function execute(args) {
@@ -563,7 +540,9 @@ CmdUtils.CreateCommand({
     description: "Print the current page",
     preview: "Print the current page",
     execute: function (directObj) {
-        chrome.tabs.executeScript( { code:"window.print();" } );
+        if (CmdUtils.active_tab && CmdUtils.active_tab.id) {
+            chrome.scripting.executeScript({ target: { tabId: CmdUtils.active_tab.id }, func: function() { window.print(); } });
+        }
     }
 });
 
@@ -717,13 +696,14 @@ const MS_TRANSLATOR_LIMIT = 1e4,
 
 for (let code in MS_LANGS_REV) MS_LANGS[code] = MS_LANGS_REV[code];
 
-function msTranslator(method, params, back) {
-    params.to = params.to || "en";
-    params.appId = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" + new Date % 10;
-    return CmdUtils.jQuery.ajax({
-        url: "https://api.microsofttranslator.com/V2/Ajax.svc/" + method,
-        data: params,
-    });
+// Microsoft's V2 Ajax translator API is long dead — use Google's public gtx endpoint.
+// Signature kept for compatibility; returns the translated string directly.
+async function msTranslator(method, params, back) {
+    var url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=" +
+              encodeURIComponent(params.to || "en") + "&dt=t&q=" + encodeURIComponent(params.text || "");
+    var data = await CmdUtils.get(url);
+    // data[0] = [[translatedChunk, originalChunk, ...], ...]
+    return ((data && data[0]) || []).map(s => s[0]).join("");
 }
 
 CmdUtils.CreateCommand({
@@ -750,23 +730,21 @@ CmdUtils.CreateCommand({
         if (words.length >= 3 && words[words.length - 2].toLowerCase() == 'to') {
             dest = words.pop();
             words.pop();
-            text = words.join('');
+            text = words.join(' ');
         }
 
         if (text && text.length <= MS_TRANSLATOR_LIMIT) {
-            var T = await msTranslator("Translate", {
-                contentType: "text/html",
-                text: text,
-                from: "",
-                to: dest
-            });
-            T = JSON.parse(T);
-            if (typeof isSelected !== 'undefined' && _selection == true) {
-                CmdUtils.setSelection(T);
-                CmdUtils.closePopup();
+            try {
+                var T = await msTranslator("Translate", { text: text, from: "", to: dest });
+                if (_selection == true) {
+                    CmdUtils.setSelection(T);
+                    CmdUtils.closePopup();
+                }
+            } catch (e) {
+                CmdUtils.setPreview("translation failed: " + e);
             }
         } else {
-            pblock.innerHTML = "text is too short or too long. try translating <a target=_blank href=https://www.bing.com/translator/>manually</a>";
+            CmdUtils.setPreview("text is too short or too long. try translating <a target=_blank href=https://www.bing.com/translator/>manually</a>");
         }
     },
     preview: async function translate_preview(pblock, {text: text}) {
@@ -780,14 +758,12 @@ CmdUtils.CreateCommand({
         }
 
         if (text && text.length <= MS_TRANSLATOR_LIMIT) {
-            var T = await msTranslator("Translate", {
-                contentType: "text/html",
-                text: text,
-                from: "",
-                to: dest
-            });
-            T = JSON.parse(T);
-            pblock.innerHTML = T;
+            try {
+                var T = await msTranslator("Translate", { text: text, from: "", to: dest });
+                pblock.innerHTML = T;
+            } catch (e) {
+                pblock.innerHTML = "translation failed: " + e;
+            }
         } else {
             pblock.innerHTML = "text is too short or too long<BR><BR>[" + text + "]";
         }
@@ -922,38 +898,23 @@ CmdUtils.CreateCommand({
     name: ["calc","sum"],
     description: "evals math expressions, white-space separated expressions are added",
     icon: "➕",
-    external: true,
-    require: "https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.20.1/math.min.js",
-    preview: pr = function preview(previewBlock, {text}) {
-        if (text.trim()=="") text = CmdUtils.getClipboard();
+    preview: function preview(previewBlock, {text}) {
         if (text.trim()!='') {
-            var m = new math.parser();
-            text = text.trim().replace(/,/g,"."); // commas are dots
-            text = text.replace(/(\d)(\s+)/g,"$1+");  // blanks are replaced with sum
-            try {
-            console.log(text);
-                previewBlock.innerHTML = m.eval(text);
-            } catch (e) {
-                previewBlock.innerHTML = "eval error:"+e; // catching all errors as mathjs likes to throw them around
-            }
-            //CmdUtils.ajaxGet("http://api.mathjs.org/v1/?expr="+encodeURIComponent(args.text), (r)=>{ previewBlock.innerHTML = r; });
-        }
-        else
+            text = text.trim().replace(/,/g,".").replace(/(\d)(\s+)/g,"$1+");
+            CmdUtils.ajaxGet("https://api.mathjs.org/v4/?expr="+encodeURIComponent(text), (r)=>{ previewBlock.innerHTML = r; });
+        } else {
             previewBlock.innerHTML = this.description;
+        }
         return previewBlock.innerText;
     },
-    execute: function ({text}) { 
+    execute: function ({text}) {
+        if (text.trim()=="") text = CmdUtils.getClipboard();
         if (text.trim()!='') {
-            var m = new math.parser();
-            text = text.trim().replace(/,/g,"."); // commas are dots
-            text = text.replace(/(\d)(\s+)(\d)/g,"$1+$3");  // blanks are replaced with sum
-            try {
-                text = m.eval(text);
-                CmdUtils.setSelection(text); 
-                CmdUtils.popupWindow.ubiq_set_input("calc "+text, false);
-            } catch (e) {
-                CmdUtils.setResult("eval error:"+e);
-            }
+            text = text.trim().replace(/,/g,".").replace(/(\d)(\s+)(\d)/g,"$1+$3");
+            CmdUtils.ajaxGet("https://api.mathjs.org/v4/?expr="+encodeURIComponent(text), (r)=>{
+                CmdUtils.setSelection(r);
+                CmdUtils.popupWindow.ubiq_set_input("calc "+r, false);
+            });
         }
     }
 });
@@ -1070,46 +1031,42 @@ CmdUtils.CreateCommand({
 CmdUtils.CreateCommand({
     icon: "🙾",
     name: "invert",
-    description: "Inverts all colors on current page. Based on <a target=_blank href=https://stackoverflow.com/questions/4766201/javascript-invert-color-on-all-elements-of-a-page>this</a>.",
+    description: "Toggles smart color inversion (dark mode) on current page.",
+    preview: function(pblock) {
+        if (!CmdUtils.active_tab || !CmdUtils.active_tab.id) {
+            pblock.innerHTML = 'Toggles smart color inversion on current page.';
+            return;
+        }
+        chrome.scripting.executeScript({
+            target: { tabId: CmdUtils.active_tab.id },
+            func: function() { return !!document.getElementById('ubichr-invert-style'); }
+        }, function(results) {
+            var isOn = results && results[0] && results[0].result;
+            pblock.innerHTML = 'Color inversion: <b>' + (isOn ? 'ON — press Enter to remove' : 'OFF — press Enter to apply') + '</b>';
+        });
+    },
     execute: function execute(){
-        chrome.tabs.executeScript({code:`
-            (()=>{ 
-            // the css we are going to inject
-            var css = 'html {-webkit-filter: invert(100%);' +
-                '-moz-filter: invert(100%);' + 
-                '-o-filter: invert(100%);' + 
-                'filter: invert(1);' + 
-                '-ms-filter: invert(100%); }',
-            
-            head = document.getElementsByTagName('head')[0],
-            style = document.createElement('style');
-            
-            if (document.body.style.backgroundColor=='') document.body.style.backgroundColor="white";
-            // a hack, so you can "invert back" clicking the bookmarklet again
-            if (!window.counter) { window.counter = 1;} else  { window.counter ++;
-            if (window.counter % 2 == 0) { var css ='html {-webkit-filter: invert(0%); -moz-filter:    invert(0%); -o-filter: invert(0%); -ms-filter: invert(0%); }'}
-             };
-            
-            style.type = 'text/css';
-            if (style.styleSheet){
-            style.styleSheet.cssText = css;
-            } else {
-            style.appendChild(document.createTextNode(css));
-            }
-            
-            //injecting the css to the head
-            head.appendChild(style);
-
-            function invert(rgb) {
-                rgb = Array.prototype.join.call(arguments).match(/(-?[0-9\.]+)/g);
-                for (var i = 0; i < rgb.length; i++) {
-                  rgb[i] = (i === 3 ? 1 : 255) - rgb[i];
+        if (CmdUtils.active_tab && CmdUtils.active_tab.id) {
+            chrome.scripting.executeScript({
+                target: { tabId: CmdUtils.active_tab.id },
+                func: function() {
+                    var existing = document.getElementById('ubichr-invert-style');
+                    if (existing) {
+                        existing.remove();
+                    } else {
+                        var style = document.createElement('style');
+                        style.id = 'ubichr-invert-style';
+                        // invert+hue-rotate keeps hues, media counter-inverted so
+                        // photos/videos don't become negatives; background-color on
+                        // html because the filter alone doesn't affect the canvas color
+                        style.textContent =
+                            'html { filter: invert(100%) hue-rotate(180deg); background-color: #fff; }\n' +
+                            'img, video, picture, canvas, iframe, embed, object { filter: invert(100%) hue-rotate(180deg); }';
+                        document.head.appendChild(style);
+                    }
                 }
-                return rgb;
-            }
-            // document.body.style.backgroundColor = "rgb("+invert(window.getComputedStyle(document.body, null).getPropertyValue('background-color')).join(",")+")";
-            })();
-        `})
+            });
+        }
     },
 });
 
@@ -1130,17 +1087,15 @@ CmdUtils.CreateCommand({
             pblock.innerHTML = this.description+"<br><br>to grep make the argument longer ("+text.length+"/3)";
         } else {
             var arr = [];
-            chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
+            pblock.innerHTML = "";
             chrome.tabs.query({}, (t)=>{
             t.map((b)=>{
               if (b.url.match('^https?://'))
-              chrome.tabs.executeScript(b.id, 
-                                        {code:"document.body.innerText.toString();"}, 
-                                        (ret)=>{
+              chrome.scripting.executeScript({target:{tabId:b.id}, func:()=>document.body.innerText.toString()}, (results)=>{ if(chrome.runtime.lastError) return; var ret = results ? [results[0].result] : undefined;
                                           if (typeof ret === 'undefined') return;
                                           arr = arr.concat( ret[0].split(/\n/).filter(s=>s.indexOf(text)>=0) );
                                           pblock.innerHTML = arr.filter((v, i, a) => a.indexOf(v) === i).join("<br/>");
-                                          chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
+                                          chrome.storage.session.set({resultview: pblock.innerHTML});
                                         });
             });
           });
@@ -1164,13 +1119,11 @@ CmdUtils.CreateCommand( {
             pblock.innerHTML = this.description+"<br><br>to regexp make the argument longer ("+text.length+"/3)";
         } else {
             var arr = [];
-            chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
+            pblock.innerHTML = "";
             chrome.tabs.query({}, (t)=>{
             t.map((b)=>{
               if (b.url.match('^http'))
-              chrome.tabs.executeScript(b.id, 
-                                        {code:"document.body.innerText.toString();"}, 
-                                        (ret)=>{
+              chrome.scripting.executeScript({target:{tabId:b.id}, func:()=>document.body.innerText.toString()}, (results)=>{ if(chrome.runtime.lastError) return; var ret = results ? [results[0].result] : undefined;
                                           if (typeof ret === 'undefined') return;
                                           var re = new RegExp(text, "gi");
                                           var m;
@@ -1182,7 +1135,7 @@ CmdUtils.CreateCommand( {
                                           arr = Array.from(new Set(arr));
                                           pblock.innerHTML = arr.map(e=>"<a data-txt='"+escape(e)+"' href=# class=chtab data-id="+b.id+">"+e+"</a>").sort().join("<br/>")+"<br>";
                                           jQuery("a.chtab", pblock).click( (e)=>{ chrome.tabs.update(jQuery(e.target).data("id"), {active: true}); } );
-                                          chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
+                                          chrome.storage.session.set({resultview: pblock.innerHTML});
                                         });
             });
           });
@@ -1208,16 +1161,15 @@ CmdUtils.CreateCommand({
             pblock.innerHTML = this.description+"<br><br>to grep make the argument longer ("+text.length+"/3)";
         } else {
             var arr = [];
-            chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
+            pblock.innerHTML = "";
             chrome.tabs.query({}, (t)=>{
-            t.reduce((a,b)=>{
-              console.log(b.id);
-              chrome.tabs.executeScript(b.id, 
-                                        {code:"document.body.innerHTML.toString();"}, 
-                                        (ret)=>{
+            t.map((b)=>{
+              if (b.url.match('^https?://'))
+              chrome.scripting.executeScript({target:{tabId:b.id}, func:()=>document.body.innerHTML.toString()}, (results)=>{ if(chrome.runtime.lastError) return; var ret = results ? [results[0].result] : undefined;
+                                          if (typeof ret === 'undefined') return;
                                           arr = arr.concat( ret[0].split(/\s/).filter(s=>s.indexOf(text)>=0) );
                                           pblock.innerHTML = arr.filter((v, i, a) => a.indexOf(v) === i).join("<br/>");
-                                          chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
+                                          chrome.storage.session.set({resultview: pblock.innerHTML});
                                         });
             });
           });
@@ -1242,13 +1194,11 @@ CmdUtils.CreateCommand({
         pblock.innerHTML = this.description+"<br><br>to filter make the argument longer ("+text.length+"/3)";
       } else {
         _cmd.arr = [];
-        chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
+        pblock.innerHTML = "";
         chrome.tabs.query({lastFocusedWindow:true}, (t)=>{
         t = t.filter(t=>!t.url.startsWith("chrome:")).filter(t=>!t.url.startsWith("about:"));
         t.map(b=>{
-              chrome.tabs.executeScript(b.id, 
-                {code:"[...document.querySelectorAll('a')].map(a=>a.href).filter(a=>a!='');"}, 
-                (ret)=>{
+              chrome.scripting.executeScript({target:{tabId:b.id}, func:()=>[...document.querySelectorAll('a')].map(a=>a.href).filter(a=>a!='')}, (results)=>{ if(chrome.runtime.lastError) return; var ret = results ? [results[0].result] : undefined;
                 if (typeof ret==='undefined') return;
                 var rrr = [];
                 ret.forEach(a => rrr=rrr.concat(a)); // ret is array of values for every frame !
@@ -1424,58 +1374,51 @@ CmdUtils.CreateCommand({
     name: "cookies",
     description: "gets cookies, press Enter to save file, filter by domain or * for all",
     author: "Genuinous/rostok",
-    external: true,
-    require: ["https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js"],
     execute: function execute(args) {
-        var blob = new Blob([CmdUtils.popupWindow.jQuery("#ubiq-command-preview").text()], {type: "text/plain;charset=utf-8"});
-        saveAs(blob, "cookies.txt");
+        var text = CmdUtils.popupWindow.jQuery("#ubiq-command-preview pre").text();
+        var blob = new Blob([text], {type: "text/plain;charset=utf-8"});
+        var url = URL.createObjectURL(blob);
+        var a = CmdUtils.popupWindow.document.createElement('a');
+        a.href = url;
+        a.download = 'cookies.txt';
+        CmdUtils.popupWindow.document.body.appendChild(a);
+        a.click();
+        CmdUtils.popupWindow.document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     },
     preview: function preview(pblock, {text}) {
         var b = CmdUtils.getLocation();
-      
+
         function parse(a) {
             return String(a).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
         function request(search) {
-            if(text=="") text = CmdUtils.getLocation().split("//").pop().split("/").shift() || "";
-            var s="";
-            var i;
-            for (i in search) {
+            if (text=="") text = CmdUtils.getLocation().split("//").pop().split("/").shift() || "";
+            var s = "";
+            for (var i in search) {
                 var obj = search[i];
-                var indent = parse(obj.domain) + "\t";
-                indent = indent + (parse((!obj.hostOnly).toString().toUpperCase()) + "\t");
-                indent = indent + (parse(obj.path) + "\t");
-                indent = indent + (parse(obj.secure.toString().toUpperCase()) + "\t");
-                indent = indent + (parse(obj.expirationDate ? Math.round(obj.expirationDate) : "0") + "\t");
-                indent = indent + (parse(obj.name) + "\t");
-                indent = indent + parse(obj.value);
-                indent = indent + "\n";
-                if (text=="*") 
-                    s = s + indent;
-                else if (obj.domain.includes(text)) {
-                    s = s + indent;
+                if (text !== "*" && !obj.domain.includes(text)) continue;
+                s += parse(obj.domain) + "\t";
+                s += parse((!obj.hostOnly).toString().toUpperCase()) + "\t";
+                s += parse(obj.path) + "\t";
+                s += parse(obj.secure.toString().toUpperCase()) + "\t";
+                s += parse(obj.expirationDate ? Math.round(obj.expirationDate) : "0") + "\t";
+                s += parse(obj.name) + "\t";
+                s += parse(obj.value) + "\n";
             }
+            var info = "# Enter to save\n";
+            info += "# Filter by domain or * for all\n#\n";
+            info += "# HTTP Cookie File for <b>" + parse(text) + "</b> by Genuinous @genuinous.\n";
+            info += "# This file can be used by wget, curl, aria2c and other standard compliant tools.\n";
+            info += "# Usage Examples:\n";
+            info += '#   1) wget -x --load-cookies cookies.txt "' + parse(b) + '"\n';
+            info += '#   2) curl --cookie cookies.txt "' + parse(b) + '"\n';
+            info += '#   3) aria2c --load-cookies cookies.txt "' + parse(b) + '"\n';
+            info += "#\n";
+            info = s ? "\n" + info + s : "\n# No cookies for " + text;
+            pblock.innerHTML = "<pre>" + info + "</pre>";
         }
-
-        var data = "data:application/octet-stream;base64," + btoa(unescape(encodeURIComponent(info + s)));
-        var link = "<a href=" + data + " download='cookies.txt'>cookies.txt</a>";
-        var info = "# Enter to save " + link + "\n";
-        info += "# Filter by domain or * for all\n#\n";
-        info += "# HTTP Cookie File for <b>" + parse(text) + "</b> by Genuinous @genuinous.\n";
-        info += "# This file can be used by wget, curl, aria2c and other standard compliant tools.\n";
-        info += "# Usage Examples:\n";
-        info += ('#   1) wget -x --load-cookies cookies.txt "' + parse(b) + '"\n');
-        info += ('#   2) curl --cookie cookies.txt "' + parse(b) + '"\n');
-        info += ('#   3) aria2c --load-cookies cookies.txt "' + parse(b) + '"\n');
-        info += "#\n";
-        if (s) {
-                    info = "\n" + info + s;
-        } else {
-                    info = "\n# No cookies for " + text;
-        }
-                pblock.innerHTML = "<pre>"+info+"</pre>";
-      }
-      chrome.cookies.getAll({}, request);
+        chrome.cookies.getAll({}, request);
     },
 });
 
@@ -1512,7 +1455,7 @@ CmdUtils.CreateCommand({
     execute: function execute(args) {
       chrome.tabs.query({}, (t)=>{
         var url = "chrome://password-manager/passwords";
-        if (typeof browser!=='undefined') url = "about:logins";
+        if (CmdUtils.isFirefox) url = "about:logins"; // Chrome 136+ also defines `browser`, don't sniff it
         var found = false;
         t.map((b)=>{
           if (b.url==url) {
@@ -1521,8 +1464,8 @@ CmdUtils.CreateCommand({
             return;
           }
         });
-        //if (!found) CmdUtils.addTab(`{url}?q=${args.text}#:~:text=${args.text}`);
-        if (!found) CmdUtils.addTab(`{url}?q=${args.text}`);
+        //if (!found) CmdUtils.addTab(`${url}?q=${args.text}#:~:text=${args.text}`);
+        if (!found) CmdUtils.addTab(`${url}?q=${args.text}`);
         
       });
     },
@@ -1569,8 +1512,6 @@ CmdUtils.CreateCommand({
     description: "saves multiple links from clipboard or argument list to a single zip",
     author: "rostok",
     icon: "res/icon-128.png",
-    external: true,
-    require: ["https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js", "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js"],
     execute: function execute({text, _cmd}) {
         if (text.trim()=="") text = CmdUtils.getClipboard();
         this.lastDownload = undefined;
@@ -1726,31 +1667,28 @@ CmdUtils.CreateCommand({
 CmdUtils.CreateCommand({
     icon: "💀",
     name: "killcookies",
-    description: "kills cookies on current page",
+    description: "kills all cookies of the current tab (incl. HttpOnly), preview lists them",
     author: { name: "rostok" },
     execute: function execute(args) {
-        chrome.tabs.executeScript({code:`
-            var cookies = document.cookie.split(';');
-            for (var i = 0; i < cookies.length; i++) {
-                var cookie = cookies[i];
-                var eqPos = cookie.indexOf('=');
-                var name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
-                document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT';
-            }
-            `
-        }, (r)=>{
-            pblock.innerHTML = "cookies killed";
-        });    
+        var url = CmdUtils.getLocation();
+        if (!url) return;
+        // chrome.cookies API reaches HttpOnly cookies too, document.cookie does not
+        chrome.cookies.getAll({url: url}, (cookies)=>{
+            (cookies||[]).forEach(c=>{
+                var cookieUrl = (c.secure ? "https://" : "http://") + c.domain.replace(/^\./,'') + c.path;
+                chrome.cookies.remove({url: cookieUrl, name: c.name});
+            });
+            CmdUtils.setTip("killed "+((cookies||[]).length)+" cookie(s)");
+        });
     },
     preview: function preview(pblock, args) {
-        // preview will only show cookies
-          pblock = "";
-          chrome.tabs.executeScript({code:"document.cookie.toString();"}, (r)=>{
-              r=r+"";
-              r=r.replace(/;\s*/g,";\n");
-              r="<pre>"+r+"</pre>";
-              pblock.innerHTML = "cookies:"+r;
-          });    
+        var url = CmdUtils.getLocation();
+        if (!url) { pblock.innerHTML = this.description+"<br><br>no active http(s) tab"; return; }
+        chrome.cookies.getAll({url: url}, (cookies)=>{
+            if (!cookies || cookies.length==0) { pblock.innerHTML = "no cookies for "+escapeHTML(url); return; }
+            pblock.innerHTML = "execute to kill "+cookies.length+" cookie(s) of "+escapeHTML(url)+":<pre>"+
+                cookies.map(c=>escapeHTML(c.name+"="+c.value)).join("\n")+"</pre>";
+        });
     },
 });
 
@@ -1822,17 +1760,13 @@ CmdUtils.CreateCommand({
     name: "jquery",
     description: "injects jQuery to current tab (v2)",
     icon: "https://jquery.com/favicon.ico",
-    execute: async function execute(args) { 
-      var jq = chrome.runtime.getManifest().background.scripts.filter(a=>a.includes("jquery")).pop();
-      jq = await CmdUtils.get(jq);
-      jq = JSON.stringify(jq);
-      chrome.tabs.executeScript( { code: `
-      	var script = document.createElement('script'); 
-        script.textContent = ${jq}; 
-        (document.head || document.documentElement).append(script); 
-        script.remove();
-        console.log('💉jQuery injected');
-      `});
+    execute: async function execute(args) {
+        if (CmdUtils.active_tab && CmdUtils.active_tab.id) {
+            chrome.scripting.executeScript({
+                target: { tabId: CmdUtils.active_tab.id },
+                files: ['lib/jquery-3.6.0.min.js']
+            }, () => { CmdUtils.notify('jQuery injected'); });
+        }
     },
 });
 
@@ -1842,11 +1776,8 @@ CmdUtils.CreateCommand({
     description: "injects JavaScript from url",
     icon: "https://jquery.com/favicon.ico",
     execute: function execute({text}) {
-      text = text.replace("http:", "");
-      text = text.replace("https:", "");
-      chrome.tabs.executeScript({code:"((e,s)=>{e.src=s;e.onload=function(){console.log('script injected')};document.head.appendChild(e);})(document.createElement('script'),'"+text+"')"}, (r)=>{
-      CmdUtils.notify(r+'', "Script injected.");
-      });
+        text = text.replace("http:", "").replace("https:", "");
+        CmdUtils.inject("//" + text, (r) => { CmdUtils.notify('Script injected'); });
     },
 });
 
@@ -1881,12 +1812,39 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: ["grayscale","greyscale"],
-    author: "Alan Hogan",
     icon: "🎨",
-    external: true,
-    description: "Removes colors.",
-    homepage: "https://alanhogan.com/bookmarklets",
-    execute: function execute(args) { CmdUtils.inject("https://cdn.jsdelivr.net/gh/alanhogan/bookmarklets/grayscale.js"); },
+    description: "Toggles grayscale on current page.",
+    preview: function(pblock) {
+        if (!CmdUtils.active_tab || !CmdUtils.active_tab.id) {
+            pblock.innerHTML = 'Toggles grayscale on current page.';
+            return;
+        }
+        chrome.scripting.executeScript({
+            target: { tabId: CmdUtils.active_tab.id },
+            func: function() { return !!document.getElementById('ubichr-grayscale-style'); }
+        }, function(results) {
+            var isOn = results && results[0] && results[0].result;
+            pblock.innerHTML = 'Grayscale: <b>' + (isOn ? 'ON — click to remove' : 'OFF — click to apply') + '</b>';
+        });
+    },
+    execute: function execute(args) {
+        if (CmdUtils.active_tab && CmdUtils.active_tab.id) {
+            chrome.scripting.executeScript({
+                target: { tabId: CmdUtils.active_tab.id },
+                func: function() {
+                    var existing = document.getElementById('ubichr-grayscale-style');
+                    if (existing) {
+                        existing.remove();
+                    } else {
+                        var style = document.createElement('style');
+                        style.id = 'ubichr-grayscale-style';
+                        style.textContent = 'html { filter: grayscale(100%); }';
+                        document.head.appendChild(style);
+                    }
+                }
+            });
+        }
+    },
 });
 
 CmdUtils.makeSearchCommand({
@@ -1956,24 +1914,36 @@ CmdUtils.CreateCommand({
     timeout: 250,
     external: true, // uses vanilla mark.js v8.11.1 
     icon: "🟨",
-    execute: function ({text, _cmd}) {
-      if (text=="") 
+    execute: function ({text, _cmd, pblock}) {
+      if (text=="") {
         CmdUtils.removeUpdateHandler("markHandler");
-      else
+        chrome.storage.session.remove('markHighlights'); // stop re-marking from service worker
+      } else {
         CmdUtils.addUpdateHandler("markHandler", ()=>{ _cmd.preview(null, {text}); });
+        chrome.storage.session.set({markHighlights: text}); // service worker re-marks on tab load
+      }
       _cmd.highlights = text;
-      pblock.innerHTML = _cmd.description+"<hr>highlights: "+_cmd.highlights;
+      if (pblock) pblock.innerHTML = _cmd.description+"<hr>highlights: "+_cmd.highlights;
     },
-    preview: function preview(pblock, {text, _cmd}) {   
-      CmdUtils.ajaxGet("https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js", (data)=>{
-          var code = data + `
-                var args='${text}'.split(/\\s+/);
-                var markinstance = new Mark(document.querySelector("body"));
-				markinstance.unmark({done:()=>markinstance.mark(args)});
-                `;
-          chrome.tabs.executeScript({ code: code });
-      });
-      if (_cmd)pblock.innerHTML = _cmd.description+"<hr>highlights: "+_cmd.highlights;
+    preview: function preview(pblock, {text, _cmd}) {
+        if (CmdUtils.active_tab && CmdUtils.active_tab.id) {
+            var words = text.split(/\s+/);
+            chrome.scripting.executeScript({
+                target: { tabId: CmdUtils.active_tab.id },
+                files: ['lib/mark.min.js']
+            }, () => {
+                if (chrome.runtime.lastError) { console.error(chrome.runtime.lastError); return; }
+                chrome.scripting.executeScript({
+                    target: { tabId: CmdUtils.active_tab.id },
+                    func: function(words) {
+                        var markinstance = new Mark(document.querySelector("body"));
+                        markinstance.unmark({done: () => markinstance.mark(words)});
+                    },
+                    args: [words]
+                });
+            });
+        }
+        if (_cmd) pblock.innerHTML = _cmd.description + "<hr>highlights: " + _cmd.highlights;
     }
 });
 
@@ -2012,25 +1982,22 @@ CmdUtils.CreateCommand({
     name: "merge-tabs",
     icon: "🗀",
     description: "merge chrome tabs to a single window",
-    execute: function execute(args) {   
+    execute: function execute(args) {
+            // MV3: chrome.tabs.getAllInWindow was removed; windows.getAll({populate}) is enough
             chrome.windows.getCurrent(
-                  (win)=>{
-                        targetWindow = win;
-                        chrome.tabs.getAllInWindow(targetWindow.id, 
-                            (tabs)=>{
-                                      chrome.windows.getAll({"populate" : true}, 
-                                        (windows)=>{
-                                          for (var i = 0; i < windows.length; i++) {
-                                            var win = windows[i];
-                                            if (targetWindow.id != win.id && win.type==='normal') {
-                                              for (var j = 0; j < win.tabs.length; j++) {
-                                                var tab = win.tabs[j];
-                                                chrome.tabs.move(tab.id,{"windowId": targetWindow.id, "index": -1});
-                                                if(tab.pinned==true){chrome.tabs.update(tab.id, {"pinned":true});}
-                                              }
-                                            }
-                                          }
-                                      });
+                  (targetWindow)=>{
+                        chrome.windows.getAll({"populate" : true},
+                          (windows)=>{
+                            for (var i = 0; i < windows.length; i++) {
+                              var win = windows[i];
+                              if (targetWindow.id != win.id && win.type==='normal') {
+                                for (var j = 0; j < win.tabs.length; j++) {
+                                  var tab = win.tabs[j];
+                                  chrome.tabs.move(tab.id,{"windowId": targetWindow.id, "index": -1});
+                                  if(tab.pinned==true){chrome.tabs.update(tab.id, {"pinned":true});}
+                                }
+                              }
+                            }
                         });
             });
 
@@ -2346,21 +2313,19 @@ CmdUtils.CreateCommand( {
             pblock.innerHTML = this.description+"<br><br>make the selector longer ("+text.length+"/3)";
         } else {
             var arr = [];
-            chrome.extension.getBackgroundPage().resultview = pblock.innerHTML = "";
+            pblock.innerHTML = "";
             chrome.tabs.query({}, (t)=>{
             t.map((b)=>{
               if (b.url.match('^http'))
-              chrome.tabs.executeScript(b.id, 
-                {code:"document.body.innerHTML;"}, 
-                (ret)=>{
+              chrome.scripting.executeScript({target:{tabId:b.id}, func:()=>document.body.innerHTML}, (results)=>{ if(chrome.runtime.lastError) return; var ret = results ? [results[0].result] : undefined;
                   if (typeof ret==='undefined') return;
                   var r = CmdUtils.jQuery(text,ret[0]).get();
                    r = r.map(v=>v.outerHTML);
                    r = r.map(v=>escapeHTML(v));
                   arr = arr.concat( r );
-                  CmdUtils.setTip(arr.length);  
+                  CmdUtils.setTip(arr.length);
                   $(pblock).html(arr.join("<br>")).css({"width":"540px","height":"505px","overflow-x":"hidden"});
-                  chrome.extension.getBackgroundPage().resultview = pblock.innerHTML;
+                  chrome.storage.session.set({resultview: pblock.innerHTML});
                 });
             });
           });
@@ -2383,14 +2348,6 @@ CmdUtils.makeSearchCommand({
     prevAttrs: {zoom: 0.70},
 });
   
-CmdUtils.makeSearchCommand({
-    name: "12ft",
-    icon: "https://12ft.io/favicon.png",
-    url: "https://12ft.io/proxy?q={location}",
-    description: "skips paywalls with help of 12ft.io",
-    author: "rostok",
-});
-
 CmdUtils.makeSearchCommand({
     name: "perplexity",
     description: "Perplexity - AI Search",
@@ -2422,25 +2379,36 @@ CmdUtils.CreateCommand({
       });    
       return $html.html();
     }, 
-    execute: function execute(args) {   
-        CmdUtils.setClipboardHTML( this.sanitize( CmdUtils.getClipboardHTML() ) );
-        CmdUtils.refreshPreview()
+    execute: async function execute(args) {
+        var t = await CmdUtils.getClipboardHTML();
+        await CmdUtils.setClipboardHTML(this.sanitize(t));
+        CmdUtils.refreshPreview();
     },
     preview: async function preview(pblock, args) {
-        pblock.innerHTML = "";      
-        var t = CmdUtils.getClipboardHTML();
-        t = this.sanitize(t);
-        pblock.innerHTML += t;
+        var t = await CmdUtils.getClipboardHTML();
+        pblock.innerHTML = this.sanitize(t);
+    },
+    test: {
+        internal: true,
+        init: function() {
+            var cmd = CmdUtils.getcmd('clip-sanitize');
+            var result = cmd.sanitize('<b style="color:red;font-family:Arial">hello</b>');
+            this._result = result;
+        },
+        test: function() {
+            return this._result && this._result.includes('hello') && !this._result.includes('color:red');
+        },
     },
 });
 
 CmdUtils.CreateCommand({
     icon: "❌",
-    name: "close",
-    description: "Close tabs with urls matching arguments",
+    name: ["close-tabs", "close-matching"],
+    description: "Close all tabs whose URL matches the given pattern(s) (chrome.tabs.query syntax, e.g. *://*.example.com/*); with no arguments patterns are taken from the clipboard",
+    help: "close-tabs *://*.example.com/* — closes every tab on example.com<br>close-tabs (no args) — uses whitespace-separated URL patterns from the clipboard<br>to close just the current tab use the <b>close</b> command",
     preview: function(pblock, {text}) {
       if (text.trim() == "") text = CmdUtils.getClipboard();
-      pblock.innerHTML = "closing:<br>"+text.split(/\s+/).map(u=>decodeURIComponent(u)).join("<br>");
+      pblock.innerHTML = "execute to close tabs matching:<br>"+text.split(/\s+/).map(u=>decodeURIComponent(u)).join("<br>");
     },
     execute: function ({text}) {
       if (text.trim() == "") text = CmdUtils.getClipboard();
@@ -2461,7 +2429,7 @@ CmdUtils.CreateCommand({
       chrome.tabs.query({}, (t)=>{
         t.map((b)=>{
           if (b.url.match('^https?://'))
-            chrome.tabs.executeScript(b.id, {code:"document.body.innerText.toString();"}, (ret)=>{
+            chrome.scripting.executeScript({target:{tabId:b.id}, func:()=>document.body.innerText.toString()}, (results)=>{ if(chrome.runtime.lastError) return; var ret = results ? [results[0].result] : undefined;
               if (typeof ret === 'undefined') return;
               if (texts.some(t=>ret[0].toLowerCase().includes(t))) arr.push( b.url );
               callback(arr.filter((v, i, a) => a.indexOf(v) === i).join("\n"));
@@ -2493,23 +2461,25 @@ CmdUtils.CreateCommand({
     description: "make unique; enter sets the clipboard",
     process: function (text) { return [...new Set((text||"").split("\n"))].sort().join("\n"); },
     execute: function execute(args) { CmdUtils.setClipboard(this.process(args.text.trim() || CmdUtils.getClipboard())); },
-    preview: function preview(pblock, {text}) { 
-     $(pblock).css('font-size','.7em').html(`<pre>${this.process(text.trim()||CmdUtils.getClipboard())}</pre>`); 
+    preview: function preview(pblock, {text}) {
+     $(pblock).css('font-size','.7em').html(`<pre>${this.process(text.trim()||CmdUtils.getClipboard())}</pre>`);
     },
+    test: { init: ()=>CmdUtils.setClipboard("b\na\nb\nc"), includesText: "a\nb\nc" },
 });
 
 CmdUtils.CreateCommand({
     name: "clipuniqc",
     icon: "📋",
     description: "make unique and count; enter sets the clipboard",
-    process: function (text) { 
+    process: function (text) {
       var a = (text||"").split("\n");
-      return [...new Set(a)].map(e=>a.filter(v=>v==e).length.toString().padStart(4)+" "+e).join("\n"); 
+      return [...new Set(a)].map(e=>a.filter(v=>v==e).length.toString().padStart(4)+" "+e).join("\n");
     },
     execute: function execute(args) { CmdUtils.setClipboard(this.process(args.text.trim() || CmdUtils.getClipboard())); },
-    preview: function preview(pblock, {text}) { 
-     $(pblock).css('font-size','.7em').html(`<pre>${this.process(text.trim()||CmdUtils.getClipboard())}</pre>`); 
+    preview: function preview(pblock, {text}) {
+     $(pblock).css('font-size','.7em').html(`<pre>${this.process(text.trim()||CmdUtils.getClipboard())}</pre>`);
     },
+    test: { init: ()=>CmdUtils.setClipboard("a\nb\na"), includesText: "2" },
 });
 
 CmdUtils.CreateCommand({
@@ -2518,9 +2488,10 @@ CmdUtils.CreateCommand({
     description: "sort clipboard lines; enter sets the clipboard",
     process: function (text) { return (text||"").split("\n").sort().join("\n"); },
     execute: function execute(args) { CmdUtils.setClipboard(this.process(args.text.trim() || CmdUtils.getClipboard())); },
-    preview: function preview(pblock, {text}) { 
-     $(pblock).css('font-size','.7em').html(`<pre>${this.process(text.trim()||CmdUtils.getClipboard())}</pre>`); 
+    preview: function preview(pblock, {text}) {
+     $(pblock).css('font-size','.7em').html(`<pre>${this.process(text.trim()||CmdUtils.getClipboard())}</pre>`);
     },
+    test: { init: ()=>CmdUtils.setClipboard("c\na\nb"), includesText: "a\nb\nc" },
 });
 
 
@@ -2528,9 +2499,7 @@ CmdUtils.CreateCommand({
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
-// mark built-int commands
+// mark built-in commands (loadCustomScripts is called by popup.js after sandbox-ready)
 CmdUtils.CommandList.forEach((c)=>{c['builtIn']=true;});
-
-CmdUtils.loadCustomScripts();
 
 CmdUtils.loadHistory();

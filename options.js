@@ -102,25 +102,9 @@ async function saveScripts(instance, changeObj) {
         chrome.storage.local.set({'customscripts': customscripts});
 	}
 	    
-    $("#info").html("");
-    // eval
-    try {
-        $("#info").html("evaluated!");
-        eval(customscripts);
-        CmdUtils.unloadCustomScripts(); 
-        CmdUtils.loadCustomScripts(); 
-    } catch (e) {
-        var m = e.message;
-        var l = /anonymous\>:(\d+)\:/.exec(e.stack);
-        if (l != null) {
-            l = l[1];
-            m += " <a href=# id=linerror>LINE:"+l+"</a>";
-        }
-        console.log(e)
-        console.log(l);
-        $("#info").html("<span style='background-color:red'>"+m+"</span>");
-        if (l != null) $("a#linerror").click( ()=>{ editor.setCursor({line:l,ch:0}); });
-    }
+    // MV3: eval not allowed in extension pages; scripts are evaluated in
+    // the sandboxed iframe when the popup opens. Just show a "saved" message.
+    $("#info").html("saved — reload popup to apply");
 }
 
 function saveCursorPos() {

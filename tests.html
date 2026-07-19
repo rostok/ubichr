@@ -8,22 +8,17 @@
 
 <style>
     .status {
-        white-space: nowrap; 
-    }
-    .mulcol1 {
-        column-fill: auto;
-        height: 90vh;
-        column-count: 2;
+        white-space: nowrap;
     }
     .mulcol2 {
-        column-fill: balance-all;
         column-width: 16rem;
+        column-fill: auto;
         height: 90vh;
     }
     .colhead {
-        break-before:column;
         font-weight: 1000;
         display: block;
+        margin-top: 1em;
     }
 </style>
 <body>
@@ -35,6 +30,7 @@
     <button id="close">close test tabs</button>
     <input type=checkbox id=autoclose checked><label for="autoclose">close tabs on pass</label>
     <div id=ubiversion style="position:absolute; top:0px; right:0px; color: #666;"></div>
+    <iframe id="sandbox-frame" src="sandbox.html" sandbox="allow-scripts" style="display:none;width:0;height:0;border:none;"></iframe>
     <p>
     <!-- <button id="generate">generate test stubs</button> -->
     <div class="mulcol2">
@@ -70,7 +66,12 @@
 </body>
 
 <script src="lib/jquery-3.6.0.min.js"></script>
+<script src="utils.js"></script>
+<script src="cmdutils.js"></script>
+<script src="commands.js"></script>
+<script src="context.js"></script>
 <script src="core.js"></script>
+<script src="sandbox-bridge.js"></script>
 <script src="tests.js"></script>
 
 </html>

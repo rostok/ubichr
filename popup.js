@@ -14,6 +14,15 @@ var ubiq_history_index = 0;
 var ubiq_last_preview_command_index = -1; // index for CommandList, changed from ubiq_last_preview_command
 var ubiq_last_preview_cmd = null; // the last command structure
 var ubiq_preview_org_html = '<div id="ubiq-command-preview"></div>';
+var ubiq_test_mode = window.location.hash.startsWith('#test');
+
+// fresh system-clipboard read for commands that use getClipboard(); in test mode
+// tests.html propagates the clipboard via setClipboard/getViews and reading the
+// system clipboard here would overwrite that with stale content
+function ubiq_read_clipboard() {
+    if (ubiq_test_mode) return Promise.resolve(CmdUtils._clipboardText);
+    return CmdUtils.readClipboard();
+}
 
 // sets the tip field (for time being this is the preview panel)
 function ubiq_set_tip(v) {
@@ -92,7 +101,7 @@ function ubiq_show_preview(cmd_struct) {
     {
     case 'undefined':
             ubiq_reset_preview();
-            ubiq_set_preview( cmd_struct.description | cmd_struct.help );
+            ubiq_set_preview( cmd_struct.description || cmd_struct.help );
             break;
     case 'string': 
             ubiq_reset_preview();
@@ -122,7 +131,7 @@ function ubiq_show_preview(cmd_struct) {
                 CmdUtils.popupWindow.jQuery("#ubiq-command-preview").css("overflow-y", "auto"); 
                 try {
                     CmdUtils.deblog("prev [", cmd_struct.name ,"] [", text,"]");
-                    CmdUtils.backgroundWindow.clearTimeout(cmd_struct.lastPrevTimeoutID); // keep lastPrevTimeoutID in cmd_struct instead of global var
+                    clearTimeout(cmd_struct.lastPrevTimeoutID); // keep lastPrevTimeoutID in cmd_struct instead of global var
                     ubiq_reset_preview();
                     (preview_func.bind(cmd_struct))(ubiq_preview_el(), directObj);
                 } catch (e) {
@@ -130,9 +139,6 @@ function ubiq_show_preview(cmd_struct) {
                     CmdUtils.lastError = `preview [${cmd_struct.name} [${text}]\n\n${e.stack}`;
                     CmdUtils.notify(e.toString(), "preview function error");
                     console.error(e.stack);
-                    if (CmdUtils.backgroundWindow && typeof CmdUtils.backgroundWindow.error === 'function') {
-                        CmdUtils.backgroundWindow.error(e.stack);
-                    }
                 }
             }
             // if (typeof cmd_struct.require !== 'undefined')
@@ -161,7 +167,7 @@ function ubiq_dispatch_command(line) {
     var text = words.join(' ').trim();
     if (text=="") text = CmdUtils.selectedText;
 
-    var cmd = ubiq_match_first_command(cmd);
+    var cmd = ubiq_match_first_command(command);
     // Expand match (typing 'go' will expand to 'google')
     if (CmdUtils.expandOnExecute) ubiq_replace_first_word(cmd);
 
@@ -186,7 +192,7 @@ function ubiq_dispatch_command(line) {
     var pfunc = ()=>{
         try {
             CmdUtils.deblog("exec [", cmd_struct.name ,"] [", text,"]");
-            CmdUtils.backgroundWindow.clearTimeout(cmd_struct.lastExecTimeoutID); // keeping lastExecTimeoutID in cmd_struct instead of single global var
+            clearTimeout(cmd_struct.lastExecTimeoutID); // keeping lastExecTimeoutID in cmd_struct instead of single global var
             CmdUtils.saveToHistory(cmd_struct.name+" "+text);
             (cmd_struct.execute.bind(cmd_struct))(directObj);
         } catch (e) {
@@ -194,9 +200,6 @@ function ubiq_dispatch_command(line) {
             CmdUtils.lastError = `execute [${cmd_struct.name} [${text}]\n\n${e.stack}`;
             CmdUtils.notify(e.toString(), "execute function error");
             console.error(e.stack);
-            if (CmdUtils.backgroundWindow && typeof CmdUtils.backgroundWindow.error === 'function') {
-                CmdUtils.backgroundWindow.error(e.stack);
-            }
         }
     }
     CmdUtils.loadScripts( cmd_struct.require, ()=>CmdUtils.loadScripts( cmd_struct.requirePopup, pfunc, window ) );
@@ -232,8 +235,12 @@ function ubiq_help() {
 
 function ubiq_focus() {
     var el = document.getElementById('ubiq_input');
-    el.setSelectionRange(0, el.value.length);
-    el.focus();
+    if (document.activeElement === el) {
+        el.setSelectionRange(0, el.value.length);
+    } else {
+        el.addEventListener('focus', () => el.setSelectionRange(0, el.value.length), { once: true });
+        el.focus();
+    }
 }
 
 // returns command line
@@ -268,7 +275,7 @@ function ubiq_match_first_command(text) {
 }
 
 function ubiq_tabsuggest() {
-    var cmd = ubiq_match_first_command(cmd);
+    var cmd = ubiq_match_first_command();
     if (cmd.trim()=="") return;
     ubiq_replace_first_word(cmd);
     cmd = ubiq_command();
@@ -379,7 +386,7 @@ function ubiq_show_matching_commands(text) {
                 }
             }
             if (!sr[2]) continue;
-            if (sr == 0x7fffffff) {
+            if (sr[2] == 0x7fffffff) {
                 matches.push(sr);
             } else {
                 fuzzy_matches.push(sr);
@@ -644,35 +651,301 @@ function ubiq_result_autoresize(entries, observer) {
 var resultResizeObserver = new ResizeObserver(ubiq_result_autoresize);
 resultResizeObserver.observe(document.querySelector('#ubiq-result-panel'));
 
+// ── Sandbox bridge ─────────────────────────────────────────────────────────────
+
+// Create a stub command that forwards preview/execute to the sandbox
+function ubiq_create_sandbox_stub(info) {
+    var name = info.name;
+    var stub = {
+        name: name,
+        names: info.names || [name],
+        icon: info.icon || '',
+        description: info.description || '',
+        help: info.help || '',
+        external: info.external || false,
+        builtIn: false,
+        test: info.test,
+        preview: info.previewSrc
+            ? function(pblock, args) {
+                var sf = document.getElementById('sandbox-frame');
+                if (!sf) return;
+                ubiq_read_clipboard().then(function(clip) {
+                    sf.contentWindow.postMessage({
+                        type: 'preview',
+                        name: name,
+                        args: { text: args.text || '', _opt_idx: args._opt_idx, _opt_val: args._opt_val, _selection: args._selection },
+                        selectedText: CmdUtils.selectedText,
+                        activeTab: CmdUtils.active_tab,
+                        clipboardText: clip
+                    }, '*');
+                });
+              }
+            : (info.description || info.help || ''),
+        execute: function(args) {
+            var sf = document.getElementById('sandbox-frame');
+            if (!sf) return;
+            ubiq_read_clipboard().then(function(clip) {
+                sf.contentWindow.postMessage({
+                    type: 'execute',
+                    name: name,
+                    args: { text: args.text || '', _opt_idx: args._opt_idx, _opt_val: args._opt_val, _selection: args._selection },
+                    selectedText: CmdUtils.selectedText,
+                    activeTab: CmdUtils.active_tab,
+                    clipboardText: clip
+                }, '*');
+            });
+        },
+        // Original source for command-source/dump
+        _previewSrc: info.previewSrc || null,
+        _executeSrc: info.executeSrc || null,
+        _extraProps: info.extraProps || {}
+    };
+    return stub;
+}
+
+// Handle chrome.* proxy calls from the sandbox
+function ubiq_handle_chrome_call(msg) {
+    var sf = document.getElementById('sandbox-frame');
+    function sendResult(result, error) {
+        if (sf) sf.contentWindow.postMessage({
+            type: 'chrome-result', id: msg.id,
+            result: result, error: error
+        }, '*');
+    }
+
+    switch (msg.method) {
+        case 'createTab':
+            CmdUtils.createTab(msg.args[0], function(tab) { sendResult(tab); });
+            break;
+        case 'tabs.create':
+            chrome.tabs.create.apply(chrome.tabs, msg.args.concat([function(tab) {
+                sendResult(tab, chrome.runtime.lastError && chrome.runtime.lastError.message);
+            }]));
+            break;
+        case 'tabs.update':
+            chrome.tabs.update.apply(chrome.tabs, msg.args.concat([function(tab) {
+                sendResult(tab);
+            }]));
+            break;
+        case 'tabs.query':
+            chrome.tabs.query(msg.args[0] || {}, function(tabs) { sendResult(tabs); });
+            break;
+        case 'tabs.executeScript': {
+            // MV2-compat path for legacy custom commands: [tabId|null, {code}]
+            var xTabId = msg.args[0];
+            var details = msg.args[1] || {};
+            if (xTabId == null) xTabId = CmdUtils.active_tab && CmdUtils.active_tab.id;
+            if (!xTabId) { sendResult(null, 'No target tab'); break; }
+            var code = details.code || '';
+            var known = code.match(/^\s*document\.body\.inner(Text|HTML)(?:\.toString\(\))?\s*;?\s*$/);
+            if (known) {
+                // the most common MV2 snippet — serve without the userScripts requirement
+                chrome.scripting.executeScript({
+                    target: { tabId: xTabId },
+                    func: function(kind) { return document.body['inner' + kind]; },
+                    args: [known[1]]
+                }, function(results) {
+                    if (chrome.runtime.lastError) { sendResult(null, chrome.runtime.lastError.message); return; }
+                    sendResult((results || []).map(function(r) { return r.result; }));
+                });
+            } else {
+                chrome.runtime.sendMessage({ message: 'executeCode', tabId: xTabId, code: code }, function(resp) {
+                    if (chrome.runtime.lastError) { sendResult(null, chrome.runtime.lastError.message); return; }
+                    if (resp && resp.error) { sendResult(null, resp.error); return; }
+                    sendResult(resp && resp.results);
+                });
+            }
+            break;
+        }
+        case 'notifications.create':
+            chrome.notifications.create(msg.args[0], msg.args[1], function(id) {
+                sendResult(id);
+            });
+            break;
+        case 'fetch': {
+            // args[0] is either a plain url string (legacy) or a request object
+            // {url, method, data, headers, raw} — raw:true returns the full
+            // {status, statusText, responseText, headers} for the sandbox ajax transport
+            var req = msg.args[0];
+            if (typeof req === 'string') req = { url: req };
+            var xhr = new XMLHttpRequest();
+            xhr.open(req.method || 'GET', req.url, true);
+            xhr.withCredentials = true;
+            if (req.headers) for (var h in req.headers) { try { xhr.setRequestHeader(h, req.headers[h]); } catch(e) {} }
+            xhr.onload = function() {
+                if (req.raw) sendResult({ status: xhr.status, statusText: xhr.statusText, responseText: xhr.responseText, headers: xhr.getAllResponseHeaders() });
+                else sendResult(xhr.responseText);
+            };
+            xhr.onerror = function() { sendResult(null, 'XHR network error'); };
+            xhr.send(req.data != null ? req.data : null);
+            break;
+        }
+        case 'scripting.injectScript':
+            var url = msg.args[0];
+            if (CmdUtils.active_tab && CmdUtils.active_tab.id) {
+                chrome.scripting.executeScript({
+                    target: { tabId: CmdUtils.active_tab.id },
+                    func: function(scriptUrl) {
+                        var e = document.createElement('script');
+                        e.src = scriptUrl;
+                        e.onload = function() { console.log('script injected'); };
+                        document.head.appendChild(e);
+                    },
+                    args: [url]
+                }, function() { sendResult(true); });
+            } else {
+                sendResult(false, 'No active tab');
+            }
+            break;
+        case 'scripting.setSelection':
+            CmdUtils.setSelection(msg.args[0]);
+            sendResult(true);
+            break;
+        default:
+            sendResult(null, 'Unknown method: ' + msg.method);
+    }
+}
+
+// Handle all postMessage events from the sandbox iframe
+window.addEventListener('message', function(e) {
+    var sf = document.getElementById('sandbox-frame');
+    if (!sf || e.source !== sf.contentWindow) return;
+    var msg = e.data;
+    if (!msg || !msg.type) return;
+
+    switch (msg.type) {
+        case 'sandbox-ready':
+            CmdUtils.sandboxFrame = sf;
+            CmdUtils.loadCustomScripts();
+            break;
+        case 'set-cmd-prop': {
+            var cmd = CmdUtils.getcmd(msg.name);
+            if (cmd) cmd[msg.prop] = msg.value;
+            break;
+        }
+        case 'register-command': {
+            var _existing = CmdUtils.CommandList.find(function(c) { return c.name === msg.name; });
+            if (_existing && _existing.builtIn) break; // built-ins take precedence over sandbox stubs
+            CmdUtils.CommandList = CmdUtils.CommandList.filter(function(c) { return c.name !== msg.name; });
+            CmdUtils.CommandList.push(ubiq_create_sandbox_stub(msg));
+            break;
+        }
+        case 'pblock-update':
+            var pblock = ubiq_preview_el();
+            if (pblock) pblock.innerHTML = msg.html;
+            break;
+        case 'chrome-call':
+            ubiq_handle_chrome_call(msg);
+            break;
+        case 'set-tip':
+            ubiq_set_tip(msg.html);
+            break;
+        case 'set-preview':
+            ubiq_set_preview(msg.html);
+            break;
+        case 'set-result':
+            ubiq_set_result(msg.html);
+            break;
+        case 'set-badge':
+            CmdUtils.setBadge(msg.text, msg.color);
+            break;
+        case 'set-clipboard':
+            CmdUtils.setClipboard(msg.text);
+            break;
+        case 'save-history':
+            CmdUtils.saveToHistory(msg.cmdline);
+            break;
+        case 'save-history-preview':
+            CmdUtils.saveToHistoryPreview(msg.cmdline);
+            break;
+        case 'refresh-preview':
+            ubiq_show_matching_commands();
+            break;
+        case 'eval-ok':
+            ubiq_show_matching_commands();
+            break;
+        case 'eval-error':
+            CmdUtils.setTip('<span style="color:red">Custom script error: ' + msg.message + '</span>');
+            break;
+        case 'preview-error': {
+            var pblock = ubiq_preview_el();
+            if (pblock) pblock.innerHTML = '<span style="color:red">preview error: ' + msg.message + '</span>';
+            CmdUtils.lastError = 'preview [' + msg.name + ']: ' + msg.message;
+            CmdUtils.setBadge('!', 'red');
+            break;
+        }
+    }
+});
+
 $(window).on('load', function() {
-    if (typeof CmdUtils !== 'undefined' && typeof Utils !== 'undefined' && typeof backgroundPage !== 'undefined' ) {
+    if (typeof CmdUtils !== 'undefined' && typeof Utils !== 'undefined') {
         ubiq_preview_org_html = ubiq_preview_el().outerHTML;
         CmdUtils.setPreview = ubiq_set_preview;
         CmdUtils.setResult = ubiq_set_result;
         CmdUtils.setTip = ubiq_set_tip;
         CmdUtils.popupWindow = window;
-        CmdUtils.updateActiveTab();
-        
-        // Add event handler to window 
+        CmdUtils.backgroundWindow = window; // MV3: popup IS the main context
+
+        // Read state stored by service worker
+        chrome.storage.session.get(['selectedText', 'active_tab'], function(result) {
+            CmdUtils.selectedText = result.selectedText || '';
+            CmdUtils.active_tab = result.active_tab || null;
+        });
+        // populate clipboard cache for commands that use getClipboard(); re-render
+        // the preview once it arrives (built-in clip* commands read it synchronously)
+        if (!ubiq_test_mode) {
+            CmdUtils.readClipboard().then(function() { lcmd = null; ubiq_show_matching_commands(); });
+            window.addEventListener('focus', function() { CmdUtils.readClipboard(); });
+        }
+        CmdUtils.loadHistory();
+
+        // Add event handler to window
         document.addEventListener('keydown', function(e) { ubiq_keydown_handler(e); }, false);
         document.addEventListener('keyup', function(e) { ubiq_keyup_handler(e); }, false);
         document.getElementById('ubiq_input').addEventListener('input', ubiq_save_input, false); // keydown fires before input is updated
-        
+
+        if (typeof chrome.userScripts === 'undefined') {
+            CmdUtils.setTip('<span style="color:orange">&#9888; Developer mode disabled &mdash; script injection commands won\'t work. Enable in <a href="chrome://extensions" target="_blank">chrome://extensions</a></span>');
+            CmdUtils.setBadge('DEV', 'orange');
+        }
+
         console.log("hello from UbiChr");
 
-        ubiq_focus(); 
-        if (CmdUtils.loadLastInput)
+        var isTestMode = ubiq_test_mode;
+        if (isTestMode) {
+            // Wait for sandbox to finish loading custom scripts before starting test
+            var _doOnPopup = function() {
+                var testViews = chrome.extension.getViews({type: 'tab'});
+                var testsWnd = testViews.find(w => w.location.pathname.endsWith('/tests.html'));
+                if (testsWnd && typeof testsWnd.CmdUtils !== 'undefined')
+                    testsWnd.CmdUtils.onPopup(window);
+            };
+            var _testTimer = setTimeout(_doOnPopup, 2000); // fallback if no custom scripts
+            window.addEventListener('message', function _waitEval(e) {
+                var sf = document.getElementById('sandbox-frame');
+                if (!sf || e.source !== sf.contentWindow) return;
+                if (e.data && (e.data.type === 'eval-ok' || e.data.type === 'eval-error')) {
+                    clearTimeout(_testTimer);
+                    window.removeEventListener('message', _waitEval);
+                    _doOnPopup();
+                }
+            });
+        } else if (CmdUtils.loadLastInput) {
             ubiq_load_input( ()=>{
                 ubiq_show_matching_commands();
                 CmdUtils.onPopup(window);
+                ubiq_focus();
             });
-        else            
+        } else {
             CmdUtils.onPopup(window);
+            ubiq_focus();
+        }
+        // Note: custom scripts are loaded when sandbox sends 'sandbox-ready'
     } else {
         chrome.tabs.create({ "url": "chrome://extensions" });
         chrome.notifications.create({
             "type": "basic",
-            "iconUrl": chrome.extension.getURL("res/icon-128.png"),
+            "iconUrl": chrome.runtime.getURL("res/icon-128.png"),
             "title": "UbiChr",
             "message": "there is something wrong, try restarting UbiChr"
         });

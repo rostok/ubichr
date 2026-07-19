@@ -52,13 +52,13 @@ CmdUtils.deblog = function (...args) {
 // executed after popup is opened, used for testing 
 CmdUtils.onPopup = function () {};
 
-// sets chrome extension badge
+// sets chrome extension badge (MV3: chrome.action instead of chrome.browserAction)
 CmdUtils.setBadge = function(text='OK', color='#77c') {
-  chrome.browserAction.setBadgeBackgroundColor({color:color});
+  chrome.action.setBadgeBackgroundColor({color:color});
   setTimeout(function(){
-    chrome.browserAction.setBadgeText({'text':text});
+    chrome.action.setBadgeText({'text':text});
     setTimeout(function(){
-      chrome.browserAction.setBadgeText({'text':''});
+      chrome.action.setBadgeText({'text':''});
     }, 1000);
   }, 0);
 };
@@ -266,14 +266,18 @@ CmdUtils.getLocationOrigin = function getLocationOrigin(url="") {
     }
 };
 
+// modern Chrome (136+) also defines the `browser` namespace alias, so its
+// presence no longer implies Firefox — sniff the UA instead
+CmdUtils.isFirefox = typeof navigator !== 'undefined' && /Firefox/.test(navigator.userAgent);
+
 // opens new tab with provided url
 CmdUtils.addTab = function addTab(url, active=true) {
     if (CmdUtils.lastKeyEvent && CmdUtils.lastKeyEvent.shiftKey) active = false;
 
-    if (typeof browser !== 'undefined') {
+    if (typeof browser !== 'undefined' && CmdUtils.isFirefox) {
         browser.tabs.create({ "url": url, "active": active });
-        if (browser) CmdUtils.closePopup(); // FF keeps popup open, so we close it
-    } else 
+        CmdUtils.closePopup(); // FF keeps popup open, so we close it
+    } else
     if (typeof chrome !== 'undefined' && typeof chrome.tabs !== 'undefined') {
         chrome.tabs.create({ "url": url, "active": active });
     } else {
@@ -300,49 +304,51 @@ CmdUtils.addTab = function addTab(url, active=true) {
 // finally callback is called after tab is created
 CmdUtils.createTab = (props, callback=undefined) => {
     callback = callback || (()=>{});
-    var cb = callback;
     var inp = props.input || "";  delete props.input;
     var val = props.value; delete props.value;
     var sub = props.submit || ""; delete props.submit;
     var frm = props.form || ""; delete props.form;
-    var inc = props.initcode || ""; delete props.initcode;
-    var bgc = props.begincode || ""; delete props.begincode;
+    delete props.initcode;
+    delete props.begincode;
     var enc = props.endcode || ""; delete props.endcode;
     var del = parseInt(props.delay) || 0;  delete props.delay;
     var cmp = props.complete; delete props.complete;
-    if ( (inp != "" && val !== undefined) || sub != "" ) cb = (tab) => {
-      var code = `
-      ${bgc}
-      try {
-        window.setTimeout(()=>{
-          console.log("CmdUtils.createTab() starts i:${inp} v:${val} s:${sub} d:${del} ");
-          if ("${inp}"!="") {
-            var i = document.querySelector("${inp}");
-            i.value = ${JSON.stringify(val)};
-            i.dispatchEvent(new Event('change', { 'bubbles': true }))
-          }
-          if ("${sub}"!="") document.querySelectorAll("${sub}").forEach(i=>i.click()); 
-          if ("${frm}"!="") document.querySelectorAll("${frm}").forEach(i=>i.submit()); 
-          ${enc}
-          console.log("CmdUtils.createTab() ends");
-        },${del});
-      } 
-      catch(e) {
-        console.error("CmdUtils.createTab() failed", e);
-      }`;
-      if (props.complete) {
-              code = `function start() { ${code} }
-              document.onreadystatechange = ()=>{ if (document.readyState == "complete") start() };
-              document.onreadystatechange();`;
-      }
-      code = `${inc}${code}`;
-    //   CmdUtils.log(tab);
-    //   CmdUtils.log(code);
-    //   console.log(code);
-      chrome.tabs.executeScript(tab.id, {code:code}, (ret)=>{
-        // script was injected, nothing to do here
-      });
-      callback(tab);
+
+    // complete:true or endcode — delegate to service worker: it waits for tab load
+    // and runs endcode via chrome.userScripts (eval is blocked in MV3 content scripts)
+    if (cmp || enc) {
+        chrome.runtime.sendMessage({
+            message: 'createTabAndInject',
+            url: props.url,
+            inp, val, sub, frm, del, enc
+        });
+        return;
+    }
+
+    var cb = callback;
+    if ( (inp != "" && val !== undefined) || sub != "" || frm != "" ) cb = (tab) => {
+        chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: function(inp, val, sub, frm, del) {
+                setTimeout(function() {
+                    try {
+                        if (inp) {
+                            var i = document.querySelector(inp);
+                            if (i) {
+                                i.value = val;
+                                i.dispatchEvent(new Event('change', { bubbles: true }));
+                            }
+                        }
+                        if (sub) document.querySelectorAll(sub).forEach(function(i) { i.click(); });
+                        if (frm) document.querySelectorAll(frm).forEach(function(i) { i.submit(); });
+                    } catch(e) {
+                        console.error("CmdUtils.createTab() failed", e);
+                    }
+                }, del || 0);
+            },
+            args: [inp, val, sub, frm, del]
+        });
+        callback(tab);
     };
     chrome.tabs.create(props, cb);
 };
@@ -403,7 +409,7 @@ CmdUtils.refreshPreview = ()=>{
 
 // closes ubiquity popup
 CmdUtils.closePopup = function closePopup(w) {
-    if (typeof popupWindow !== 'undefined') popupWindow.close();
+    if (CmdUtils.popupWindow) CmdUtils.popupWindow.close();
 };
 
 // gets json with xhr
@@ -450,38 +456,49 @@ CmdUtils.post = function post(url, data) {
     });
 };
 
-// loads remote scripts into specified window (or backround if not specified)
+// loads scripts into specified window (popup by default)
+// MV3 NOTE: extension-page CSP is locked to script-src 'self' — only LOCAL
+// (bundled) files can load here; remote URLs fail with a console error.
+// Custom (sandbox) commands get remote require/requirePopup via sandbox.js
+// loadScripts instead (fetch through popup proxy + eval).
+// Uses <script src> tags: jQuery.getScript would inline-eval same-origin
+// responses, which extension-page CSP also blocks.
 CmdUtils.loadScripts = function loadScripts(url, callback, wnd=window) {
     wnd.loadedScripts = wnd.loadedScripts || []; // this array will hold all loaded scripts into this window
     url = url || [];
     if (url.constructor === String) url = [url];
-
-    if (typeof wnd.jQuery === 'undefined') {
-        console.error("there's no jQuery at "+wnd+".");
-        return false;
-    }
+    url = url.filter(script => !wnd.loadedScripts.includes(script));
     if (url.length == 0) return callback();
-        
+
     CmdUtils.log("loadingScripts >>> ", url.join(), wnd.loadedScripts.join());
 
-    url = url.filter(script => !wnd.loadedScripts.includes(script));
-
-    wnd.jQuery.when.apply(wnd.jQuery, wnd.jQuery.map(url, (u) => {
-        return wnd.jQuery.getScript(u);
-    })).done(() => { // All scripts have finished loading
-        wnd.loadedScripts = [...new Set([...wnd.loadedScripts ,...url])];
-        return callback();
-    }).fail((jqxhr, settings, exception) => {
-        CmdUtils.error("failed loading scripts",urls.join(),exception);
+    var remaining = url.length;
+    url.forEach((u) => {
+        var s = wnd.document.createElement('script');
+        s.src = u;
+        s.async = false; // preserve execution order for dependent scripts
+        s.onload = () => {
+            wnd.loadedScripts.push(u);
+            if (--remaining == 0) callback();
+        };
+        s.onerror = () => {
+            CmdUtils.error("failed loading script", u,
+                "(MV3 CSP allows only bundled files in extension pages — bundle locally, or rely on the sandbox for custom commands)");
+        };
+        wnd.document.head.appendChild(s);
     });
 };
 
 
-// updates selectedText variable
+// updates selectedText variable (MV3: chrome.scripting.executeScript)
 CmdUtils.updateSelection = function (tab_id) {
-    chrome.tabs.executeScript( tab_id, { code: "window ? window.getSelection().toString() : '';" }, function(selection) {
-        if (selection && selection.length>0) CmdUtils.selectedText = selection[0] || "";
-        CmdUtils.deblog("selectedText is ", CmdUtils.selectedText);  
+    chrome.scripting.executeScript({
+        target: { tabId: tab_id },
+        func: function() { return window.getSelection ? window.getSelection().toString() : ''; }
+    }, function(results) {
+        if (chrome.runtime.lastError) return;
+        if (results && results[0] && results[0].result) CmdUtils.selectedText = results[0].result;
+        CmdUtils.deblog("selectedText is ", CmdUtils.selectedText);
     });
 };
 
@@ -517,22 +534,19 @@ CmdUtils.updateActiveTab = function () {
     });
 };
 
-// replaces current selection with string provided
+// replaces current selection with string provided (MV3: func+args injection)
 CmdUtils.setSelection = function setSelection(s) {
-    console.log("CmdUtils.setSelection"+s)
-    if (typeof s!=='string') s = s+'';
-    s = s.replace(/(['"])/g, "\\$1");
-    // http://jsfiddle.net/b3Fk5/2/
-    var insertCode = `
-    function replaceSelectedText(replacementText) {
+    console.log("CmdUtils.setSelection", s);
+    if (typeof s !== 'string') s = s + '';
+    function _replaceSelectedText(replacementText) {
         var sel, range;
         if (window.getSelection) {
             sel = window.getSelection();
             var activeElement = document.activeElement;
-            if (activeElement.nodeName == "TEXTAREA" ||
-                (activeElement.nodeName == "INPUT" && activeElement.type.toLowerCase() == "text")) {
-                    var val = activeElement.value, start = activeElement.selectionStart, end = activeElement.selectionEnd;
-                    activeElement.value = val.slice(0, start) + replacementText + val.slice(end);
+            if (activeElement.nodeName === 'TEXTAREA' ||
+                (activeElement.nodeName === 'INPUT' && activeElement.type.toLowerCase() === 'text')) {
+                var val = activeElement.value, start = activeElement.selectionStart, end = activeElement.selectionEnd;
+                activeElement.value = val.slice(0, start) + replacementText + val.slice(end);
             } else {
                 if (sel.rangeCount) {
                     range = sel.getRangeAt(0);
@@ -547,11 +561,15 @@ CmdUtils.setSelection = function setSelection(s) {
             range.text = replacementText;
         }
     }
-    replaceSelectedText("${s}");`;
-    if (CmdUtils.active_tab && CmdUtils.active_tab.id)
-        return chrome.tabs.executeScript( CmdUtils.active_tab.id, { code: insertCode } );
-    else 
-        return chrome.tabs.executeScript( { code: insertCode } );
+    var target = (CmdUtils.active_tab && CmdUtils.active_tab.id)
+        ? { tabId: CmdUtils.active_tab.id }
+        : null;
+    if (!target) return;
+    chrome.scripting.executeScript({
+        target: target,
+        func: _replaceSelectedText,
+        args: [s]
+    });
 };
 
 // for measuring time the input is changed
@@ -607,112 +625,82 @@ CmdUtils.preview = function preview(command, pblock, args) {
     return (c.preview.bind(c))(pblock,args);
 };
 
-// sets clipboard
-CmdUtils.setClipboard = function setClipboard (t) {
-    var input = document.createElement('textarea');
-    document.body.appendChild(input);
-    input.value = t;
-    input.focus();
-    input.select();
-    document.execCommand('Copy');
-    input.remove();
-};
+CmdUtils._clipboardText = '';
 
-// gets clipboard
-CmdUtils.getClipboard = function getClipboard () {
-    var input = document.createElement('textarea');
-    document.body.appendChild(input);
-    input.focus();
-    input.select();
-    document.execCommand('paste');
-    var r = input.value;
-    input.remove();
-    return r || "";
-};
-
-// sets clipboard
-CmdUtils.setClipboardHTML = function setClipboard (t) {
-    var input = document.createElement('div');
-    document.body.appendChild(input);
-    input.contentEditable = true;
-    var range = document.createRange();
-    range.selectNode(input);
-    window.getSelection().removeAllRanges();
-    window.getSelection().addRange(range);
-    input.innerHTML = t;
-    input.focus();
-    input.select();
-    document.execCommand('Copy');
-    input.remove();
-};
-
-CmdUtils.setClipboardHTML = async function setClipboardHTML(htmlContent) {
-    // Create a temporary content-editable element to hold the HTML
-    const tempEl = document.createElement('div');
-    tempEl.contentEditable = 'true';
-    tempEl.style.position = 'absolute';
-    tempEl.style.left = '-9999px'; // Hide the element off-screen
-
-    document.body.appendChild(tempEl);
-    tempEl.innerHTML = htmlContent; // Insert the HTML content to copy
-    tempEl.unselectable = "off";
-    tempEl.focus();
-
-    // Select the content
-    document.getSelection().selectAllChildren(tempEl);
-
-    // Use the Clipboard API to write the selected content as text
+// sets plain-text clipboard
+CmdUtils.setClipboard = function setClipboard(t) {
+    t = String(t);
+    CmdUtils._clipboardText = t;
     try {
-        const successful = document.execCommand('copy');
-        const msg = successful ? 'successful' : 'unsuccessful';
-        console.log('Copying text command was ' + msg);
-    } catch (err) {
-        console.error('Failed to copy', err);
-    }
-
-    // Clean up
-    document.body.removeChild(tempEl);
+        chrome.extension.getViews({type: 'tab'}).forEach(function(w) {
+            if (w !== window && w.CmdUtils) w.CmdUtils._clipboardText = t;
+        });
+    } catch(e) {}
+    navigator.clipboard.writeText(t).catch(function(e) { console.warn('setClipboard failed', e); });
 };
 
-// Usage example:
-// CmdUtils.setClipboardHTML('<p style="color: red;">This is some text!</p>');
-
-// gets clipboard as HTML https://stackoverflow.com/a/43375402/2451546
-CmdUtils.getClipboardHTML = function getClipboard () {
-    var input = document.createElement('div');
-    document.body.appendChild(input);
-    input.contentEditable = true;
-    var range = document.createRange();
-    range.selectNode(input);
-    window.getSelection().removeAllRanges();
-    window.getSelection().addRange(range);
-    input.focus();    
-    document.execCommand("Paste");
-    var r = input.innerHTML;
-    input.remove();
-    return r || "";
+// gets plain-text clipboard (sync, from cache populated by setClipboard/readClipboard)
+CmdUtils.getClipboard = function getClipboard() {
+    return CmdUtils._clipboardText;
 };
+
+// async: reads plain-text clipboard into cache
+CmdUtils.readClipboard = async function readClipboard() {
+    // readText() throws when the document isn't focused — keep the cache then
+    try { CmdUtils._clipboardText = await navigator.clipboard.readText(); }
+    catch(e) { console.warn('readClipboard failed:', e.message); }
+    return CmdUtils._clipboardText;
+};
+
+// async: sets HTML clipboard
+CmdUtils.setClipboardHTML = async function setClipboardHTML(html) {
+    try {
+        await navigator.clipboard.write([
+            new ClipboardItem({ 'text/html': new Blob([html], {type: 'text/html'}),
+                                'text/plain': new Blob([html.replace(/<[^>]+>/g,'')], {type: 'text/plain'}) })
+        ]);
+    } catch(e) { console.warn('setClipboardHTML failed', e); }
+};
+
+// async: reads HTML clipboard
+CmdUtils.getClipboardHTML = async function getClipboardHTML() {
+    try {
+        var items = await navigator.clipboard.read();
+        for (var item of items) {
+            if (item.types.includes('text/html')) {
+                var blob = await item.getType('text/html');
+                return await blob.text();
+            }
+        }
+    } catch(e) {}
+    return '';
+};
+
+CmdUtils.sandboxFrame = null;  // set by popup.js once sandbox iframe is ready
 
 CmdUtils.unloadCustomScripts = function unloadCustomScripts() {
-    CmdUtils.CommandList = CmdUtils.CommandList.filter((c)=>{
-        return c['builtIn']==true;
-    });
-    
-}
+    CmdUtils.CommandList = CmdUtils.CommandList.filter((c) => c['builtIn'] == true);
+    if (CmdUtils.sandboxFrame) {
+        CmdUtils.sandboxFrame.contentWindow.postMessage({ type: 'unload-custom' }, '*');
+    }
+};
 
+// MV3: custom scripts are eval'd inside sandbox.html (sandboxed iframe allows eval)
 CmdUtils.loadCustomScripts = function loadCustomScripts() {
     CmdUtils.unloadCustomScripts();
-    // mark built-int commands
-    CmdUtils.CommandList.forEach((c)=>{c['builtIn']=true;});
+    // mark built-in commands
+    CmdUtils.CommandList.forEach((c) => { c['builtIn'] = true; });
 
     if (typeof chrome === 'undefined' || typeof chrome.storage === 'undefined') return;
+    if (!CmdUtils.sandboxFrame) {
+        console.warn("loadCustomScripts: sandbox not ready yet");
+        return;
+    }
     try {
-        // load custom scripts
         chrome.storage.local.get('customscripts', function(result) {
-            try {
-                eval(result.customscripts || "");
-            } catch (e) {
-                console.error("custom scripts eval failed", e);
+            var code = result.customscripts || '';
+            if (code.trim()) {
+                CmdUtils.sandboxFrame.contentWindow.postMessage({ type: 'eval', code: code }, '*');
             }
         });
     } catch (e) {
@@ -720,23 +708,30 @@ CmdUtils.loadCustomScripts = function loadCustomScripts() {
     }
 };
 
-// injcects script from url
+// injects script from url into active tab (MV3: func+args)
 CmdUtils.inject = function inject(url, oninject) {
-    chrome.tabs.executeScript({
-        code:"((e,s)=>{e.src=s;e.onload=function(){console.log('script injected')};document.head.appendChild(e);})(document.createElement('script'),'"+url+"')"
-        }, oninject
-    );
+    if (!CmdUtils.active_tab || !CmdUtils.active_tab.id) return;
+    chrome.scripting.executeScript({
+        target: { tabId: CmdUtils.active_tab.id },
+        func: function(scriptUrl) {
+            var e = document.createElement('script');
+            e.src = scriptUrl;
+            e.onload = function() { console.log('script injected'); };
+            document.head.appendChild(e);
+        },
+        args: [url]
+    }, oninject);
 };
 
-// show browser notification with simple limiter 
+// show browser notification with simple limiter (MV3: chrome.runtime.getURL)
 CmdUtils.lastNotification = "";
 CmdUtils.notify = function (message, title) {
     if (CmdUtils.lastNotification == title+"/"+message) return;
     chrome.notifications.create({
         "type": "basic",
-        "iconUrl": typeof browser!=='undefined' ? browser.runtime.getURL("res/icon-128.png") : chrome.extension.getURL("res/icon-128.png"),
+        "iconUrl": chrome.runtime.getURL("res/icon-128.png"),
         "title": title || "UbiChr",
-        "message": message
+        "message": String(message)
     });
     CmdUtils.lastNotification = title+"/"+message;
 };
@@ -784,7 +779,26 @@ CmdUtils.dump = (cmd) => {
     if (c==null) return "";
     var r = "// UbiChr '"+c.name+"' command\n";
     r += "CmdUtils.CreateCommand({\n";
-    r += Object.entries(c).map(([k,v])=> "\t"+k+":"+(typeof v==='function' ? unescape(v.toString()) : JSON.stringify(v))).join(",\n");
+    if (c._previewSrc || c._executeSrc) {
+        // Sandbox command: reconstruct from original stored sources
+        var parts = [];
+        var skip = {_previewSrc:1,_executeSrc:1,_extraProps:1,builtIn:1,preview:1,execute:1,test:1};
+        ['name','names','icon','description','help','external'].forEach(function(k) {
+            if (c[k] !== undefined && c[k] !== '' && c[k] !== false)
+                parts.push('\t'+k+':'+JSON.stringify(c[k]));
+        });
+        Object.entries(c._extraProps||{}).forEach(function([k,v]) {
+            try { parts.push('\t'+k+':'+JSON.stringify(v)); } catch(e) {}
+        });
+        if (c._executeSrc) parts.push('\texecute:'+c._executeSrc);
+        if (c._previewSrc) parts.push('\tpreview:'+c._previewSrc);
+        r += parts.join(',\n');
+    } else {
+        var skip2 = {_previewSrc:1,_executeSrc:1,_extraProps:1};
+        r += Object.entries(c).filter(([k])=>!skip2[k]).map(([k,v])=>
+            "\t"+k+":"+(typeof v==='function' ? unescape(v.toString()) : JSON.stringify(v))
+        ).join(",\n");
+    }
     r += "\n});\n";
     return r;
 };
