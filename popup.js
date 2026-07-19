@@ -207,6 +207,9 @@ function ubiq_dispatch_command(line) {
 
 function ubiq_help() {
     var html = '<div style="position:absolute; top:56px; right:0px; color: #666;">UbiChr v'+CmdUtils.VERSION+'</div>';
+    if (typeof chrome.userScripts === 'undefined') {
+        html += '<div style="color:yellow; font-weight:bold;">UbiChr v3 requires userScripts option being enabled in extension settings!</div>';
+    }
     html += 'Type the name of a command and press Enter to execute it, or <b>help</b> for assistance.</p>';
     html += "<div id='ubiq-help' style='width:780px;max-height:390px; overflow-y: auto;'>";
     html += "commands loaded: ";

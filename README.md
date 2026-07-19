@@ -13,6 +13,13 @@ UbiChr is my humble attempt to create [Ubiquity](https://wiki.mozilla.org/Labs/U
 
 ![UbiChr in action](marketing/ubiquity-wiki-search.gif)
 
+# Manifest V3
+Since version 3.x UbiChr runs on Manifest V3. Commands that inject scripts into pages use the `chrome.userScripts` API, which Chrome keeps disabled by default. **You must enable it manually**, otherwise script injection commands won't work and UbiChr will show a warning on its first screen:
+* Chrome 138+: go to `chrome://extensions`, open UbiChr details and turn on **Allow user scripts**
+* older Chrome (120-137): enable **Developer mode** on `chrome://extensions`
+
+The last Manifest V2 version is preserved on the [manifest-v2](https://github.com/rostok/ubichr/tree/manifest-v2) branch (tag `v2-final`).
+
 # Installation
 To install use Chrome Web Store https://chrome.google.com/webstore/search/ubichr
 
