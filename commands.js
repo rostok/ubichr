@@ -264,8 +264,9 @@ CmdUtils.CreateCommand({
     preview: async function define_preview(pblock, {text: text}) {
         var doc = await CmdUtils.get("https://www.dictionary.com/browse/"+encodeURIComponent(text));
         CmdUtils.setPreview("");
-        $("section[data-type*=-dictionary-]", doc).appendTo(pblock).find("a[href*=thesaurus],button").remove();
-        $("div[data-type=pronunciation-toggle]",pblock).remove() 
+        $("section#id-sec-entry-group-dcom", doc).appendTo(pblock)
+        //.find("a[href*=thesaurus],button").remove();
+        //$("div[data-type=pronunciation-toggle]",pblock).remove() 
     },
 });
 
@@ -420,44 +421,96 @@ CmdUtils.CreateCommand({
     license: "",
     timeout: 250,
     preview: async function define_preview(pblock, args) {
-        pblock.innerHTML = "Searches for movies on IMDB";
-        args.text = args.text.replace(/[\.\\\/\s]+/g," ").trim();
-        year = parseInt(args.text.replace(/[(\s)]/g," ").trim().split(/\s+/).slice(-1));
-        var release_date = "";
-        if(year>1900 && year<2050) {
-          args.text = args.text.split(/[(\s]+/).slice(0,-1).join(" ");
-          release_date = "&release_date="+year;
+        var text = args.text.replace(/[\.\\\/\s]+/g, " ").trim();
+        if (!text) {
+            pblock.innerHTML = "Searches for movies on IMDB";
+            return;
         }
-        if (args.text.trim()!="") {
-          jQuery(pblock).loadAbs("https://www.imdb.com/search/title?title="+encodeURIComponent(args.text)+release_date+" ul.ipc-metadata-list > *", ()=>{
-            jQuery(pblock).find("li").each((i,e)=>{
-              var link = jQuery(e).find("a").first().attr("href");
-              var img = "<img style='margin:0 10px 10px 0; float:left' height=96 width=65 aling=bottom src='"+jQuery(e).find(".ipc-image").first().attr("src")+"'>";
-              var title = "<a href='"+jQuery(e).find("a").first().attr("href")+"'>"+jQuery(e).find("h3").text().trim()+"</a> ";
-              var info = "<span>"    
-                       + jQuery(e).find(".dli-title-metadata").find("span:nth(0)").text()+" | "
-                       + jQuery(e).find(".dli-title-metadata").find("span:nth(1)").text()+" | "
-                       + "<span style='color:yellow'>"+jQuery(e).find(".ipc-rating-star").text().split(/\s+/).shift()+"</span>"
-                       + "</span>";
-              var syno = "<br><span>"+jQuery(e).find(".ipc-html-content-inner-div").text()+"</span>";
-              jQuery(e).replaceWith("<div data-option='' data-option-value='"+link+"'><div style='clear:both;overflow-y:auto;'>"+img+"<div style=''>"+ title + info + syno + "</div></div></div>");
+        
+        pblock.innerHTML = "Searching for movies on IMDB...";
+        
+        var release_date = "";
+        var yearStr = text.replace(/[()\s]/g, " ").trim().split(/\s+/).pop();
+        var year = parseInt(yearStr, 10);
+        
+        // Extract year if it's placed at the end of the query
+        if (!isNaN(year) && year > 1900 && year < 2050) {
+            var textWithoutYear = text.substring(0, text.lastIndexOf(yearStr));
+            text = textWithoutYear.replace(/[()\s]+$/, "").trim();
+            // New IMDB prefers date ranges for specific years
+            release_date = "&release_date=" + year + "-01-01," + year + "-12-31";
+        }
+        
+        if (text) {
+            jQuery(pblock).loadAbs("https://www.imdb.com/search/title/?title=" + encodeURIComponent(text) + release_date + " ul.ipc-metadata-list > *", () => {
+                var items = jQuery(pblock).find("li.ipc-metadata-list-summary-item");
+                
+                if (items.length === 0) {
+                    pblock.innerHTML = "<div style='padding:10px;'>No results found.</div>";
+                    return;
+                }
+                
+                items.each((i, e) => {
+                    var $e = jQuery(e);
+                    
+                    // Link
+                    var link = $e.find("a.ipc-title-link-wrapper").attr("href") || $e.find("a").first().attr("href");
+                    if (link && link.indexOf("imdb.com") === -1) {
+                        link = "https://www.imdb.com" + link;
+                    }
+                    
+                    // Image
+                    var imgSrc = $e.find(".ipc-image").attr("src") || "";
+                    var img = imgSrc ? "<img style='margin:0 10px 10px 0; float:left; object-fit:cover; border-radius:4px;' height='96' width='65' src='" + imgSrc + "'>" : "";
+                    
+                    // Title (Removing the ranking prefix like '1. ')
+                    var rawTitle = $e.find("h3.ipc-title__text").text().trim();
+                    rawTitle = rawTitle.replace(/^\d+\.\s*/, '');
+                    var title = "<a href='" + link + "' style='font-size:1.1em; font-weight:bold; color:#f5c518; text-decoration:none;'>" + rawTitle + "</a><br>";
+                    
+                    // Metadata (Year, Length, Certificate)
+                    var metaItems =[];
+                    $e.find(".dli-title-metadata-item").each((idx, el) => {
+                        var t = jQuery(el).text().trim();
+                        if (t) metaItems.push(t);
+                    });
+                    
+                    // Rating
+                    var rating = $e.find(".ipc-rating-star--rating").text().trim();
+                    if (rating) metaItems.push("<span style='color:yellow'>&#9733; " + rating + "</span>");
+                    
+                    var info = "<span style='font-size:0.9em; color:#ccc;'>" + metaItems.join(" | ") + "</span>";
+                    
+                    // Synopsis
+                    var synoText = $e.find(".ipc-html-content-inner-div").text().trim();
+                    var syno = synoText ? "<br><span style='display:block; margin-top:4px; font-size:0.9em;'>" + synoText + "</span>" : "";
+                    
+                    // Replace li node
+                    $e.replaceWith("<div data-option='' data-option-value='" + link + "' style='padding:5px; border-bottom:1px solid #444; clear:both; overflow:auto;'><div style='clear:both;'>" + img + "<div style=''>" + title + info + syno + "</div></div></div>");
+                });
             });
-          });
         }
     },
     execute: function execute(args) {
-        args.text = args.text.replace(/[\.\\\/\s]+/g," ").trim();
+        var text = args.text.replace(/[\.\\\/\s]+/g, " ").trim();
+        if (!text && !args._opt_val) return;
+        
         var release_date = "";  
-        year = parseInt(args.text.replace(/[(\s)]/g," ").trim().split(/\s+/).slice(-1));
-        if(year>1900 && year<2050) {
-          args.text = args.text.split(/[(\s]+/).slice(0,-1).join(" ");
-          release_date = "&release_date="+year;
+        var yearStr = text.replace(/[()\s]/g, " ").trim().split(/\s+/).pop();
+        var year = parseInt(yearStr, 10);
+        
+        if (!isNaN(year) && year > 1900 && year < 2050) {
+            var textWithoutYear = text.substring(0, text.lastIndexOf(yearStr));
+            text = textWithoutYear.replace(/[()\s]+$/, "").trim();
+            release_date = "&release_date=" + year + "-01-01," + year + "-12-31";
         }
+        
         var opt = args._opt_val || "";
-        if(opt.includes("://")) 
+        if (opt.includes("://")) {
             CmdUtils.addTab(opt);
-        else 
-            CmdUtils.addTab("https://www.imdb.com/search/title?title="+encodeURIComponent(args.text)+release_date);
+        } else {
+            CmdUtils.addTab("https://www.imdb.com/search/title/?title=" + encodeURIComponent(text) + release_date);
+        }
     }
 });
 
