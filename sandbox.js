@@ -452,7 +452,9 @@ window.addEventListener('message', function(event) {
                     if (typeof previewFn === 'string') {
                         sendToPopup({ type: 'pblock-update', html: previewFn });
                     } else if (typeof previewFn === 'function') {
-                        var previewResult = (previewFn.bind(cmd))(pblockEl, msg.args || { text: '' });
+                        var previewArgs = msg.args || { text: '' };
+                        previewArgs._cmd = cmd;
+                        var previewResult = (previewFn.bind(cmd))(pblockEl, previewArgs);
                         if (previewResult && typeof previewResult.then === 'function') {
                             previewResult.catch(function(e) {
                                 console.error('sandbox async preview error', e);
@@ -479,6 +481,7 @@ window.addEventListener('message', function(event) {
                 try {
                     var execArgs = msg.args || { text: '' };
                     execArgs.pblock = pblockEl; // popup dispatch passes pblock in args too
+                    execArgs._cmd = cmd;
                     var execResult = (cmd.execute.bind(cmd))(execArgs);
                     if (execResult && typeof execResult.then === 'function') {
                         execResult.catch(function(e) {
