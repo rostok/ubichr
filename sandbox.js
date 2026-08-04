@@ -271,6 +271,15 @@ var CmdUtils = {
             console.error('ajaxGet failed', e);
         });
     },
+    ajaxGetJSON: function(url, callback) {
+        chromeProxy('fetch', [url]).then(function(result) {
+            var data;
+            try { data = JSON.parse(result); } catch(e) { data = null; }
+            if (callback) callback(data);
+        }).catch(function(e) {
+            console.error('ajaxGetJSON failed', e);
+        });
+    },
     get: async function(url) {
         var text = await chromeProxy('fetch', [url]);
         // Use jQuery(text) — same as MV2 popup where $.ajax returned responseText

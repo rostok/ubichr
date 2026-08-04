@@ -212,6 +212,17 @@ CmdUtils.makeSearchCommand({
 
 ```
 
+## Click-to-copy in preview
+Since custom command previews run in a sandboxed iframe, click handlers attached directly to preview elements never reach the visible popup (only the rendered HTML is mirrored over, not live JS listeners). To make part of a preview clickable to copy, mark the element with `class="copydata"` instead of binding your own click handler — the popup handles the click generically. It underlines the element and copies its text content to the clipboard on click.
+
+* `data-copy="value"` — copies this instead of the element's own text (useful when the visible label differs from the value, e.g. an icon/link).
+* `data-copy-feedback="text"` — replaces the element's content with `text` after the copy (e.g. a checkmark).
+
+```javascript
+pblock.innerHTML = "<span class='copydata'>" + value + "</span>"; // click copies "value" itself
+pblock.innerHTML = "<a class='copydata' data-copy='" + value + "' data-copy-feedback='✅'>📄</a>"; // click copies value, then shows ✅
+```
+
 ## Open tab, post a form and dodge anti CSRF token
 The example below opens an URL and also fills a form than is finally submitted. This particular approach is suitable for to create a shortcut to all non-standard pages operating on forms with parameters passed with POST and some kind of CSRF protection (token, cookie, etc). 
 

@@ -907,6 +907,19 @@ $(window).on('load', function() {
         document.addEventListener('keyup', function(e) { ubiq_keyup_handler(e); }, false);
         document.getElementById('ubiq_input').addEventListener('input', ubiq_save_input, false); // keydown fires before input is updated
 
+        // preview HTML from the sandbox is mirrored in as a plain string (no live listeners
+        // survive the trip), so click-to-copy for custom commands is handled here generically.
+        // data-copy overrides what gets copied (defaults to the element's text);
+        // data-copy-feedback, if present, replaces the element's content after copying.
+        $(document).on('click', '#ubiq-command-preview .copydata', function(e) {
+            e.preventDefault();
+            var $t = $(this);
+            var val = $t.attr('data-copy');
+            CmdUtils.setClipboard(val != null ? val : $t.text());
+            var feedback = $t.attr('data-copy-feedback');
+            if (feedback != null) $t.text(feedback);
+        });
+
         if (typeof chrome.userScripts === 'undefined') {
             CmdUtils.setTip('<span style="color:orange">&#9888; Developer mode disabled &mdash; script injection commands won\'t work. Enable in <a href="chrome://extensions" target="_blank">chrome://extensions</a></span>');
             CmdUtils.setBadge('DEV', 'orange');
