@@ -177,6 +177,15 @@ var CmdUtils = {
         });
     },
 
+    // Runs a built-in command's preview/execute (they live in the popup, not here —
+    // getcmd() above can't call their functions, only proxy simple property sets).
+    // 'preview' writes straight into the real, visible preview element in the popup.
+    runBuiltin: function(name, method, args) {
+        var clean = Object.assign({}, args);
+        delete clean._cmd; delete clean.pblock; // not cloneable through postMessage
+        sendToPopup({ type: 'run-builtin', name: name, method: method, args: clean });
+    },
+
     getcmdpart: function(name) {
         if (!name) return null;
         name = name.trim().toLowerCase();

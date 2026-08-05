@@ -840,6 +840,13 @@ window.addEventListener('message', function(e) {
         case 'chrome-call':
             ubiq_handle_chrome_call(msg);
             break;
+        case 'run-builtin': {
+            var builtin = CmdUtils.getcmd(msg.name); // real getcmd (cmdutils.js) — sees built-ins
+            if (!builtin) break;
+            if (msg.method === 'execute' && typeof builtin.execute === 'function') builtin.execute.call(builtin, msg.args);
+            if (msg.method === 'preview' && typeof builtin.preview === 'function') builtin.preview.call(builtin, ubiq_preview_el(), msg.args);
+            break;
+        }
         case 'set-tip':
             ubiq_set_tip(msg.html);
             break;

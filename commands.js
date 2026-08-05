@@ -156,7 +156,7 @@ CmdUtils.CreateCommand({
             curr_from = matches[2];
             curr_to = matches[3];
         } else {
-            matches = currency_spec.match(/^([\d\.\+\-\\\/\*]+)\s+(\w{6})$/);
+            matches = currency_spec.match(/^([\d\.,\+\-\\\/\*]+)\s+(\w{6})$/);
             if (matches && matches.length>=3) {
                 amount = matches[1];
                 curr_from = matches[2].substring(0,3);
@@ -170,7 +170,8 @@ CmdUtils.CreateCommand({
             }
         }
         try {
-          amount = parseFloat(amount) || 0;
+          if (!/^[\d.,+\-*/\s]+$/.test(amount)) throw new Error("invalid amount expression");
+          amount = CmdUtils.evalArithmetic(amount) || 0;
         } catch (e) {
           amount = 0;
         }

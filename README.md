@@ -223,6 +223,21 @@ pblock.innerHTML = "<span class='copydata'>" + value + "</span>"; // click copie
 pblock.innerHTML = "<a class='copydata' data-copy='" + value + "' data-copy-feedback='✅'>📄</a>"; // click copies value, then shows ✅
 ```
 
+## Calling a built-in command from a custom command
+Custom commands run in a sandboxed iframe; built-in commands (`commands.js`) run in the popup. `CmdUtils.getcmd(name)` can't bridge the two — for a built-in it returns a stub that only proxies simple property assignment (e.g. setting an API key), not function calls. Calling `.preview()`/`.execute()` on it throws `is not a function`.
+
+To run (and effectively reuse/wrap) a built-in command's `preview`/`execute` from a custom command, use `CmdUtils.runBuiltin(name, method, args)` instead. It forwards the call to the popup, where the built-in actually lives; `preview` writes straight into the real, visible preview element.
+
+```javascript
+CmdUtils.CreateCommand({
+  name: "eurpln",
+  execute: (args) => CmdUtils.runBuiltin('currency-converter', 'execute', {...args, text: args.text+" "+args._cmd.name}),
+  preview: (pblock, args) => CmdUtils.runBuiltin('currency-converter', 'preview', {...args, text: args.text+" "+args._cmd.name}),
+});
+```
+
+Note: `args` is passed through `postMessage`, so it's structured-cloned — functions and DOM nodes (`_cmd`, `pblock`) are stripped automatically; don't rely on them reaching the built-in.
+
 ## Open tab, post a form and dodge anti CSRF token
 The example below opens an URL and also fills a form than is finally submitted. This particular approach is suitable for to create a shortcut to all non-standard pages operating on forms with parameters passed with POST and some kind of CSRF protection (token, cookie, etc). 
 

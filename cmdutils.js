@@ -412,6 +412,28 @@ CmdUtils.closePopup = function closePopup(w) {
     if (CmdUtils.popupWindow) CmdUtils.popupWindow.close();
 };
 
+// evaluates a +,-,*,/ expression without eval()/Function() (blocked by the
+// extension_pages CSP, unlike the sandbox) — caller must pre-validate the charset
+CmdUtils.evalArithmetic = function evalArithmetic(expr) {
+    expr = expr.replace(/,/g, ".").replace(/\s+/g, "");
+    var tokens = expr.match(/\d+\.?\d*|[+\-*/]/g) || [];
+    if (tokens.length === 0) return 0;
+    // pass 1: resolve * and /, left to right
+    var stack = [parseFloat(tokens[0]) || 0];
+    for (var i=1; i<tokens.length; i+=2) {
+        var op = tokens[i], val = parseFloat(tokens[i+1]) || 0;
+        if (op === '*') stack.push(stack.pop() * val);
+        else if (op === '/') stack.push(stack.pop() / val);
+        else stack.push(op, val); // defer + and -
+    }
+    // pass 2: resolve + and -, left to right
+    var result = stack[0];
+    for (var i=1; i<stack.length; i+=2) {
+        result = stack[i] === '+' ? result + stack[i+1] : result - stack[i+1];
+    }
+    return result;
+};
+
 // gets json with xhr
 CmdUtils.ajaxGetJSON = function ajaxGetJSON(url, callback) {
     var xhr = new XMLHttpRequest();
