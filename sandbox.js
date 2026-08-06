@@ -136,6 +136,11 @@ var CmdUtils = {
             // Original function sources for command-source/dump
             previewSrc: typeof cs.preview === 'function' ? cs.preview.toString() : (typeof cs.preview === 'string' ? cs.preview : null),
             executeSrc: typeof cs.execute === 'function' ? cs.execute.toString() : null,
+            // cs.onAuth === true → let the native HTTP-auth dialog show as normal;
+            // cs.onAuth is a function → popup asks us to run it (can't cross postMessage
+            // as a function, so just the mode goes over; see 'auth-required' below);
+            // otherwise → popup shows a generic "requires basic auth" tip
+            onAuthMode: cs.onAuth === true ? 'allow' : (typeof cs.onAuth === 'function' ? 'function' : 'default'),
             extraProps: (function() {
                 var skip = {name:1,names:1,icon:1,description:1,help:1,external:1,test:1,preview:1,execute:1,timeout:1,builtIn:1};
                 var p = {};
@@ -278,6 +283,15 @@ var CmdUtils = {
             if (callback) callback(result);
         }).catch(function(e) {
             console.error('ajaxGet failed', e);
+        });
+    },
+    // temp/debug: credentials:'omit' — testing whether this avoids the native
+    // HTTP-auth prompt that plain ajaxGet (credentials:'include') triggers
+    ajaxGetNoAuth: function(url, callback) {
+        chromeProxy('fetch', [{ url: url, raw: true, credentials: 'omit' }]).then(function(r) {
+            if (callback) callback(r);
+        }).catch(function(e) {
+            console.error('ajaxGetNoAuth failed', e);
         });
     },
     ajaxGetJSON: function(url, callback) {
@@ -453,6 +467,14 @@ window.addEventListener('message', function(event) {
 
         case 'unload-custom': {
             sandboxCommands = {};
+            break;
+        }
+
+        case 'auth-required': {
+            var authCmd = sandboxCommands[msg.name];
+            if (authCmd && typeof authCmd.onAuth === 'function') {
+                try { (authCmd.onAuth.bind(authCmd))(pblockEl); } catch (e) { console.error('onAuth handler failed', e); }
+            }
             break;
         }
 

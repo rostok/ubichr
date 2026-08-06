@@ -95,7 +95,7 @@ function ubiq_handle_chrome_call(msg) {
                 method: req.method || 'GET',
                 headers: req.headers || {},
                 body: req.data != null ? req.data : undefined,
-                credentials: 'include'
+                credentials: req.credentials || 'include'
             })
                 .then(function(r) { return r.text().then(function(t) { return { r: r, t: t }; }); })
                 .then(function(o) {

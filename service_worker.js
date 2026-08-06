@@ -184,3 +184,19 @@ chrome.tabs.onHighlighted.addListener(function(higInfo) {
 // storage.session is cleared on browser restart and tab events may not have fired
 // yet when the popup first opens — populate active_tab/selectedText on SW startup
 updateActiveTab();
+
+// Suppresses the native HTTP Basic/Digest auth dialog for UbiChr's own background
+// fetches (details.tabId === -1 — not tied to any real browser tab, i.e. requests
+// made via the sandbox's fetch proxy). Real tab navigations keep the normal native
+// prompt. The suppress/allow decision (and any custom handling) is delegated to
+// whichever command is currently running, via the popup — see cmd.onAuth in README.
+chrome.webRequest.onAuthRequired.addListener(
+    function(details, asyncCallback) {
+        if (details.tabId !== -1) { asyncCallback({}); return; } // real tab — default browser behavior
+        chrome.runtime.sendMessage({ message: 'authRequired', url: details.url }, function(resp) {
+            asyncCallback(!chrome.runtime.lastError && resp && resp.allow ? {} : { cancel: true });
+        });
+    },
+    { urls: ["<all_urls>"] },
+    ["asyncBlocking"]
+);

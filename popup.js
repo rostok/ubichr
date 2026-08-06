@@ -701,7 +701,8 @@ function ubiq_create_sandbox_stub(info) {
         // Original source for command-source/dump
         _previewSrc: info.previewSrc || null,
         _executeSrc: info.executeSrc || null,
-        _extraProps: info.extraProps || {}
+        _extraProps: info.extraProps || {},
+        _onAuthMode: info.onAuthMode || 'default'
     };
     return stub;
 }
@@ -808,6 +809,34 @@ function ubiq_handle_chrome_call(msg) {
             sendResult(null, 'Unknown method: ' + msg.method);
     }
 }
+
+// Answers the service worker's onAuthRequired check (see service_worker.js): should
+// the native HTTP-auth dialog be allowed for this background fetch, or suppressed?
+// Delegates to the currently running command's cmd.onAuth:
+//   true       → allow (native dialog shows as normal)
+//   function   → suppress, and run the handler (built-ins run it directly here;
+//                sandboxed custom commands get it forwarded into the sandbox, since
+//                functions can't cross that postMessage boundary)
+//   otherwise  → suppress, show a generic "requires basic auth" tip
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+    if (request.message !== 'authRequired') return;
+    var cmd = ubiq_last_preview_cmd;
+    if (cmd && cmd.onAuth === true) { sendResponse({allow: true}); return; }
+    if (cmd && typeof cmd.onAuth === 'function') {
+        cmd.onAuth(ubiq_preview_el());
+        sendResponse({allow: false});
+        return;
+    }
+    if (cmd && cmd._onAuthMode === 'allow') { sendResponse({allow: true}); return; }
+    if (cmd && cmd._onAuthMode === 'function') {
+        var sf = document.getElementById('sandbox-frame');
+        if (sf) sf.contentWindow.postMessage({type: 'auth-required', name: cmd.name, url: request.url}, '*');
+        sendResponse({allow: false});
+        return;
+    }
+    ubiq_set_tip('<span style="color:orange">🔒 basic auth required <a href="' + request.url + '" target="_blank">' + request.url + '</a></span>');
+    sendResponse({allow: false});
+});
 
 // Handle all postMessage events from the sandbox iframe
 window.addEventListener('message', function(e) {

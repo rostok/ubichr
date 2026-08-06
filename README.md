@@ -238,6 +238,27 @@ CmdUtils.CreateCommand({
 
 Note: `args` is passed through `postMessage`, so it's structured-cloned — functions and DOM nodes (`_cmd`, `pblock`) are stripped automatically; don't rely on them reaching the built-in.
 
+## Handling servers that require HTTP Basic Auth
+Fetching a URL that challenges with HTTP Basic/Digest auth (401 + `WWW-Authenticate`) normally pops Chrome's native username/password dialog — for a background request made from a command's `preview`/`execute` (not a real, visible tab) that's disruptive, so UbiChr suppresses it by default. Add an `onAuth` property to a command to control what happens instead:
+
+| `onAuth` | behavior |
+|----------|----------|
+| not set | a generic `"🔒 basic auth required <url>"` tip is shown above the preview, `<url>` linking to a new tab |
+| `true` | the native dialog is allowed to show, same as without UbiChr involved |
+| `function(pblock)` | called instead of showing the tip — write your own message/link into `pblock` |
+
+```javascript
+CmdUtils.CreateCommand({
+    name: "scan",
+    onAuth: function(pblock) {
+        pblock.innerHTML += "<br><span style='color:orange'>🔒 some images need a manual login — open the link in its own tab</span>";
+    },
+    // ... preview/execute
+});
+```
+
+This only affects requests tied to no real tab (`details.tabId === -1` in `service_worker.js`) — a real tab navigation (e.g. a scan link opened with `target="_blank"`) still gets the normal native prompt, since that's a deliberate, expected login.
+
 ## Open tab, post a form and dodge anti CSRF token
 The example below opens an URL and also fills a form than is finally submitted. This particular approach is suitable for to create a shortcut to all non-standard pages operating on forms with parameters passed with POST and some kind of CSRF protection (token, cookie, etc). 
 
