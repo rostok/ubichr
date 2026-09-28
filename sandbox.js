@@ -220,8 +220,10 @@ var CmdUtils = {
     // ── UI proxies ─────────────────────────────────────────────────────────────
     // compat shim: some custom commands expect a preview-block getter
     getPreviewBlock: function() { return pblockEl; },
-    setPreview: function(html) {
-        sendToPopup({ type: 'set-preview', html: html });
+    setPreview: function(html, prepend) {
+        // write through pblockEl (not a direct postMessage) so the MutationObserver
+        // mirrors it to the popup AND args.pblock (used by execute) stays in sync
+        pblockEl.innerHTML = prepend ? (html + "<hr/>" + pblockEl.innerHTML) : html;
     },
     setResult: function(html) {
         sendToPopup({ type: 'set-result', html: html });

@@ -899,10 +899,15 @@ CmdUtils.CreateCommand({
     name: ["calc","sum"],
     description: "evals math expressions, white-space separated expressions are added",
     icon: "➕",
+    require: "lib/mathjs/15.2.0/math.min.js",
     preview: function preview(previewBlock, {text}) {
         if (text.trim()!='') {
             text = text.trim().replace(/,/g,".").replace(/(\d)(\s+)/g,"$1+");
-            CmdUtils.ajaxGet("https://api.mathjs.org/v4/?expr="+encodeURIComponent(text), (r)=>{ previewBlock.innerHTML = r; });
+            try {
+                previewBlock.innerHTML = math.format(math.evaluate(text), {precision: 14});
+            } catch (e) {
+                previewBlock.innerHTML = "<span style='color:red'>"+e.message+"</span>";
+            }
         } else {
             previewBlock.innerHTML = this.description;
         }
@@ -912,10 +917,13 @@ CmdUtils.CreateCommand({
         if (text.trim()=="") text = CmdUtils.getClipboard();
         if (text.trim()!='') {
             text = text.trim().replace(/,/g,".").replace(/(\d)(\s+)(\d)/g,"$1+$3");
-            CmdUtils.ajaxGet("https://api.mathjs.org/v4/?expr="+encodeURIComponent(text), (r)=>{
+            try {
+                var r = math.format(math.evaluate(text), {precision: 14});
                 CmdUtils.setSelection(r);
                 CmdUtils.popupWindow.ubiq_set_input("calc "+r, false);
-            });
+            } catch (e) {
+                CmdUtils.setSelection(e.message);
+            }
         }
     }
 });
