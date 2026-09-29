@@ -1,3 +1,16 @@
+.ubichr-progress {
+    width: 530px;
+    accent-color: #888;
+}
+.ubichr-progress::-webkit-progress-bar {
+    background-color: #444;
+    border-radius: 3px;
+}
+.ubichr-progress::-webkit-progress-value {
+    background-color: #999;
+    border-radius: 3px;
+}
+
 body {
     width: 780px;
     height: 560px;

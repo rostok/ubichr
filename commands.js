@@ -1521,7 +1521,69 @@ CmdUtils.CreateCommand({
     description: "saves multiple links from clipboard or argument list to a single zip",
     author: "rostok",
     icon: "res/icon-128.png",
-    execute: function execute({text, _cmd}) {
+    // small IndexedDB-backed history — persists finished zips (as real Blobs)
+    // across popup close/reopen, capped to the last 5.
+    _openDB: function() {
+        return new Promise((resolve, reject) => {
+            var req = indexedDB.open('ubichr-saves', 1);
+            req.onupgradeneeded = () => { req.result.createObjectStore('zips', {keyPath:'id', autoIncrement:true}); };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    },
+    _addToHistory: async function(blob, filename, count) {
+        var db = await this._openDB();
+        await new Promise((resolve, reject) => {
+            var tx = db.transaction('zips', 'readwrite');
+            tx.objectStore('zips').add({time: Date.now(), filename: filename, count: count, size: blob.size, blob: blob});
+            tx.oncomplete = resolve;
+            tx.onerror = () => reject(tx.error);
+        });
+        await new Promise((resolve, reject) => { // trim to the last 5
+            var tx = db.transaction('zips', 'readwrite');
+            var seen = 0;
+            tx.objectStore('zips').openCursor(null, 'prev').onsuccess = (e) => {
+                var cursor = e.target.result;
+                if (!cursor) return;
+                seen++;
+                if (seen > 5) cursor.delete();
+                cursor.continue();
+            };
+            tx.oncomplete = resolve;
+            tx.onerror = () => reject(tx.error);
+        });
+        db.close();
+    },
+    _getRecent: async function(limit) {
+        var db = await this._openDB();
+        var out = [];
+        await new Promise((resolve, reject) => {
+            var tx = db.transaction('zips', 'readonly');
+            tx.objectStore('zips').openCursor(null, 'prev').onsuccess = (e) => {
+                var cursor = e.target.result;
+                if (!cursor || out.length >= limit) { resolve(); return; }
+                out.push(cursor.value);
+                cursor.continue();
+            };
+            tx.onerror = () => reject(tx.error);
+        });
+        db.close();
+        return out;
+    },
+    _clearHistory: async function() {
+        var db = await this._openDB();
+        await new Promise((resolve, reject) => {
+            var tx = db.transaction('zips', 'readwrite');
+            tx.objectStore('zips').clear();
+            tx.oncomplete = resolve;
+            tx.onerror = () => reject(tx.error);
+        });
+        db.close();
+    },
+    execute: async function execute({text, _cmd, _opt_val}) {
+        var opt = _opt_val || "";
+        if (opt == "clear-history") { await this._clearHistory(); return; }
+        if (opt.includes("://")) { CmdUtils.addTab(opt); return; } // Ctrl+Up/Down-selected save zip / history entry (blob: URL)
         if (text.trim()=="") text = CmdUtils.getClipboard();
         this.lastDownload = undefined;
         this.lastFile = "";
@@ -1537,20 +1599,21 @@ CmdUtils.CreateCommand({
                 oReq.open("GET", l, true);
                 oReq.responseType = "blob";//"arraybuffer";
                 oReq.onprogress = (e)=>{
-                    // CmdUtils.popupWindow.console.log(e);
-                    this.progress[e.currentTarget.responseURL] = {loaded:e.loaded, total:e.total};
-                    var lt = Object.values(this.progress).reduce( (acc, cur)=>{console.log("a",acc,"c",cur); return {loaded:acc.loaded+cur.loaded,total:acc.total+cur.total}});
+                    // keyed by link index, not responseURL — duplicate/redirected links
+                    // used to collide on the same key and undercount the total
+                    this.progress[idx] = {loaded:e.loaded, total:e.total};
+                    var lt = this.progress.reduce( (acc, cur)=> cur ? {loaded:acc.loaded+cur.loaded,total:acc.total+cur.total} : acc, {loaded:0,total:0});
                     if (CmdUtils.popupWindow.ubiq_match_first_command()==this.name) {
-                        var prc = Math.round(lt.loaded*100/lt.total,1);
+                        var known = lt.total>0;
+                        var prc = known ? Math.round(lt.loaded*100/lt.total) : 0;
                         var s = "";
-                        s += "<progress style='width:530px' value='"+prc+"' max='100'></progress><br><br>";
-                        s += "loaded:"+lt.loaded+" / total:"+lt.total+" ("+prc+"%)<br><br>"
+                        s += "<progress class='ubichr-progress' value='"+prc+"' max='100'></progress><br><br>";
+                        s += known ? ("loaded:"+lt.loaded+" / total:"+lt.total+" ("+prc+"%)<br><br>") : ("loaded:"+lt.loaded+" (rozmiar nieznany)<br><br>");
                         s += this.lastFile;
                         CmdUtils.popupWindow.ubiq_set_preview(s);
-                    }                    
-                    //CmdUtils.popupWindow.console.log("loaded:"+lt.loaded+" / total:"+lt.total+" ("+Math.round(lt.loaded*100/lt.total,1)+"%)");
+                    }
                 };
-                oReq.onload = function(oEvent) {
+                oReq.onload = (oEvent) => { // arrow — keeps `this` on the command object (was `this`=oReq, breaking lastFile/lastDownload)
                     var arrayBuffer = oReq.response;
                     var byteArray = new Uint8Array(arrayBuffer);
                     var f = l.replace(/[:\/\\&?]/g,"-");
@@ -1644,9 +1707,9 @@ CmdUtils.CreateCommand({
                     this.lastFile = l+"("+oReq.response.type+")";
                     if (i==array.length) {
                         CmdUtils.popupWindow.ubiq_set_preview("done!");
-                    
+
                         zip.generateAsync({type:"blob"})
-                        .then(function (blob) {
+                        .then((blob) => {
                             var url = window.webkitURL || window.URL || window.mozURL || window.msURL;
                             var a = document.createElement('a');
                             a.download = 'bulk.zip';
@@ -1654,8 +1717,11 @@ CmdUtils.CreateCommand({
                             CmdUtils.popupWindow.ubiq_set_preview("");
                             a.textContent = 'save zip';
                             a.dataset.downloadurl = ['zip', a.download, a.href].join(':');
+                            a.setAttribute('data-option', '');
+                            a.setAttribute('data-option-value', a.href);
                             this.lastDownload = a;
                             CmdUtils.popupWindow.jQuery("#ubiq-command-preview").append(a);
+                            this._addToHistory(blob, a.download, array.length).catch(e=>console.warn('save history failed', e));
                         });
                     }
                 };
@@ -1663,13 +1729,37 @@ CmdUtils.CreateCommand({
             }, time+=delay);
         });
     },
-    preview: function preview(pblock, {text,_cmd}) {
+    preview: async function preview(pblock, args) {
+        var text = args.text;
         if (text.trim()=="") text = CmdUtils.getClipboard();
-        text = text.trim().split(/\s+/).map( (s,a) => { return "<br><a target=_blank href='"+s+"'>"+s+"</a>"; } ).join("");
-        pblock.innerHTML = "download & zip:" + text;
-        if(this.lastDownload !== undefined) {
-            jQuery(pblock).append("<hr>last download: ").append(this.lastDownload);
-        }
+        var links = text.trim()=="" ? [] : text.trim().split(/\s+/);
+
+        (this._previewUrls||[]).forEach(u=>URL.revokeObjectURL(u));
+        this._previewUrls = [];
+
+        var html = "";
+        try {
+            var recent = await this._getRecent(5);
+            if (recent.length) {
+                html += "<b>Ostatnie zapisy:</b><br>";
+                recent.forEach(rec=>{
+                    var url = URL.createObjectURL(rec.blob);
+                    this._previewUrls.push(url);
+                    var d = new Date(rec.time);
+                    html += "<a data-option data-option-value='"+url+"' download='"+rec.filename+"' href='"+url+"'>"+rec.filename+"</a> — "+rec.count+" plik(ów), "+d.toLocaleTimeString()+"<br>";
+                });
+                html += "<a href='#' id='ubichr-save-clear' data-option data-option-value='clear-history'>clear history</a><hr>";
+            }
+        } catch(e) { console.warn('save history read failed', e); }
+
+        html += "download & zip:" + links.map( s => "<br><a target=_blank href='"+s+"'>"+s+"</a>" ).join("");
+        pblock.innerHTML = html;
+
+        jQuery(pblock).find('#ubichr-save-clear').on('click', async (e) => {
+            e.preventDefault();
+            await this._clearHistory();
+            this.preview(pblock, args);
+        });
     },
 });
 
