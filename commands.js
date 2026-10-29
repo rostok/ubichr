@@ -1903,10 +1903,26 @@ CmdUtils.CreateCommand({
     name: "allow-text-selection",
     author: "Alan Hogan",
     icon: "Ꮖ",
-    external: true,
     description: "Allows text selection by undoing user-select:none CSS rules.",
     homepage: "https://alanhogan.com/bookmarklets",
-    execute: function execute(args) { CmdUtils.inject("https://cdn.jsdelivr.net/gh/alanhogan/bookmarklets/enable-text-selection.js"); },
+    // local rewrite of enable-text-selection.js bookmarklet (MV3 forbids remotely hosted code)
+    execute: function execute(args) {
+        if (CmdUtils.active_tab && CmdUtils.active_tab.id) {
+            chrome.scripting.executeScript({
+                target: { tabId: CmdUtils.active_tab.id, allFrames: true }, // also iframes (e.g. code playground results)
+                func: function() {
+                    var style = document.createElement('style');
+                    style.textContent = '* { -webkit-user-select: text !important; user-select: text !important; }';
+                    (document.head || document.documentElement).appendChild(style);
+                    var allow = function() { return true; };
+                    var els = [document].concat(Array.from(document.getElementsByTagName('*')));
+                    els.forEach(function(el) {
+                        el.onselectstart = el.ondragstart = el.ondrag = el.oncontextmenu = el.onmousedown = el.onmouseup = el.oncopy = allow;
+                    });
+                }
+            });
+        }
+    },
 });
 
 CmdUtils.CreateCommand({

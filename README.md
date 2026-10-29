@@ -284,32 +284,11 @@ CmdUtils.CreateCommand({
 
 UbiChr command creates internal chrome listener that is fired upon new tab being opened. The listerer callback executes JS into a page that fills the form and submits it and finally removes the callback. Please note, that the example above has no tab url check in place. 
 
-## Commands that inject external JavaScript
-Build 1.0.0.31 includes two commands that rely on external sources. These are `allow-text-selection` that removes anti selection by overriding `user-select: none` CSS style, and `grayscale` (or `greyscale`) which just disables colors. Both commands inject JS source taken from CDN and as a precaution include `external: true` attribute. Be aware that the CDN provided source may change anytime.
+## Commands converted from bookmarklets
+Build 1.0.0.31 introduced two commands converted from bookmarklets by [Alan Hogan](https://github.com/alanhogan/bookmarklets): `allow-text-selection`, which removes anti-selection measures by overriding `user-select: none` CSS rules and resetting `onselectstart`/`oncontextmenu`/`oncopy`-style handlers, and `grayscale` (or `greyscale`), which disables page colors. Originally both injected the bookmarklet source from a CDN via `CmdUtils.inject()`.
 
-The intention here is to convert simple bookmarked javascript into typical commands. The author of the original JS scripts or the bookmarklets is [Alan Hogan](https://github.com/alanhogan/bookmarklets).
+Manifest V3 forbids remotely hosted code (the Chrome Web Store rejected build 3.0.0.10 for it), so since 3.0.0.11 both commands are implemented locally with `chrome.scripting.executeScript({func})` and no longer carry the `external: true` attribute. `CmdUtils.inject()` and the `inject-js` command remain available for user-supplied URLs only.
 
-```javascript
-CmdUtils.CreateCommand({
-    name: "allow-text-selecion",
-    author: "Alan Hogan",
-    icon: "Ꮖ",
-    external: true,
-    description: "Allows text selection by undoing user-select:none CSS rules.",
-    homepage: "https://alanhogan.com/bookmarklets",
-    execute: function execute(args) { CmdUtils.inject("https://cdn.jsdelivr.net/gh/alanhogan/bookmarklets/enable-text-selection.js"); },
-});
-
-CmdUtils.CreateCommand({
-    name: ["grayscale","greyscale"],
-    author: "Alan Hogan",
-    icon: "🎨",
-    external: true,
-    description: "Removes colors.",
-    homepage: "https://alanhogan.com/bookmarklets",
-    execute: function execute(args) { CmdUtils.inject("https://cdn.jsdelivr.net/gh/alanhogan/bookmarklets/grayscale.js"); },
-});
-```
 ## Update handlers
 The background script runs ```CmdUtils.updateActiveTab()``` method on couple of chrome's events
 (onUpdated,onActivated,onHighlighted). Version 0.1.0.32 adds possibility to attach/remove your custom handlers to ```CmdUtils.updateActiveTab()```. This is managed via:
